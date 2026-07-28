@@ -23,3 +23,34 @@ The first vertical slice stabilizes a versioned trace envelope, deterministic va
 - no automatic merge or publication.
 
 See `docs/product-brief.md` and `docs/architecture/ADR-0001-contract-first-modular-monolith.md`.
+
+## Phase 0 usage
+
+The SDK is pinned by `global.json`. Build all three zero-package projects:
+
+```sh
+dotnet build ProgressTrace.slnx --configuration Release --nologo --warnaserror
+```
+
+Validate a trace. Valid input produces machine-readable JSON and exit code `0`;
+semantic-invalid input returns `1`, while malformed JSON, unreadable input, or
+bad usage returns `2`.
+
+```sh
+dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj \
+  --configuration Release -- validate fixtures/valid/minimal-trace.json
+```
+
+Normalize a valid trace to canonical JSON on standard output:
+
+```sh
+dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj \
+  --configuration Release -- normalize fixtures/valid/multi-event-trace.json
+```
+
+Run the conformance executable:
+
+```sh
+dotnet run --project tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj \
+  --configuration Release
+```
