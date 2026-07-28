@@ -239,7 +239,13 @@ public static class TraceValidator
             return null;
         }
 
-        if (value.ValueKind != JsonValueKind.String || !value.TryGetDateTimeOffset(out var result))
+        if (value.ValueKind != JsonValueKind.String)
+        {
+            diagnostics.Add(Diagnostic(DiagnosticCodes.Type, Path(pointer, name), $"{name} must be a string."));
+            return null;
+        }
+
+        if (!value.TryGetDateTimeOffset(out var result))
         {
             diagnostics.Add(Diagnostic(DiagnosticCodes.InvalidValue, Path(pointer, name), $"{name} must be an ISO 8601 date-time."));
             return null;
@@ -275,7 +281,7 @@ public static class TraceValidator
             {
                 diagnostics.Add(Diagnostic(
                     DiagnosticCodes.UnknownProperty,
-                    Path(pointer, Escape(property.Name)),
+                    Path(pointer, property.Name),
                     "Property is not allowed."));
             }
         }

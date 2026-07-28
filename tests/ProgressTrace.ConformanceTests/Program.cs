@@ -42,6 +42,7 @@ foreach (var path in Directory.EnumerateFiles(invalidDirectory, "*.json").Order(
 
 AssertInputSizeBoundary(failures);
 AssertDuplicateDiagnosticsAreRedacted(failures);
+AssertUnknownPropertyPointerEscaping(failures);
 
 if (failures.Count == 0)
 {
@@ -99,5 +100,21 @@ static void AssertDuplicateDiagnosticsAreRedacted(List<string> failures)
     else if (duplicate.Message.Contains(secretValue, StringComparison.Ordinal))
     {
         failures.Add("duplicate-property: diagnostic echoed a payload value");
+    }
+}
+
+static void AssertUnknownPropertyPointerEscaping(List<string> failures)
+{
+    var input = System.Text.Encoding.UTF8.GetBytes(
+        """{"schemaVersion":"1.0","traceId":"t","source":{"name":"n","version":"v"},"createdAt":"2026-01-02T00:00:00Z","events":[],"unexpected/key~token":true}""");
+    var result = TraceValidator.ParseAndValidate(input);
+    var unknown = result.Diagnostics.SingleOrDefault(static item => item.Code == "PT003");
+    if (unknown is null)
+    {
+        failures.Add("unknown-property-pointer: property containing '/' and '~' was not rejected");
+    }
+    else if (unknown.Pointer != "/unexpected~1key~0token")
+    {
+        failures.Add($"unknown-property-pointer: expected /unexpected~1key~0token; got {unknown.Pointer}");
     }
 }
