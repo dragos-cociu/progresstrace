@@ -39,6 +39,9 @@ byte-identical.
 
 Diagnostics contain a stable code, JSON Pointer, and safe message. They identify
 the structural location but do not include payload values or trace content.
+Duplicate property names are rejected throughout the document, including inside
+payload objects, with `PT004`. Inputs larger than 16 MiB (16,777,216 bytes) are
+rejected before JSON parsing with `PT005`.
 Trace files are untrusted data: normalization never executes or interprets
 payloads. Future upload or model-assisted features must redact before data
 leaves the local boundary.

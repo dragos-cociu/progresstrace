@@ -20,6 +20,12 @@ static async Task<int> RunAsync(string[] args)
     byte[] input;
     try
     {
+        var sizeValidation = TraceValidator.ValidateInputSize(new FileInfo(args[1]).Length);
+        if (!sizeValidation.IsValid)
+        {
+            WriteJson(Console.Out, new { valid = false, diagnostics = sizeValidation.Diagnostics });
+            return 2;
+        }
         input = await File.ReadAllBytesAsync(args[1]);
     }
     catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
@@ -32,7 +38,8 @@ static async Task<int> RunAsync(string[] args)
     if (!result.IsValid)
     {
         WriteJson(Console.Out, new { valid = false, diagnostics = result.Diagnostics });
-        return result.Diagnostics.Any(static item => item.Code == DiagnosticCodes.InvalidJson) ? 2 : 1;
+        return result.Diagnostics.Any(static item =>
+            item.Code is DiagnosticCodes.InvalidJson or DiagnosticCodes.InputTooLarge) ? 2 : 1;
     }
 
     if (args[0] == "validate")

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using ProgressTrace.Core.Diagnostics;
 using ProgressTrace.Core.Models;
@@ -7,11 +6,19 @@ namespace ProgressTrace.Core.Validation;
 
 public static class TraceValidator
 {
+    public const int MaximumInputSizeBytes = 16 * 1024 * 1024;
+
     private static readonly HashSet<string> Actors =
         new(StringComparer.Ordinal) { "system", "user", "assistant", "tool", "other" };
 
     public static ValidationResult ParseAndValidate(ReadOnlyMemory<byte> utf8Json)
     {
+        var sizeValidation = ValidateInputSize(utf8Json.Length);
+        if (!sizeValidation.IsValid)
+        {
+            return sizeValidation;
+        }
+
         JsonDocument document;
         try
         {
@@ -26,6 +33,7 @@ public static class TraceValidator
         {
             var diagnostics = new List<Diagnostic>();
             var root = document.RootElement;
+            RejectDuplicateProperties(root, "", diagnostics);
             if (root.ValueKind != JsonValueKind.Object)
             {
                 diagnostics.Add(Diagnostic(DiagnosticCodes.Type, "", "Envelope must be an object."));
@@ -50,6 +58,14 @@ public static class TraceValidator
             return new(envelope, diagnostics);
         }
     }
+
+    public static ValidationResult ValidateInputSize(long inputSizeBytes) =>
+        inputSizeBytes <= MaximumInputSizeBytes
+            ? new(null, [])
+            : Invalid(
+                DiagnosticCodes.InputTooLarge,
+                "",
+                $"Input exceeds the maximum size of {MaximumInputSizeBytes} bytes.");
 
     private static TraceSource? ReadSource(JsonElement root, List<Diagnostic> diagnostics)
     {
@@ -223,13 +239,7 @@ public static class TraceValidator
             return null;
         }
 
-        if (value.ValueKind != JsonValueKind.String ||
-            !DateTimeOffset.TryParseExact(
-                value.GetString(),
-                ["O", "yyyy-MM-dd'T'HH:mm:ssK"],
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out var result))
+        if (value.ValueKind != JsonValueKind.String || !value.TryGetDateTimeOffset(out var result))
         {
             diagnostics.Add(Diagnostic(DiagnosticCodes.InvalidValue, Path(pointer, name), $"{name} must be an ISO 8601 date-time."));
             return null;
@@ -267,6 +277,38 @@ public static class TraceValidator
                     DiagnosticCodes.UnknownProperty,
                     Path(pointer, Escape(property.Name)),
                     "Property is not allowed."));
+            }
+        }
+    }
+
+    private static void RejectDuplicateProperties(
+        JsonElement value,
+        string pointer,
+        List<Diagnostic> diagnostics)
+    {
+        if (value.ValueKind == JsonValueKind.Object)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var property in value.EnumerateObject())
+            {
+                var propertyPointer = Path(pointer, property.Name);
+                if (!names.Add(property.Name))
+                {
+                    diagnostics.Add(Diagnostic(
+                        DiagnosticCodes.DuplicateProperty,
+                        propertyPointer,
+                        "JSON object property names must be unique."));
+                }
+                RejectDuplicateProperties(property.Value, propertyPointer, diagnostics);
+            }
+        }
+        else if (value.ValueKind == JsonValueKind.Array)
+        {
+            var index = 0;
+            foreach (var item in value.EnumerateArray())
+            {
+                RejectDuplicateProperties(item, pointer + "/" + index, diagnostics);
+                index++;
             }
         }
     }
