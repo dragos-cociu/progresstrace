@@ -29,6 +29,15 @@ per `docs/contracts/obligation-ledger.md`, before evaluation runs. An empty
 validation (exit 1); evaluation never receives a ledger with zero
 obligations.
 
+The full diagnostic code registry for every trace or ledger validation
+failure, the deterministic two-phase validation order across both input
+documents, and the `evaluate` CLI's exact stdout/stderr shape and exit
+codes are normatively defined in `docs/contracts/obligation-ledger.md`'s
+"Diagnostic registry", "Validation order", and "CLI evaluate behavior"
+sections. This document defines only the shape, content, and canonical
+serialization of the `EvaluationResult` artifact that those sections
+describe as evaluation's sole successful output.
+
 ## Document structure
 
 - `schemaVersion`: contract major/minor version. Phase 1 accepts only `1.0`.
