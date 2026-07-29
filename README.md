@@ -6,9 +6,9 @@ Its differentiator is not generic loop detection. ProgressTrace is intended to e
 
 ## Current phase
 
-**Phase 0: Canonical Trace Contract**
+**Phase 1: Deterministic Obligation-Aware Evaluation (approved current milestone)**
 
-The first vertical slice stabilizes a versioned trace envelope, deterministic validation and normalization, conformance fixtures, and a local .NET 10 CLI. It intentionally does not implement evaluation, scoring, storage, UI, hosted services, or Python adapters yet.
+Phase 0 is integrated: a versioned trace envelope, deterministic validation and normalization, conformance fixtures, and a local .NET 10 CLI. Phase 1 extends that foundation with the obligation-ledger and evaluation-result contracts described below and is the approved current milestone; its implementation is not yet complete. It intentionally does not implement baseline comparison, cost measurement, storage, UI, hosted services, or Python adapters yet.
 
 ## Architectural direction
 
@@ -23,6 +23,24 @@ The first vertical slice stabilizes a versioned trace envelope, deterministic va
 - no automatic merge or publication.
 
 See `docs/product-brief.md` and `docs/architecture/ADR-0001-contract-first-modular-monolith.md`.
+
+## Phase 1 (approved architecture, not yet implemented)
+
+Phase 1 adds two new versioned contracts, an obligation ledger
+(`docs/contracts/obligation-ledger.md`) and an evaluation result
+(`docs/contracts/evaluation-result.md`), plus a third CLI verb,
+`evaluate <trace-path> <obligation-ledger-path>`, that classifies each
+declared obligation and the trace overall as `progress`, `stagnation`,
+`regression`, or `insufficient-evidence`. This scope is currently approved
+architecture and an executable task specification only; implementation,
+fixtures, and CI updates are a separate, later task, and Phase 1 is not
+claimed complete until that implementation is integrated. Baseline
+comparison and false-halt or late-halt cost remain fully absent from
+Phase 1 and are explicitly deferred to Phase 2.
+
+See `docs/architecture/ADR-0002-obligation-and-evaluation-contracts.md`,
+`docs/contracts/obligation-ledger.md`, `docs/contracts/evaluation-result.md`,
+and `tasks/phase-1-obligation-evaluation.json`.
 
 ## Phase 0 usage
 

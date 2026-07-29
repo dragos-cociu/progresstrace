@@ -4,6 +4,8 @@
 
 Provisional, accepted for Phase 0 and subject to falsifiable spikes.
 
+Extended by ADR-0002 (obligation ledger and evaluation-result contracts) for Phase 1; no other line of this decision is modified.
+
 ## Context
 
 ProgressTrace needs durable cross-language contracts, deterministic domain semantics, local/CI usability, AI-framework adapters, statistical research workflows, and potentially a hosted service. A single-language decision for every future component would either weaken the normative core or isolate the project from the AI ecosystem. Starting multiple services and runtimes immediately would impose cost before boundaries are proven.
