@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/ProgressTrace.Core/ProgressTrace.Core.csproj" />
+  <Project Path="src/ProgressTrace.Cli/ProgressTrace.Cli.csproj" />
+  <Project Path="tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj" />
+</Solution>

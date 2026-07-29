@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0",
+  "traceId": "synthetic-rfc3339",
+  "source": {
+    "name": "fixture",
+    "version": "1"
+  },
+  "createdAt": "2026-01-02T03:04:05.1+02:30",
+  "events": [
+    {
+      "id": "event-1",
+      "sequence": 0,
+      "timestamp": "2026-01-02T00:34:05.2Z",
+      "type": "synthetic",
+      "actor": "other",
+      "payload": {},
+      "provenance": {
+        "sourceEventId": "source-1"
+      }
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "id": "phase-0-canonical-trace",
+  "title": "Implement the canonical trace contract vertical slice",
+  "objective": "Implement a .NET 10 contract-first vertical slice with a versioned canonical trace envelope JSON Schema, deterministic parsing/validation/normalization core, CLI validate and normalize commands, synthetic valid/invalid fixtures, and a zero-third-party-dependency conformance test executable. Follow docs/product-brief.md, docs/security.md, and ADR-0001. Do not implement evaluation, scoring, adapters, storage, UI, hosted services, plugins, or Python/TypeScript packages.",
+  "repository": "/srv/projects/progresstrace",
+  "base_branch": "main",
+  "allowed_paths": [
+    ".editorconfig",
+    ".gitignore",
+    "Directory.Build.props",
+    "ProgressTrace.slnx",
+    "global.json",
+    "README.md",
+    "contracts/**",
+    "docs/**",
+    "fixtures/**",
+    "src/**",
+    "tests/**"
+  ],
+  "acceptance_commands": [
+    ["dotnet", "build", "ProgressTrace.slnx", "--configuration", "Release", "--nologo", "--warnaserror"],
+    ["dotnet", "run", "--project", "tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj", "--configuration", "Release", "--no-build"],
+    ["dotnet", "run", "--project", "src/ProgressTrace.Cli/ProgressTrace.Cli.csproj", "--configuration", "Release", "--no-build", "--", "validate", "fixtures/valid/minimal-trace.json"],
+    ["python3", "-m", "json.tool", "contracts/trace-envelope.schema.json"]
+  ],
+  "max_repair_attempts": 2,
+  "timeouts_seconds": {
+    "architect": 300,
+    "builder": 600,
+    "verifier": 300,
+    "acceptance_command": 180
+  },
+  "stop_conditions": [
+    "dirty_base_repository",
+    "invalid_structured_output",
+    "path_policy_violation",
+    "role_timeout",
+    "attempt_budget_exhausted"
+  ],
+  "human_gates": [
+    "architecture_scope_change",
+    "final_integration"
+  ]
+}

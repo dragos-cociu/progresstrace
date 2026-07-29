@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0",
+  "traceId": "synthetic-timestamp-type",
+  "source": {
+    "name": "fixture-generator",
+    "version": "1.0"
+  },
+  "createdAt": 0,
+  "events": []
+}
