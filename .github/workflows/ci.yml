@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phase-0-contract:
+    name: Phase 0 contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+
+      - name: Build solution
+        run: dotnet build ProgressTrace.slnx --configuration Release --nologo --warnaserror
+
+      - name: Run conformance tests
+        run: dotnet run --no-build --project tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj --configuration Release
+
+      - name: Validate minimal trace with CLI
+        run: dotnet run --no-build --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj --configuration Release -- validate fixtures/valid/minimal-trace.json
+
+      - name: Validate trace envelope schema JSON
+        run: python3 -m json.tool contracts/trace-envelope.schema.json > /dev/null
+
+      - name: Verify formatting
+        run: dotnet format ProgressTrace.slnx --verify-no-changes --no-restore --verbosity minimal
