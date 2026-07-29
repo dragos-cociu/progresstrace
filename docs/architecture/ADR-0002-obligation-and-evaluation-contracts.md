@@ -94,6 +94,13 @@ this ADR was authored; those decisions are transcribed here, not reopened.
   `insufficient-evidence` classification; a dangling `eventId` or
   `obligationId` reference is instead always a validation failure, never
   an evaluation classification.
+- **Diagnostics and CLI order**: `evaluate`'s exact two-document
+  validation order, exit-code mapping, and full diagnostic registry,
+  including the new obligation-specific `PT200`-`PT204` codes and the
+  pointer-target rule for each, are fixed in `docs/contracts/obligation-ledger.md`'s
+  "Diagnostic registry", "Validation order", and "CLI evaluate behavior"
+  sections; Codex implements them without inventing a code, pointer,
+  message, pass order, or exit behavior.
 
 ## Contract and version strategy
 
@@ -163,7 +170,11 @@ Message}` shape and must not echo ledger or payload values, matching the
 references, an empty `obligations` array, and abandoned-terminal
 violations, whether sequence-based or same-`eventId` tie-index-based, fail
 closed with a diagnostic rather than being silently ignored or best-effort
-matched. All new fixtures remain synthetic, with no employer, medical,
+matched. The exact stable code, pointer-target rule, and validation order
+for every one of these diagnostics is fixed in
+`docs/contracts/obligation-ledger.md`'s "Diagnostic registry" and
+"Validation order" sections, which are normative for `evaluate`'s CLI
+behavior. All new fixtures remain synthetic, with no employer, medical,
 credential, or production data, per `docs/security.md`'s fixture rule.
 
 ## Consequences

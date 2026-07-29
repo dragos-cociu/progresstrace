@@ -15,4 +15,9 @@ public static class DiagnosticCodes
     public const string DuplicateEventId = "PT102";
     public const string NonMonotonicSequence = "PT103";
     public const string NonMonotonicTimestamp = "PT104";
+    public const string DuplicateObligationId = "PT200";
+    public const string TraceIdMismatch = "PT201";
+    public const string DanglingObligationId = "PT202";
+    public const string DanglingEventId = "PT203";
+    public const string AbandonedTerminal = "PT204";
 }

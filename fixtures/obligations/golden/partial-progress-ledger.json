@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0","traceId":"synthetic-multi-event","algorithm":{"name":"progresstrace-evaluator","version":"1.0.0"},"obligationResults":[{"obligationId":"obl-1","classification":"progress","evidenceEventIds":["event-001","event-002"]}],"traceClassification":"progress"}

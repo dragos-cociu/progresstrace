@@ -13,7 +13,7 @@ public static class TraceValidator
 
     public static ValidationResult ParseAndValidate(ReadOnlyMemory<byte> utf8Json)
     {
-        var sizeValidation = ValidateInputSize(utf8Json.Length);
+        var sizeValidation = JsonValidationHelpers.ValidateInputSize(utf8Json.Length);
         if (!sizeValidation.IsValid)
         {
             return sizeValidation;
@@ -33,14 +33,14 @@ public static class TraceValidator
         {
             var diagnostics = new List<Diagnostic>();
             var root = document.RootElement;
-            RejectDuplicateProperties(root, "", diagnostics);
+            JsonValidationHelpers.RejectDuplicateProperties(root, "", diagnostics);
             if (root.ValueKind != JsonValueKind.Object)
             {
                 diagnostics.Add(Diagnostic(DiagnosticCodes.Type, "", "Envelope must be an object."));
                 return new(null, diagnostics);
             }
 
-            RejectUnknown(root, "", ["schemaVersion", "traceId", "source", "createdAt", "events"], diagnostics);
+            JsonValidationHelpers.RejectUnknown(root, "", ["schemaVersion", "traceId", "source", "createdAt", "events"], diagnostics);
             var schemaVersion = ReadRequiredString(root, "schemaVersion", "", diagnostics);
             var traceId = ReadRequiredString(root, "traceId", "", diagnostics);
             if (schemaVersion is not null && schemaVersion != "1.0")
@@ -60,12 +60,7 @@ public static class TraceValidator
     }
 
     public static ValidationResult ValidateInputSize(long inputSizeBytes) =>
-        inputSizeBytes <= MaximumInputSizeBytes
-            ? new(null, [])
-            : Invalid(
-                DiagnosticCodes.InputTooLarge,
-                "",
-                $"Input exceeds the maximum size of {MaximumInputSizeBytes} bytes.");
+        JsonValidationHelpers.ValidateInputSize(inputSizeBytes);
 
     private static TraceSource? ReadSource(JsonElement root, List<Diagnostic> diagnostics)
     {
@@ -80,7 +75,7 @@ public static class TraceValidator
             return null;
         }
 
-        RejectUnknown(value, "/source", ["name", "version"], diagnostics);
+        JsonValidationHelpers.RejectUnknown(value, "/source", ["name", "version"], diagnostics);
         return new(
             ReadRequiredString(value, "name", "/source", diagnostics),
             ReadRequiredString(value, "version", "/source", diagnostics));
@@ -114,7 +109,7 @@ public static class TraceValidator
                 continue;
             }
 
-            RejectUnknown(item, pointer, ["id", "sequence", "timestamp", "type", "actor", "payload", "provenance"], diagnostics);
+            JsonValidationHelpers.RejectUnknown(item, pointer, ["id", "sequence", "timestamp", "type", "actor", "payload", "provenance"], diagnostics);
             var id = ReadRequiredString(item, "id", pointer, diagnostics);
             var sequence = ReadRequiredInteger(item, "sequence", pointer, diagnostics);
             var timestamp = ReadRequiredTimestamp(item, "timestamp", pointer, diagnostics);
@@ -192,7 +187,7 @@ public static class TraceValidator
             return null;
         }
 
-        RejectUnknown(value, path, ["sourceEventId"], diagnostics);
+        JsonValidationHelpers.RejectUnknown(value, path, ["sourceEventId"], diagnostics);
         return new(ReadRequiredString(value, "sourceEventId", path, diagnostics));
     }
 
@@ -267,56 +262,6 @@ public static class TraceValidator
 
         diagnostics.Add(Diagnostic(DiagnosticCodes.Required, Path(pointer, name), $"Required property {name} is missing."));
         return false;
-    }
-
-    private static void RejectUnknown(
-        JsonElement value,
-        string pointer,
-        string[] allowed,
-        List<Diagnostic> diagnostics)
-    {
-        foreach (var property in value.EnumerateObject())
-        {
-            if (!allowed.Contains(property.Name, StringComparer.Ordinal))
-            {
-                diagnostics.Add(Diagnostic(
-                    DiagnosticCodes.UnknownProperty,
-                    Path(pointer, property.Name),
-                    "Property is not allowed."));
-            }
-        }
-    }
-
-    private static void RejectDuplicateProperties(
-        JsonElement value,
-        string pointer,
-        List<Diagnostic> diagnostics)
-    {
-        if (value.ValueKind == JsonValueKind.Object)
-        {
-            var names = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var property in value.EnumerateObject())
-            {
-                var propertyPointer = Path(pointer, property.Name);
-                if (!names.Add(property.Name))
-                {
-                    diagnostics.Add(Diagnostic(
-                        DiagnosticCodes.DuplicateProperty,
-                        propertyPointer,
-                        "JSON object property names must be unique."));
-                }
-                RejectDuplicateProperties(property.Value, propertyPointer, diagnostics);
-            }
-        }
-        else if (value.ValueKind == JsonValueKind.Array)
-        {
-            var index = 0;
-            foreach (var item in value.EnumerateArray())
-            {
-                RejectDuplicateProperties(item, pointer + "/" + index, diagnostics);
-                index++;
-            }
-        }
     }
 
     private static string Path(string parent, string name) => parent + "/" + Escape(name);

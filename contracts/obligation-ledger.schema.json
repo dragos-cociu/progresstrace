@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.progresstrace.dev/obligation-ledger/1.0.0",
+  "title": "ProgressTrace obligation ledger",
+  "type": "object",
+  "required": ["schemaVersion", "traceId", "obligations", "signals"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "traceId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "obligations": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/obligation" }
+    },
+    "signals": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/signal" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "obligation": {
+      "type": "object",
+      "required": ["id", "description"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "pattern": "\\S" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "signal": {
+      "type": "object",
+      "required": ["obligationId", "eventId", "status"],
+      "properties": {
+        "obligationId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+        "eventId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+        "status": {
+          "type": "string",
+          "enum": ["open", "in-progress", "satisfied", "regressed", "abandoned"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

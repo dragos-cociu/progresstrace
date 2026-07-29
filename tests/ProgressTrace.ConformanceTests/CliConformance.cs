@@ -1,0 +1,122 @@
+using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
+using ProgressTrace.Core.Validation;
+
+static class CliConformance
+{
+    public static void Assert(string root, List<string> failures)
+    {
+        var cli = Directory.EnumerateFiles(
+                Path.Combine(root, "src", "ProgressTrace.Cli", "bin", "Release"),
+                "ProgressTrace.Cli.dll", SearchOption.AllDirectories)
+            .SingleOrDefault();
+        if (cli is null)
+        {
+            failures.Add("cli: built CLI assembly was not found");
+            return;
+        }
+
+        var temp = Path.Combine(Path.GetTempPath(), $"progresstrace-conformance-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(temp);
+        try
+        {
+            const string marker = "SYNTHETIC_UNTRUSTED_MARKER";
+            var missingTrace = Path.Combine(temp, marker + "-missing-trace.json");
+            var missingLedger = Path.Combine(temp, marker + "-missing-ledger.json");
+            var malformedTrace = Write(temp, "malformed-trace.json", Encoding.UTF8.GetBytes("{\"x\":\"SYNTHETIC_UNTRUSTED_MARKER\""));
+            var malformedLedger = Write(temp, "malformed-ledger.json", Encoding.UTF8.GetBytes("{\"x\":\"SYNTHETIC_UNTRUSTED_MARKER\""));
+            var oversizedTrace = WriteOversized(temp, "oversized-trace.json");
+            var oversizedLedger = WriteOversized(temp, "oversized-ledger.json");
+            var boundary = Write(temp, "boundary.json", new byte[TraceValidator.MaximumInputSizeBytes]);
+            var validTrace = Path.Combine(root, "fixtures", "valid", "multi-event-trace.json");
+            var validLedger = Path.Combine(root, "fixtures", "obligations", "valid", "partial-progress-ledger.json");
+            var invalidLedger = Path.Combine(root, "fixtures", "obligations", "invalid", "mismatched-trace-id.PT201.json");
+
+            Check("bad usage", Run(cli), 2, stdout: false, stderr: true, failures, marker);
+            Check("unreadable trace", Run(cli, "evaluate", missingTrace, missingLedger), 2, false, true, failures, marker);
+            CheckCode("malformed trace", Run(cli, "evaluate", malformedTrace, missingLedger), 2, "PT000", failures, marker);
+            CheckCode("oversized trace", Run(cli, "evaluate", oversizedTrace, missingLedger), 2, "PT005", failures, marker);
+            CheckCode("exact boundary", Run(cli, "validate", boundary), 2, "PT000", failures, marker);
+            Check("unreadable ledger", Run(cli, "evaluate", validTrace, missingLedger), 2, false, true, failures, marker);
+            CheckCode("malformed ledger", Run(cli, "evaluate", validTrace, malformedLedger), 2, "PT000", failures, marker);
+            CheckCode("oversized ledger", Run(cli, "evaluate", validTrace, oversizedLedger), 2, "PT005", failures, marker);
+            CheckCode("invalid ledger", Run(cli, "evaluate", validTrace, invalidLedger), 1, "PT201", failures, marker);
+            var success = Run(cli, "evaluate", validTrace, validLedger);
+            Check("valid pair", success, 0, true, false, failures, marker);
+            var golden = File.ReadAllText(Path.Combine(root, "fixtures", "obligations", "golden", "partial-progress-ledger.json"));
+            if (success.Stdout != golden + (golden.EndsWith('\n') ? "" : "\n"))
+                failures.Add("cli valid pair: stdout did not equal the canonical golden result");
+        }
+        finally
+        {
+            Directory.Delete(temp, recursive: true);
+        }
+    }
+
+    private static string Write(string directory, string name, byte[] bytes)
+    {
+        var path = Path.Combine(directory, name);
+        File.WriteAllBytes(path, bytes);
+        return path;
+    }
+
+    private static string WriteOversized(string directory, string name)
+    {
+        var path = Path.Combine(directory, name);
+        using var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write);
+        stream.SetLength(TraceValidator.MaximumInputSizeBytes + 1L);
+        return path;
+    }
+
+    private static Result Run(string cli, params string[] arguments)
+    {
+        var start = new ProcessStartInfo("dotnet")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+        start.ArgumentList.Add(cli);
+        foreach (var argument in arguments) start.ArgumentList.Add(argument);
+        using var process = Process.Start(start) ?? throw new InvalidOperationException("CLI process could not start.");
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        var stderr = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(10_000))
+        {
+            process.Kill(entireProcessTree: true);
+            process.WaitForExit();
+            return new(-1, stdout.GetAwaiter().GetResult(), stderr.GetAwaiter().GetResult(), true);
+        }
+        return new(process.ExitCode, stdout.GetAwaiter().GetResult(), stderr.GetAwaiter().GetResult(), false);
+    }
+
+    private static void CheckCode(string name, Result result, int exit, string code, List<string> failures, string marker)
+    {
+        Check(name, result, exit, true, false, failures, marker);
+        try
+        {
+            using var document = JsonDocument.Parse(result.Stdout);
+            var diagnostics = document.RootElement.GetProperty("diagnostics");
+            if (diagnostics.GetArrayLength() != 1 || diagnostics[0].GetProperty("code").GetString() != code)
+                failures.Add($"cli {name}: expected only {code}");
+        }
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException or KeyNotFoundException)
+        {
+            failures.Add($"cli {name}: stdout was not a diagnostic response");
+        }
+    }
+
+    private static void Check(string name, Result result, int exit, bool stdout, bool stderr, List<string> failures, string marker)
+    {
+        if (result.TimedOut) failures.Add($"cli {name}: timed out");
+        if (result.ExitCode != exit) failures.Add($"cli {name}: expected exit {exit}, got {result.ExitCode}");
+        if (string.IsNullOrEmpty(result.Stdout) != !stdout) failures.Add($"cli {name}: stdout contract failed");
+        if (string.IsNullOrEmpty(result.Stderr) != !stderr) failures.Add($"cli {name}: stderr contract failed");
+        if (result.Stdout.Contains(marker, StringComparison.Ordinal) || result.Stderr.Contains(marker, StringComparison.Ordinal))
+            failures.Add($"cli {name}: output echoed an untrusted path or payload");
+    }
+
+    private sealed record Result(int ExitCode, string Stdout, string Stderr, bool TimedOut);
+}
