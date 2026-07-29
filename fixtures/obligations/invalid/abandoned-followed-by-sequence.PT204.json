@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0","traceId":"synthetic-multi-event","obligations":[{"id":"o","description":""}],"signals":[{"obligationId":"o","eventId":"event-001","status":"abandoned"},{"obligationId":"o","eventId":"event-002","status":"open"}]}

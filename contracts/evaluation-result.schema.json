@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.progresstrace.dev/evaluation-result/1.0.0",
+  "title": "ProgressTrace evaluation result",
+  "type": "object",
+  "required": ["schemaVersion", "traceId", "algorithm", "obligationResults", "traceClassification"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "traceId": { "type": "string", "minLength": 1 },
+    "algorithm": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "progresstrace-evaluator" },
+        "version": { "const": "1.0.0" }
+      },
+      "additionalProperties": false
+    },
+    "obligationResults": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/obligationResult" }
+    },
+    "traceClassification": { "$ref": "#/$defs/classification" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "classification": {
+      "type": "string",
+      "enum": ["progress", "stagnation", "regression", "insufficient-evidence"]
+    },
+    "obligationResult": {
+      "type": "object",
+      "required": ["obligationId", "classification", "evidenceEventIds"],
+      "properties": {
+        "obligationId": { "type": "string", "minLength": 1 },
+        "classification": { "$ref": "#/$defs/classification" },
+        "evidenceEventIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
