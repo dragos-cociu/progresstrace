@@ -50,8 +50,13 @@ static class SchemaConformance
                 !root.GetProperty("$defs").TryGetProperty(text[prefix.Length..], out schema))
                 throw new InvalidOperationException($"Unsupported or unresolved schema reference: {text}");
         }
-        if (schema.TryGetProperty("type", out var type) && !MatchesType(value, type.GetString()!))
-            return Fail(pointer, "type", out error);
+        if (schema.TryGetProperty("type", out var type))
+        {
+            var matches = type.ValueKind == JsonValueKind.Array
+                ? type.EnumerateArray().Any(candidate => MatchesType(value, candidate.GetString()!))
+                : MatchesType(value, type.GetString()!);
+            if (!matches) return Fail(pointer, "type", out error);
+        }
         if (schema.TryGetProperty("const", out var constant) && !JsonElement.DeepEquals(value, constant))
             return Fail(pointer, "const", out error);
         if (schema.TryGetProperty("enum", out var choices) &&
@@ -104,6 +109,9 @@ static class SchemaConformance
         "object" => value.ValueKind == JsonValueKind.Object,
         "array" => value.ValueKind == JsonValueKind.Array,
         "string" => value.ValueKind == JsonValueKind.String,
+        "integer" => value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out _),
+        "boolean" => value.ValueKind is JsonValueKind.True or JsonValueKind.False,
+        "null" => value.ValueKind == JsonValueKind.Null,
         _ => throw new InvalidOperationException($"Unsupported schema type: {type}")
     };
 

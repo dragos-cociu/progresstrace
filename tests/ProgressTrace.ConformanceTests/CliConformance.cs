@@ -24,14 +24,19 @@ static class CliConformance
             const string marker = "SYNTHETIC_UNTRUSTED_MARKER";
             var missingTrace = Path.Combine(temp, marker + "-missing-trace.json");
             var missingLedger = Path.Combine(temp, marker + "-missing-ledger.json");
+            var missingDeclaration = Path.Combine(temp, marker + "-missing-declaration.json");
             var malformedTrace = Write(temp, "malformed-trace.json", Encoding.UTF8.GetBytes("{\"x\":\"SYNTHETIC_UNTRUSTED_MARKER\""));
             var malformedLedger = Write(temp, "malformed-ledger.json", Encoding.UTF8.GetBytes("{\"x\":\"SYNTHETIC_UNTRUSTED_MARKER\""));
+            var malformedDeclaration = Write(temp, "malformed-declaration.json", Encoding.UTF8.GetBytes("{\"producerName\":\"SYNTHETIC_UNTRUSTED_MARKER\""));
             var oversizedTrace = WriteOversized(temp, "oversized-trace.json");
             var oversizedLedger = WriteOversized(temp, "oversized-ledger.json");
+            var oversizedDeclaration = WriteOversized(temp, "oversized-declaration.json");
             var boundary = Write(temp, "boundary.json", new byte[TraceValidator.MaximumInputSizeBytes]);
             var validTrace = Path.Combine(root, "fixtures", "valid", "multi-event-trace.json");
             var validLedger = Path.Combine(root, "fixtures", "obligations", "valid", "partial-progress-ledger.json");
             var invalidLedger = Path.Combine(root, "fixtures", "obligations", "invalid", "mismatched-trace-id.PT201.json");
+            var assessLedger = Path.Combine(root, "fixtures", "termination", "ledgers", "valid", "on-target-ledger.json");
+            var validDeclaration = Path.Combine(root, "fixtures", "termination", "valid", "on-target-declaration.json");
 
             Check("bad usage", Run(cli), 2, stdout: false, stderr: true, failures, marker);
             Check("unreadable trace", Run(cli, "evaluate", missingTrace, missingLedger), 2, false, true, failures, marker);
@@ -47,6 +52,21 @@ static class CliConformance
             var golden = File.ReadAllText(Path.Combine(root, "fixtures", "obligations", "golden", "partial-progress-ledger.json"));
             if (success.Stdout != golden + (golden.EndsWith('\n') ? "" : "\n"))
                 failures.Add("cli valid pair: stdout did not equal the canonical golden result");
+
+            Check("assess bad usage", Run(cli, "assess", validTrace, assessLedger), 2, false, true, failures, marker);
+            Check("assess unreadable declaration", Run(cli, "assess", validTrace, assessLedger, missingDeclaration), 2, false, true, failures, marker);
+            CheckCode("assess malformed declaration", Run(cli, "assess", validTrace, assessLedger, malformedDeclaration), 2, "PT000", failures, marker);
+            CheckCode("assess oversized declaration", Run(cli, "assess", validTrace, assessLedger, oversizedDeclaration), 2, "PT005", failures, marker);
+            foreach (var code in new[] { "PT300", "PT301", "PT302", "PT303" })
+            {
+                var invalid = Directory.EnumerateFiles(Path.Combine(root, "fixtures", "termination", "invalid"), $"*.{code}.json").First();
+                CheckCode($"assess invalid declaration {code}", Run(cli, "assess", validTrace, assessLedger, invalid), 1, code, failures, marker);
+            }
+            var assessSuccess = Run(cli, "assess", validTrace, assessLedger, validDeclaration);
+            Check("assess valid triple", assessSuccess, 0, true, false, failures, marker);
+            var assessGolden = File.ReadAllText(Path.Combine(root, "fixtures", "termination", "golden", "on-target-declaration.json"));
+            if (assessSuccess.Stdout != assessGolden + (assessGolden.EndsWith('\n') ? "" : "\n"))
+                failures.Add("cli assess valid triple: stdout did not equal the canonical golden result");
         }
         finally
         {

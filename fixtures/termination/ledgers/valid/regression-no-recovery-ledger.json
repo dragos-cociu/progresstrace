@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0","traceId":"synthetic-non-contiguous","obligations":[{"id":"obl-a","description":""}],"signals":[{"obligationId":"obl-a","eventId":"nc-evt-0","status":"satisfied"},{"obligationId":"obl-a","eventId":"nc-evt-1","status":"regressed"}]}
