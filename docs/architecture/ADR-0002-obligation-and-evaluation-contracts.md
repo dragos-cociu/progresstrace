@@ -6,6 +6,9 @@ Accepted for Phase 1 architecture and semantic documentation; implementation
 is a separate, later task. Extends ADR-0001 without modifying its decision
 text.
 
+Extended by ADR-0003 (Phase 2 architecture and stop-assessment contracts) for
+Phase 2a; no other line of this decision is modified.
+
 ## Context
 
 Phase 0 stabilized the trace-envelope contract and a deterministic
