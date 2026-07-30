@@ -4,11 +4,21 @@ ProgressTrace is a contract-first toolkit for capturing, normalizing, evaluating
 
 Its differentiator is not generic loop detection. ProgressTrace is intended to explain whether an agent reduced explicit task obligations, obtained useful evidence, stagnated, or regressed, while measuring the cost of false halts and late halts against simpler baselines.
 
+ProgressTrace analyzes the outputs and evidence that agents and their environment actually generated; it never requires an agent to emit a prescribed ProgressTrace response. It keeps three layers separate:
+
+1. **Arbitrary source evidence** produced by an agent, tool, or runtime (model text, tool output, logs, lifecycle events). Opaque payload text is never interpreted semantically by the core.
+2. **Normalized ProgressTrace input artifacts** (trace envelope, obligation ledger, termination declaration), produced from layer 1 by an adapter, harness, controller, operator, or optionally the agent itself. Contracts differ in the provenance they carry: the trace envelope `1.0` records the source system and version in required document-level `source.name` and `source.version`, but no per-field producer/evidence-basis metadata or adapter-transform manifest; the obligation ledger `1.0` carries no producer/evidence-basis metadata at all, so its supplied annotations have unknown such provenance unless an external record exists; the termination declaration `1.0` separates the declaration producer and evidence basis in `declarationSource`, the first ProgressTrace contract carrier that explicitly separates producer role from evidence basis. A ProgressTrace canonical contract is an internal interoperability/analysis boundary after capture, not an agent-native wire protocol and not a claimed industry standard.
+3. **Deterministic derived results** (evaluation result, stop-assessment result), computed by one normative core purely from layer 2.
+
+No agent is required to emit ProgressTrace-native JSON. A source may already emit a compatible artifact, but that is optional. Without explicit obligations and correlated signals there is no universal semantic-progress inference: `insufficient-evidence` is the honest, deterministic outcome. Labeling adapter or model inference as inference, rather than observed fact or a direct agent assertion, is a normative rule for new provenance-aware boundaries; Phase 2a applies it to the termination declaration's `declarationSource`. ProgressTrace does not yet claim a general ingestion-adapter feature or universal field-level provenance across all existing artifacts; a future ADR must first choose a non-breaking manifest/envelope or a compatible new contract version.
+
+The primary initial users are builders of early agent workflows that do not yet have a mature harness; mature systems may integrate through adapters, independent audit, or conformance rather than replacing their harnesses. ProgressTrace's own agent workflow is a planned future reference adapter/corpus, not yet implemented and not an industry standard. Hosted history, UI, and persistent storage remain optional and out of current scope.
+
 ## Current phase
 
-**Phase 2a: Stop assessment (approved architecture, not yet implemented)**
+**Phase 2a: Stop assessment (architecture documented; product implementation pending)**
 
-Phase 0 and Phase 1 are integrated: a versioned trace envelope, deterministic validation and normalization, obligation-ledger validation, and evaluation-result output, all via a local .NET 10 CLI. Phase 2a adds a versioned termination declaration and a deterministic stop-assessment result, computed from the existing trace and obligation-ledger contracts, plus a fourth CLI verb, `assess <trace-path> <ledger-path> <termination-declaration-path>`. Phase 2a is approved architecture and contract documentation only; implementation is a separate, later task, and Phase 2a is not integrated until that implementation lands. Phase 2 overall also includes Task B (baseline comparison and false-halt cost), which is architecturally decided but remains fully unauthored pending a further ADR-0004; Phase 2 is not complete until both tasks ship or Dragos explicitly amends the product claim.
+Phase 0 and Phase 1 are implemented and integrated: a versioned trace envelope, deterministic validation and normalization, obligation-ledger validation, and evaluation-result output, all via a local .NET 10 CLI. Phase 2a's architecture and contracts are documented by ADR-0003 and its paired contract documents: a versioned termination declaration and a deterministic stop-assessment result, computed from the existing trace and obligation-ledger contracts, plus a fourth CLI verb, `assess <trace-path> <ledger-path> <termination-declaration-path>`. Architecture-document integration and product-code completion are distinct: the Phase 2a product implementation is pending and Phase 2a is not complete until that implementation lands. Phase 2 overall also includes Task B (baseline comparison and false-halt cost), which has only a decision-level boundary here; its exact contract architecture remains unauthored pending a further ADR-0004. Phase 2 is not complete until both tasks ship or Dragos explicitly amends the product claim.
 
 ## Architectural direction
 
@@ -42,19 +52,25 @@ and `tasks/phase-1-obligation-evaluation.json`.
 ## Phase 2a
 
 Phase 2a adds a new termination declaration
-(`docs/contracts/termination-declaration.md`), an authored attestation of
-how and where a trace's observation ended, and a new stop-assessment result
+(`docs/contracts/termination-declaration.md`), a supplied attestation of
+how and where a trace's observation ended plus a required `declarationSource`
+object recording which role produced it (`agent`, `harness`, `operator`, or
+`adapter`) and on what evidence, so no agent is required to emit it and
+producer provenance stays separate from the termination cause, and a new
+stop-assessment result
 (`docs/contracts/stop-assessment-result.md`) that deterministically reports,
 per obligation, whether it was stably attained through termination and, for
 the trace overall, how much later than necessary termination occurred, when
 termination is attested and every obligation is stable. Task A never claims
-a false halt: an unmet target is reported as the purely observational
-`unmet-target-at-termination`, never as a counterfactual claim. A fourth CLI
+a false halt: an unmet target is reported as `unmet-target-at-termination`, a
+single-trace, non-counterfactual statement computed from supplied trace and
+ledger artifacts, never as a counterfactual claim. A fourth CLI
 verb, `assess <trace-path> <ledger-path> <termination-declaration-path>`,
 extends `validate`/`normalize`/`evaluate`'s exit-code contract unchanged.
-Phase 2 also includes Task B (baseline comparison and false-halt cost),
-architecturally decided but not yet authored; Phase 2 is not complete until
-Task B ships or Dragos explicitly amends the product claim. See
+Phase 2 also includes Task B (baseline comparison and false-halt cost), which
+has only a decision-level boundary; its exact contract architecture remains
+unauthored pending ADR-0004. Phase 2 is not complete until Task B ships or
+Dragos explicitly amends the product claim. See
 `docs/architecture/ADR-0003-phase-2-architecture-and-stop-assessment.md`,
 `docs/contracts/termination-declaration.md`,
 `docs/contracts/stop-assessment-result.md`, and

@@ -1,7 +1,7 @@
 # Termination declaration
 
 Version `1.0` is the Phase 2a termination-declaration contract. It is a
-third raw, authored input, paired with a trace envelope
+third supplied input, paired with a trace envelope
 (`contracts/trace-envelope.schema.json`) and an obligation ledger
 (`contracts/obligation-ledger.schema.json`), consumed by `assess`. The
 normative machine-readable contract is
@@ -9,13 +9,28 @@ normative machine-readable contract is
 this document; the .NET Core applies the same structural rules plus the
 referential-integrity and terminal-event invariants below.
 
+A termination declaration is a ProgressTrace input artifact at the internal
+interoperability boundary after capture: an adapter, harness, controller,
+operator, or optionally the agent itself normalizes source-native evidence
+into this contract. It is not an agent-native wire protocol and is not a
+claimed industry standard, and no agent is ever required to emit it. Which
+role produced a given declaration, and what evidence it rests on, is recorded
+explicitly in the required `declarationSource` object (see "Declaration
+source and provenance" below), so agent-produced, harness-observed,
+operator-annotated, and adapter-inferred facts stay distinguishable
+downstream.
+
 ## Purpose
 
-A termination declaration is an authored attestation of how and where a
-trace's observation ended. It never claims that ending was voluntary or
+A termination declaration is a supplied attestation of how and where a
+trace's observation ended, together with a record of which role produced that
+attestation and on what evidence. It never claims that ending was voluntary or
 correct; it only names one specific, closed-vocabulary cause for why
 observation stopped at a given event, or, for `capture-truncated` and
-`unknown`, explicitly withholds that commitment. `docs/contracts/stop-assessment-result.md`
+`unknown`, explicitly withholds that commitment. The producing role is not
+required to be the agent under observation: any of an agent, a harness or
+controller, a human operator, or an adapter may produce a declaration, and
+the `declarationSource` object records which one did. `docs/contracts/stop-assessment-result.md`
 defines the derived `terminationAttested` boolean and every quantity computed
 from this declaration; this document defines only the shape, validation, and
 CLI handling of the declaration itself.
@@ -48,6 +63,14 @@ precedent.
   `harness-declared-stop`, `natural-completion`, `external-cancellation`,
   `timeout`, `crash-or-error`, `capture-truncated`, `unknown`. No other
   value, casing, or free text is accepted, and there is no default.
+- `declarationSource`: a required closed object recording who produced this
+  declaration and on what evidence, distinct from `terminationKind`'s record
+  of the cause. Its four members, in fixed canonical nested order, are
+  `producerType`, `producerName`, `producerVersion`, and `evidenceBasis`; see
+  "Declaration source and provenance" below for their exact values,
+  requiredness, redaction, and coherence rules. It never requires the agent
+  to produce the declaration, and it is never a confidence, quality, or truth
+  score.
 
 There is no authored per-obligation field of any kind on this contract:
 success semantics are fixed at `status=satisfied` for every ledger-declared
@@ -57,11 +80,21 @@ so no target needs to be authored here.
 ## Field types and requiredness
 
 The root object is a JSON object with `additionalProperties: false`;
-unknown top-level members are rejected. All four root properties are
-required, and none has a default: `schemaVersion` (string, exactly `"1.0"`
-in this version), `traceId` (string, non-empty), `terminationEventId`
-(string, non-empty), and `terminationKind` (string, exactly one of the
-fixed closed eight-value enum above).
+unknown top-level members are rejected. All five root properties are
+required, and none has a default, in this canonical order: `schemaVersion`
+(string, exactly `"1.0"` in this version), `traceId` (string, non-empty),
+`terminationEventId` (string, non-empty), `terminationKind` (string, exactly
+one of the fixed closed eight-value enum above), and `declarationSource`
+(closed object, described in "Declaration source and provenance" below).
+
+`declarationSource` is a JSON object with `additionalProperties: false`; all
+four of its members are required and none has a default, in this canonical
+nested order: `producerType` (string, one of the fixed closed four-value enum
+`agent`, `harness`, `operator`, `adapter`), `producerName` (string,
+non-empty), `producerVersion` (string non-empty, or JSON `null`), and
+`evidenceBasis` (string, one of the fixed closed four-value enum
+`agent-output`, `harness-lifecycle`, `operator-annotation`,
+`adapter-inference`).
 
 ## Canonical rank and the terminal-required rule
 
@@ -106,6 +139,103 @@ committed to, which is not itself evidence that a real, named-cause
 termination occurred. Treating `unknown` as attested would wrongly read an
 authoring gap as a positive attestation; neither this document nor
 `stop-assessment-result.md` ever does so.
+
+`terminationAttested` is a cause-commitment lookup over the closed
+`terminationKind` enum, not an evidence-quality or truth-confidence score. It
+is independent of `declarationSource`: a declaration whose
+`evidenceBasis = adapter-inference` still yields `terminationAttested = true`
+for any of the six concrete, named-cause kinds, because attestation records
+only that a specific cause was committed to, not who committed to it or how
+strong the evidence is. Such a value remains authored and inferred; it is
+never relabeled as observed agent output or as a direct agent assertion, in
+this contract or in `StopAssessmentResult`.
+
+## Declaration source and provenance
+
+`declarationSource` records who produced this termination declaration,
+separately from `terminationKind`, which records the cause. It exists because
+a termination declaration is not required to be emitted by the agent under
+observation: it may be produced by the agent itself, by a harness or
+controller that observed the run, by a human operator annotating after the
+fact, or by an adapter that normalized source-native evidence into this
+contract. Recording the producer keeps agent-produced, harness-observed,
+operator-annotated, and adapter-inferred facts distinguishable downstream, so
+no consumer mistakes an inferred or annotated cause for a direct agent
+assertion. It never requires the agent to emit this declaration, and it is
+never a confidence, quality, or truth score.
+
+`declarationSource` is a closed JSON object with `additionalProperties:
+false`; all four of its members are required, in this fixed canonical nested
+order:
+
+1. `producerType` (string, required): exactly one of the closed four-value
+   enum `agent`, `harness`, `operator`, `adapter`. The role that produced the
+   declaration.
+2. `producerName` (string, required, non-empty): identifies the producing
+   role or system. It is never echoed in any diagnostic `Message` (see the
+   redaction note below). For `producerType=operator`, this may be a
+   non-personal role name or an opaque identifier, so a real person's identity
+   need never appear in the document, supporting redaction and privacy.
+3. `producerVersion` (string non-empty, or JSON `null`; required, never
+   omitted): the producing software's version, or the literal `null` when no
+   meaningful software version exists (for example a human operator
+   annotation). `null` is a valid, distinct value; an empty or whitespace-only
+   string is not.
+4. `evidenceBasis` (string, required): exactly one of the closed four-value
+   enum `agent-output`, `harness-lifecycle`, `operator-annotation`,
+   `adapter-inference`. The kind of evidence the declaration rests on.
+
+`producerName` is redacted from diagnostics exactly like every other
+untrusted document value: no `PT303`, `PT001`, `PT002`, `PT003`, `PT004`, or
+`PT101` diagnostic ever copies a `producerName`, or any other
+`declarationSource` value, into its `Message`, matching the `PT004` redaction
+precedent.
+
+### Declaration-source coherence rules
+
+Beyond the per-field structural and enum checks above, `declarationSource`
+must be coherent with `terminationKind` and internally coherent across its own
+members. The following closed set of five coherence rules is normative; each
+is a single implication, and any violated implication is a `PT303` failure
+(see the diagnostic registry):
+
+| # | Antecedent | Required consequent |
+|---|------------|---------------------|
+| 1 | `terminationKind = agent-self-reported-stop` | `evidenceBasis = agent-output` |
+| 2 | `terminationKind = harness-declared-stop` | `evidenceBasis = harness-lifecycle` |
+| 3 | `producerType = agent` | `evidenceBasis = agent-output` |
+| 4 | `producerType = operator` | `evidenceBasis = operator-annotation` |
+| 5 | `evidenceBasis = adapter-inference` | `producerType = adapter` |
+
+Any combination not forbidden by one of these five rules is accepted. In
+particular, a harness or an adapter may faithfully wrap evidence whose origin
+differs from its own role: a `harness` or `adapter` producer may carry
+`evidenceBasis = agent-output` for an `agent-self-reported-stop` it observed
+or normalized, because rules 1 and 2 constrain only `evidenceBasis`, and rules
+3-5 do not constrain a `harness` producer or a non-`adapter-inference`
+`adapter` producer. This is the intended way to record that a non-agent role
+captured or normalized agent-origin evidence without misrepresenting who
+produced the declaration.
+
+`PT303` pointer targeting: when a single field alone establishes the
+violation, `PT303`'s pointer targets that field; otherwise it targets
+`/declarationSource`. Rules 1 and 2 are anchored by the authoritative
+root-level `terminationKind`, so the single offending `declarationSource`
+member is `evidenceBasis`, and `PT303`'s pointer is
+`/declarationSource/evidenceBasis`. Rules 3, 4, and 5 each couple two
+`declarationSource` members (`producerType` and `evidenceBasis`) jointly, with
+neither member individually authoritative over the other, so `PT303`'s pointer
+is `/declarationSource`. `PT303`'s `Message` is one fixed, safe template that
+never echoes any document value.
+
+`declarationSource` is authored provenance metadata, never observed fact.
+`evidenceBasis = adapter-inference` paired with a concrete, attested
+`terminationKind` (any of the six attested kinds) records that an adapter
+inferred that named cause from source-native evidence; the cause stays
+authored and inferred and is never relabeled as observed agent output or a
+direct agent assertion. See "Termination attestation" above for why
+`terminationAttested` is a cause-commitment lookup, not an evidence-quality or
+truth-confidence score.
 
 ## Referential integrity
 
@@ -164,19 +294,31 @@ meaning:
   exactly `"1.0"`). Pointer `/schemaVersion`. Message: `"Schema version is
   not supported."`
 - `PT101` invalid value for a field of the correct type: an empty or
-  whitespace-only required string (`traceId`, `terminationEventId`), or a
-  `terminationKind` string that is not exactly one of the fixed closed
-  eight-value enum. Pointer: the invalid value's own pointer. Message:
-  `"{name} must not be empty."` or `"Termination kind is not recognized."`,
-  as applicable.
+  whitespace-only required string (`traceId`, `terminationEventId`,
+  `declarationSource.producerName`, or a `declarationSource.producerVersion`
+  that is present as a string), a `terminationKind` string that is not
+  exactly one of the fixed closed eight-value enum, a
+  `declarationSource.producerType` string that is not exactly one of the
+  fixed closed four-value enum, or a `declarationSource.evidenceBasis` string
+  that is not exactly one of the fixed closed four-value enum. Pointer: the
+  invalid value's own pointer (for example `/declarationSource/producerName`,
+  `/declarationSource/producerType`, `/declarationSource/evidenceBasis`).
+  Message: `"{name} must not be empty."`, `"Termination kind is not
+  recognized."`, `"Producer type is not recognized."`, or `"Evidence basis is
+  not recognized."`, as applicable. A `null` `producerVersion` is valid and is
+  never a `PT101`; only a present-but-empty `producerVersion` string is.
 
-Phase 2a allocates the following new, non-colliding codes for
+Phase 2a Task A allocates the following four new, non-colliding codes for
 termination-declaration-specific semantic failures that have no trace-
-envelope or obligation-ledger precedent. They form the first three entries
-of a `PT3xx` block reserved for Phase 2 as a whole; `PT300`-`PT302` are
-allocated by this document for Task A now, and further codes in the `PT3xx`
-range remain reserved, unallocated, and undefined until a future
-`ADR-0004` allocates them for `BaselineDefinition`-specific failures.
+envelope or obligation-ledger precedent: `PT300`, `PT301`, and `PT302` for
+referential and terminal-event failures, and `PT303` for
+declaration-source coherence failures. All four are allocated by this
+document for Task A now. The remaining `PT3xx` codes are not carried forward
+as Task B's block: Task B's future `BaselineDefinition`-specific failures are
+reserved to a fresh, as-yet-unallocated `PT4xx` block, to be allocated by a
+future `ADR-0004`, so that Task A's diagnostic surface (`PT300`-`PT303`) and
+Task B's remain cleanly separated. No `PT3xx` code beyond `PT303` is
+allocated, reserved for, or claimed by Task B.
 
 - `PT300` dangling `terminationEventId`: the value does not dereference any
   event id present in the paired trace envelope. Pointer:
@@ -194,9 +336,25 @@ range remain reserved, unallocated, and undefined until a future
   the paired trace envelope's `traceId`. Pointer: `/traceId`. Message:
   `"TerminationDeclaration traceId must equal the paired trace envelope's
   traceId."`
+- `PT303` declaration-source coherence violation: one of the five
+  declaration-source coherence rules in "Declaration source and provenance"
+  above is violated. Pointer: `/declarationSource/evidenceBasis` when a
+  single field alone establishes the violation (coherence rules 1 and 2,
+  anchored by the authoritative root-level `terminationKind`); otherwise
+  `/declarationSource` (coherence rules 3, 4, and 5, which each jointly couple
+  `producerType` and `evidenceBasis`). Message, one fixed safe template for
+  every case that never echoes any document value:
+  `"TerminationDeclaration declarationSource is not coherent with the
+  declared termination."` Evaluated only after `producerType`,
+  `evidenceBasis`, and `terminationKind` have each validated as a recognized
+  enum value; a declaration violating more than one coherence rule emits one
+  `PT303` per violated rule, in ascending rule number, at each rule's fixed
+  pointer.
 
 No code is reused across meanings, and no two codes above share a
-pointer-target rule for the same failure.
+pointer-target rule for the same failure; `PT303`'s two pointer targets
+(`/declarationSource/evidenceBasis` and `/declarationSource`) are selected by
+the fixed single-offending-field rule above, never ambiguously.
 
 ### Contract status
 
@@ -242,7 +400,9 @@ trace envelope):
    declaration order.
 6. Root required-property presence and type checks (`PT001`/`PT002`),
    evaluated in this fixed order regardless of document order:
-   `schemaVersion`, `traceId`, `terminationEventId`, `terminationKind`.
+   `schemaVersion`, `traceId`, `terminationEventId`, `terminationKind`,
+   `declarationSource`. `declarationSource`'s type check adds `PT002` if it
+   is present but not a JSON object.
 7. `schemaVersion` value check (`PT100`), only if step 6 read it as a
    present string.
 8. `traceId` non-empty check (`PT101`), only if step 6 read it as a
@@ -251,6 +411,30 @@ trace envelope):
    as a present string.
 10. `terminationKind` closed-enum check (`PT101`), only if step 6 read it
     as a present string.
+11. `declarationSource` nested structural checks, only if step 6 read
+    `declarationSource` as a present JSON object:
+    a. Nested unknown-property check (`PT003`), in document property
+       declaration order.
+    b. Nested required-property presence and type checks (`PT001`/`PT002`),
+       evaluated in this fixed order regardless of document order:
+       `producerType`, `producerName`, `producerVersion`, `evidenceBasis`.
+       `producerVersion`'s type check accepts a JSON string or the JSON
+       `null` literal; any other JSON type adds `PT002`.
+12. `declarationSource` nested value checks, each only if step 11b read the
+    corresponding member as a present value of the correct type, evaluated in
+    this fixed order: `producerType` closed-enum check (`PT101`),
+    `producerName` non-empty check (`PT101`), `producerVersion` non-empty
+    check (`PT101`, only when `producerVersion` is present as a string; a
+    `null` `producerVersion` is skipped), `evidenceBasis` closed-enum check
+    (`PT101`).
+13. `declarationSource` coherence checks (`PT303`), evaluated once, only if
+    steps 10, 12 read `terminationKind`, `producerType`, and `evidenceBasis`
+    all as recognized enum values. Test the five coherence rules from
+    "Declaration source and provenance" in ascending rule number; for each
+    violated rule append one `PT303` at that rule's fixed pointer
+    (`/declarationSource/evidenceBasis` for rules 1-2, `/declarationSource`
+    for rules 3-5). All `PT303` diagnostics are Phase A diagnostics and
+    therefore always precede any Phase B diagnostic.
 
 **Phase B, cross-document referential checks** (require the paired trace
 envelope; per "CLI assess behavior" below, Phase B runs only when the trace
@@ -367,10 +551,10 @@ declaration never produces a `StopAssessmentResult`, and a successful
 
 Exit codes, consistent with the existing `0`/`1`/`2` convention: `0` only
 when step 10 emits a `StopAssessmentResult`; `1` when any one of the three
-documents produces a structural, type, referential, terminal-required, or
-enum-membership diagnostic (`PT001`-`PT004`, `PT100`-`PT101`,
-`PT200`-`PT204`, `PT300`-`PT302`) but none of the three is malformed,
-oversized, or unreadable; `2` for bad usage, an unreadable file, an
+documents produces a structural, type, referential, terminal-required,
+enum-membership, or declaration-source coherence diagnostic (`PT001`-`PT004`,
+`PT100`-`PT101`, `PT200`-`PT204`, `PT300`-`PT303`) but none of the three is
+malformed, oversized, or unreadable; `2` for bad usage, an unreadable file, an
 oversized file (`PT005`), or malformed JSON (`PT000`), on any of the three
 documents.
 
@@ -390,11 +574,12 @@ The `assess` CLI never emits, echoes, or normalizes a
 only by `assess`, and there is no verb or flag that writes a canonicalized
 `TerminationDeclaration` to stdout. No canonical-serialization rule is
 therefore defined for this contract. `StopAssessmentResult` copies
-`terminationEventId` and `terminationKind` by value into its own
-canonically serialized output, defined in
+`terminationEventId`, `terminationKind`, and the entire `declarationSource`
+object by value into its own canonically serialized output, preserving
+`declarationSource`'s nested property order, defined in
 `docs/contracts/stop-assessment-result.md`; that document's canonical
 serialization is the sole canonical artifact Task A ever emits that carries
-termination information.
+termination or producer-provenance information.
 
 ## Version policy
 
@@ -423,25 +608,59 @@ contains no employer, medical, credential, or production content. Both
 examples correlate to a hypothetical trace envelope whose maximum-
 canonical-rank event is `evt-2`.
 
-An attested, natural-completion termination declaration:
+An attested, natural-completion termination declaration produced by a
+harness that observed the run's lifecycle:
 
 ```json
 {
   "schemaVersion": "1.0",
   "traceId": "trace-example-1",
   "terminationEventId": "evt-2",
-  "terminationKind": "natural-completion"
+  "terminationKind": "natural-completion",
+  "declarationSource": {
+    "producerType": "harness",
+    "producerName": "example-harness",
+    "producerVersion": "2.3.0",
+    "evidenceBasis": "harness-lifecycle"
+  }
 }
 ```
 
 A non-attested, capture-truncated termination declaration, still
-terminal-required against the same trace:
+terminal-required against the same trace, produced by an adapter that
+inferred the truncation while normalizing source-native evidence:
 
 ```json
 {
   "schemaVersion": "1.0",
   "traceId": "trace-example-1",
   "terminationEventId": "evt-2",
-  "terminationKind": "capture-truncated"
+  "terminationKind": "capture-truncated",
+  "declarationSource": {
+    "producerType": "adapter",
+    "producerName": "example-otel-adapter",
+    "producerVersion": "0.9.1",
+    "evidenceBasis": "adapter-inference"
+  }
+}
+```
+
+An `adapter-inference` producer with a concrete, attested cause: the
+`crash-or-error` cause remains authored and inferred, never observed agent
+output, and `producerVersion` is `null` here to show that a valid producer
+may have no meaningful software version:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "traceId": "trace-example-1",
+  "terminationEventId": "evt-2",
+  "terminationKind": "crash-or-error",
+  "declarationSource": {
+    "producerType": "adapter",
+    "producerName": "example-crash-adapter",
+    "producerVersion": null,
+    "evidenceBasis": "adapter-inference"
+  }
 }
 ```

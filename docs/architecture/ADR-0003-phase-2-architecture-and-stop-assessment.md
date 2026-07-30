@@ -45,10 +45,10 @@ independently reviewed.
 ## Decision
 
 1. **Phase 2 decomposes into two composable, bounded tasks (`P2-D5`)**: Task
-   A, observational stop assessment and late-termination overhead, computed
-   from a single trace, its obligation ledger, and a newly authored
-   `TerminationDeclaration`; and Task B, baseline comparison and false-halt
-   cost, computed by additionally consuming an externally authored
+   A, single-trace deterministic stop assessment and late-termination
+   overhead, computed from a single trace, its obligation ledger, and a newly
+   authored `TerminationDeclaration`; and Task B, baseline comparison and
+   false-halt cost, computed by additionally consuming an externally authored
    counterfactual reference. Task A is fully specifiable and implementable
    now. Phase 2 is not complete, and the product brief's false-halt-cost
    claim remains unmet, until Task B ships or Dragos explicitly amends that
@@ -63,12 +63,35 @@ independently reviewed.
    `unknown`. A derived boolean, `terminationAttested`, is `true` for the six
    kinds that assert some concrete, authored cause and `false` for exactly
    `capture-truncated` and `unknown`. `terminationAttested=true` never means
-   "the agent voluntarily chose to halt"; it means only that the trace's
-   author committed to one specific, named cause for why observation ended
-   where it did, as opposed to `unknown` (no committed cause) or
+   "the agent voluntarily chose to halt"; it means only that the
+   termination-declaration producer (which `declarationSource` may record as a
+   role distinct from the trace source) committed to one specific, named cause
+   for why observation ended where it did, as opposed to `unknown` (no
+   committed cause) or
    `capture-truncated` (the capture itself, not necessarily the agent's
    activity, is known to have ended early). No field in this contract or in
-   `StopAssessmentResult` ever asserts voluntary agent intent.
+   `StopAssessmentResult` ever asserts voluntary agent intent. The
+   declaration also carries a required closed `declarationSource` object,
+   placed after `terminationKind` in canonical root order, recording who
+   produced it (`producerType` in `{agent, harness, operator, adapter}`,
+   `producerName`, `producerVersion` as a non-empty string or `null`) and on
+   what evidence (`evidenceBasis` in `{agent-output, harness-lifecycle,
+   operator-annotation, adapter-inference}`), so producer provenance is kept
+   separate from the termination cause and no agent is required to produce
+   the declaration. Five closed coherence rules bind `declarationSource` to
+   `terminationKind` and internally (an `agent-self-reported-stop` requires
+   `agent-output`; a `harness-declared-stop` requires `harness-lifecycle`; a
+   `producerType=agent` requires `agent-output`; a `producerType=operator`
+   requires `operator-annotation`; and `evidenceBasis=adapter-inference`
+   requires `producerType=adapter`), with all other combinations accepted so
+   a harness or adapter may faithfully wrap evidence of a different origin. A
+   violated rule is diagnostic `PT303`, whose exact pointer targeting,
+   message, and validation order are fixed in
+   `docs/contracts/termination-declaration.md`. `terminationAttested` is
+   unchanged by `declarationSource`: it stays a cause-commitment lookup, not
+   an evidence-quality or truth-confidence score, so an `adapter-inference`
+   declaration with a concrete cause remains a producer-supplied inference and
+   is never relabeled as observed agent output or a direct agent assertion.
 3. **Success is fixed at the contract level, not authored (`P2-D2`)**: the
    only success target for every ledger-declared obligation is
    `status=satisfied`; no per-obligation target field exists anywhere in
@@ -80,8 +103,9 @@ independently reviewed.
    start of the maximal trailing all-`satisfied` run through termination).
    It is undefined whenever `sn` is not `satisfied`, including `n=0`. An
    obligation whose stable-attainment rank is undefined is
-   `unmet-target-at-termination`: an observed absence of sustained target
-   attainment, computed the same way whether the obligation never reached
+   `unmet-target-at-termination`: a single-trace, non-counterfactual absence of
+   sustained target attainment computed from the supplied trace and ledger
+   artifacts, computed the same way whether the obligation never reached
    `satisfied`, reached it and regressed away without recovering, or has zero
    signals. It is never called a false halt; see "Why `unmet-target-at-termination`
    is not false halt" below.
@@ -139,14 +163,16 @@ independently reviewed.
     precedent, rather than introduce a soft partial-coverage classification.
 11. **Diagnostics**: Task A allocates a new `PT3xx` diagnostic block,
     distinct from the trace-envelope `PT1xx` and ledger `PT2xx` blocks, for
-    `TerminationDeclaration`-specific referential and terminality failures
-    that have no existing precedent (`PT300`-`PT302`). The full `PT3xx`
-    range is reserved for Phase 2 as a whole: `PT300`-`PT302` are allocated
-    by this document for Task A now; further codes in the `PT3xx` range
-    remain reserved, unallocated, and undefined until `ADR-0004` allocates
-    them for `BaselineDefinition`-specific failures. The exact code
-    identities, pointer-target rules, validation order, and `assess` CLI
-    stdout/stderr/exit-code shape are fixed in
+    `TerminationDeclaration`-specific failures that have no existing
+    precedent: `PT300`-`PT302` for referential and terminality failures and
+    `PT303` for `declarationSource` coherence failures. All four
+    (`PT300`-`PT303`) are allocated by this document for Task A now. Task B's
+    future `BaselineDefinition`-specific failures are not carried forward in
+    the remainder of the `PT3xx` block; instead they are reserved to a fresh,
+    as-yet-unallocated `PT4xx` block, to be allocated only by a future
+    `ADR-0004`. No `PT3xx` code beyond `PT303` is reserved for or claimed by
+    Task B. The exact code identities, pointer-target rules, validation
+    order, and `assess` CLI stdout/stderr/exit-code shape are fixed in
     `docs/contracts/termination-declaration.md`'s "Diagnostic registry",
     "Validation order", and "CLI assess behavior" sections; Codex implements
     them without inventing a code, pointer, message, pass order, or exit
@@ -158,13 +184,153 @@ independently reviewed.
 13. **The Phase 2a executable task specification lives at one file,
     `tasks/phase-2a-stop-assessment.json`**, mirroring the existing
     `tasks/phase-1-obligation-evaluation.json` convention.
+14. **Agent-output independence (`P2-D12`)**: no agent is ever required to
+    emit ProgressTrace JSON or a ProgressTrace-native final answer.
+    ProgressTrace analyzes outputs and evidence that agents and their
+    environment actually produced. A source may already emit an artifact that
+    happens to be contract-compatible, but that is optional and never
+    required. Opaque trace payload text is not interpreted by the
+    deterministic core: without explicit obligations and correlated signals
+    there is no universal semantic-progress inference, and `insufficient-evidence`
+    is the honest outcome.
+15. **Adapter boundary (`P2-D13`)**: source-native evidence is captured
+    first, then normalized by an adapter, harness, controller, operator, or
+    optionally the agent itself into canonical ProgressTrace input artifacts.
+    A ProgressTrace canonical contract is an internal
+    interoperability/analysis boundary after capture, not an agent-native
+    wire protocol and not a claimed industry standard. An adapter may transform
+    arbitrary source evidence into these artifacts, preserving whatever
+    provenance the target contract records, which differs by contract: the
+    trace envelope `1.0` records the source system and version in required
+    document-level `source.name` and `source.version` but no per-field
+    producer/evidence-basis metadata or adapter-transform manifest;
+    `ObligationLedger` `1.0` carries no producer/evidence-basis metadata at
+    all; and `TerminationDeclaration` `1.0`'s `declarationSource` is the first
+    ProgressTrace contract carrier that explicitly separates producer role
+    from evidence basis (per `P2-D14`), not the first provenance metadata of
+    any kind. Industry standardization is not a prerequisite for this internal
+    canonical contract, and a future external standard would be an ingestion
+    source through an adapter, never the canonical domain model.
+16. **Provenance before interpretation (`P2-D14`)**: this is a normative rule
+    for every new, provenance-aware artifact boundary: where a contract
+    carries producer and evidence-basis metadata, agent-produced,
+    harness-observed, operator-annotated, adapter-inferred, and core-derived
+    facts must not be conflated, the deterministic core must not read semantic
+    meaning from opaque payload text, and any model or adapter inference must
+    be labeled as inference rather than presented as observed fact or a direct
+    agent assertion. Task A implements this rule for `TerminationDeclaration`
+    through the required `declarationSource` object (Decision 2 below) and
+    preserves it in the result by copying `declarationSource` verbatim, lineage
+    class `from-declaration`, onto `StopAssessmentResult`, which labels every
+    field by artifact lineage (the eight lineage classes fixed in
+    `docs/contracts/stop-assessment-result.md`), never by an epistemic
+    truth or observation-quality status. This rule does not retroactively
+    endow artifacts that lack producer/evidence-basis metadata with such
+    provenance: `ObligationLedger` `1.0` carries none (see "Phase 1 ledger
+    provenance and future adapter provenance" below), so its supplied
+    obligations and signals are structured annotations of unknown producer and
+    evidence provenance unless an external provenance record exists, and the
+    trace envelope `1.0` records only a document-level `source.name` and
+    `source.version`, not per-field producer/evidence-basis metadata; so
+    ProgressTrace does not yet claim universal field-level provenance across
+    all existing artifacts.
+17. **Product positioning and dogfooding (`P2-D15`)**: the primary initial
+    users are builders of early agent workflows that do not yet have a mature
+    harness. Mature systems may integrate through adapters, independent audit,
+    or conformance; ProgressTrace does not presume to replace their
+    harnesses. ProgressTrace's own Claude/Codex/Hermes/Antigravity
+    development workflow is the first planned reference corpus and adapter
+    source — agent text remains arbitrary, task contracts provide
+    obligations, and controller/tool/build/test/CI/verifier/human-gate events
+    provide evidence — but that adapter is not implemented yet, is not an
+    industry standard, and must not be claimed to exist.
+
+## Ingestion boundary and product positioning
+
+ProgressTrace draws three explicit layers, and never blurs them:
+
+1. **Arbitrary source evidence** produced by an agent, tool, or runtime:
+   free-form model text, tool output, logs, lifecycle events, and any other
+   captured artifact. ProgressTrace makes no demand on its shape and does not
+   interpret opaque payload text semantically.
+2. **Normalized/annotated ProgressTrace input artifacts** — the trace
+   envelope, obligation ledger, and termination declaration — produced by an
+   adapter, harness, controller, operator, or optionally the agent itself,
+   transforming layer 1 into the canonical contracts while preserving
+   provenance. These contracts are an internal interoperability/analysis
+   boundary after capture, not an agent-native wire protocol and not a
+   claimed industry standard.
+3. **Deterministic derived ProgressTrace results** — the evaluation result
+   and the stop-assessment result — computed by the one normative core purely
+   from layer 2, with no clock, network, database, or model dependency.
+
+No agent is required to emit ProgressTrace-native JSON. A source may already
+emit a compatible artifact, but that is optional; the normal path is that an
+adapter, harness, controller, or operator captures source-native evidence and
+normalizes it. Opaque trace payload remains uninterpreted by the core: absent
+explicit obligations and correlated signals, there is no universal
+semantic-progress inference, and `insufficient-evidence` is the honest,
+deterministic outcome rather than a guessed verdict. Labeling model or adapter
+inference as inference, rather than presenting it as observed fact or a direct
+agent assertion, is a normative rule for every new provenance-aware boundary;
+Task A realizes it for the termination declaration by recording
+`declarationSource` on the declaration and copying it verbatim (lineage class
+`from-declaration`) onto `StopAssessmentResult`. It does not endow artifacts
+that predate producer metadata with provenance: `ObligationLedger` `1.0`
+carries none, so its obligations and signals remain supplied structured
+annotations of unknown producer and evidence provenance unless an external
+provenance record exists, and ProgressTrace cannot yet claim a general
+ingestion-adapter feature or universal field-level provenance across all
+existing artifacts (see "Phase 1 ledger provenance and future adapter
+provenance" below).
+
+The primary initial users are builders of early agent workflows that do not
+yet have a mature harness; for them, an operator or a thin adapter authors the
+input artifacts by hand or from simple logs. Mature systems may instead
+integrate through adapters, independent audit, or conformance, and
+ProgressTrace does not presume to replace their existing harnesses.
+ProgressTrace's own Claude/Codex/Hermes/Antigravity development workflow is
+the first planned reference corpus and adapter source, where agent text stays
+arbitrary, task contracts supply obligations, and
+controller/tool/build/test/CI/verifier/human-gate events supply evidence; that
+adapter is planned, not implemented, is not an industry standard, and is not
+claimed to exist yet. Any optional hosted service, UI, or persistent storage
+remains explicitly optional and out of Phase 2a scope.
+
+## Phase 1 ledger provenance and future adapter provenance
+
+Phase 1's obligation-ledger obligations and status signals are explicit,
+structured annotations consumed by the deterministic evaluator. They are not
+necessarily agent responses, and they are never semantic facts the core
+infers from opaque payload text; the core computes progress only from these
+explicit, correlated annotations, returning `insufficient-evidence` when they
+are absent. `ObligationLedger` `1.0` currently carries no producer/evidence-basis
+metadata analogous to `TerminationDeclaration`'s `declarationSource`: it does
+not record whether an obligation or signal was agent-produced,
+harness-observed, operator-annotated, or adapter-inferred, so its supplied
+annotations have unknown such provenance unless an external record exists.
+This differs from the trace envelope `1.0`, which does record a document-level
+`source.name` and `source.version` (the producing system's name and version),
+though still no per-field producer/evidence-basis metadata or adapter-transform
+manifest. This is a known, bounded limitation, and it is not silently solved
+by Task A's `declarationSource`, which applies only to the termination
+declaration.
+
+Before ProgressTrace claims a general ingestion-adapter feature complete, a
+future ADR must decide how ledger-level (and, more broadly, artifact-level)
+producer provenance is recorded — either a non-breaking adapter
+manifest/provenance envelope or a new, compatible contract version — under the
+same additive-only, accept-only-known-versions policy the existing contracts
+use. That schema is deliberately not designed by ADR-0003 or Phase 2a Task A;
+Phase 2a neither adds producer metadata to `ObligationLedger` `1.0` nor
+changes its frozen shape.
 
 ## Why `unmet-target-at-termination` is not false halt
 
-`unmet-target-at-termination` is a purely observational, single-trace
-statement: it reports only that a specific obligation's signals do not end
-in a maximal trailing run of `satisfied` through the declared termination
-event. It carries no claim about what would, could, or should have happened
+`unmet-target-at-termination` is a single-trace, non-counterfactual statement
+computed from supplied trace and ledger artifacts: it reports only that a
+specific obligation's signals do not end in a maximal trailing run of
+`satisfied` through the declared termination event. It carries no claim about what would, could, or should have happened
 had the trace continued, because Task A has no independent reference to
 compare against: no second trace, no fixed continuation policy, and no
 authored counterfactual budget. Calling this a "false halt" would assert a
@@ -181,7 +347,8 @@ vocabulary is exhaustive on this point.
 ## Task B follow-up gate
 
 Task B (`BaselineDefinition`, `BaselineComparisonResult`, a future `compare`
-CLI verb, and any `PT3xx` codes beyond `PT300`-`PT302`) has its
+CLI verb, and a fresh `PT4xx` diagnostic block, not any code in the `PT3xx`
+range, whose Task A allocation now runs through `PT303`) has its
 decision-level boundary fixed by `P2-D6` through `P2-D8`, `P2-D10`, and
 `P2-D11` above and in the controller's external audit record, but its
 contract architecture is not complete and it is not authored by this
@@ -195,7 +362,7 @@ verdict only, no numeric magnitude without a separate cost model), or an
 explicit product-scope amendment computing no numeric magnitude at all.
 Dragos's approved decision record favors the externally authored
 counterfactual budget as the first cut, but its exact unit, formula, and
-interpretation are not fixed by this ADR or by any document in this change.
+interpretation are not fixed by this ADR or by any other Phase 2a document.
 **Implementation of Task B, including any `BaselineDefinition` or
 `BaselineComparisonResult` schema, code, fixture, or CLI verb, is prohibited
 until a future `ADR-0004`:**
@@ -243,7 +410,33 @@ Phase 1 left it, and no code in this repository may claim to measure it.
   fixed lookup table over the closed enum, never an open or authored
   boolean, and is not itself a claim that a non-attested termination did not
   happen; it only withholds the specific, named-cause commitment the six
-  attested kinds provide.
+  attested kinds provide. It is a cause-commitment lookup, not an
+  evidence-quality or truth-confidence score, and it is independent of
+  `declarationSource`.
+- **Declaration source**: `TerminationDeclaration` carries a required closed
+  `declarationSource` object after `terminationKind`, with members
+  `producerType` (`{agent, harness, operator, adapter}`), `producerName`
+  (non-empty, never echoed in diagnostics), `producerVersion` (non-empty
+  string or `null`), and `evidenceBasis` (`{agent-output, harness-lifecycle,
+  operator-annotation, adapter-inference}`), in that nested order. Its five
+  coherence rules and the single `PT303` code (pointer
+  `/declarationSource/evidenceBasis` for the `terminationKind`-anchored rules,
+  `/declarationSource` otherwise) are fixed in
+  `docs/contracts/termination-declaration.md`. `StopAssessmentResult` copies
+  the whole object verbatim as lineage class `from-declaration`, preserving
+  nested order, so operator-annotated and adapter-inferred inputs stay
+  distinguishable from a direct agent assertion downstream.
+- **Result lineage labels**: `StopAssessmentResult` labels every field with
+  exactly one of eight mutually exclusive artifact-lineage classes —
+  `contract-constant`, `from-trace`, `from-ledger`, `from-declaration`,
+  `derived-from-declaration`, `derived-from-trace-and-declaration`,
+  `derived-from-trace-and-ledger`, and `derived-from-all-inputs` — that name
+  only source artifacts and the inputs a computation consumed, never truth,
+  observation quality, producer identity, or evidence confidence, and never an
+  epistemic status such as "observed" or "authored". The exact per-field
+  mapping is fixed in `docs/contracts/stop-assessment-result.md`'s "Provenance
+  labels" section and must agree with it; these are documentation-only labels,
+  with no runtime `sourceClass` property added to the `1.0` shape.
 - **Stable-attainment reuse of the existing signal total order**: stable
   attainment is computed over the exact same per-obligation signal total
   order already fixed in `docs/contracts/obligation-ledger.md` ("Signal
@@ -259,7 +452,7 @@ Phase 1 left it, and no code in this repository may claim to measure it.
   fields defined in `docs/contracts/stop-assessment-result.md`. No
   reimplementation of the classification table or trace-level precedence
   rule is permitted outside that existing namespace.
-- **Diagnostics and CLI order**: the exact `PT300`-`PT302` codes, their
+- **Diagnostics and CLI order**: the exact `PT300`-`PT303` codes, their
   pointer-target rules, `TerminationDeclaration`'s two-phase validation
   order, and `assess`'s full stdout/stderr shape and 0/1/2 exit-code mapping,
   including trace-then-ledger-then-declaration precedence, are fixed in
@@ -275,6 +468,8 @@ evaluation result. Evolution is additive-only: any future Task B field
 (`falseHalt`, a magnitude, or a source label) is added only to Task B's own
 new contracts, never inserted into `StopAssessmentResult` `1.0` or into the
 frozen `EvaluationResult` `1.0` shape. The closed `terminationKind` enum, the
+required closed `declarationSource` object (its four members, their nested
+order, its two closed enums, and its five coherence rules), the
 terminal-required rule, the stable-attainment rule, and the non-summed
 `traceOverhead` formula fixed in this document and in
 `docs/contracts/termination-declaration.md`/`docs/contracts/stop-assessment-result.md`
@@ -366,9 +561,8 @@ fixture rule.
   invariant already proven for the ledger and reused identically for the
   declaration.
 - `StopAssessmentResult` does not yet demonstrate the false-halt half of the
-  core product claim; `docs/product-brief.md` (unmodified by this change)
-  and this ADR's "Task B follow-up gate" record this as an explicit,
-  tracked deferral, not a silent omission.
+  core product claim; `docs/product-brief.md` and this ADR's "Task B follow-up
+  gate" record this as an explicit, tracked deferral, not a silent omission.
 - `terminationAttested=false` (for `unknown` and `capture-truncated` alike)
   always suppresses `safeStopRank` and `traceOverhead`, even when every
   obligation happens to be mechanically stable-attainment; this is a

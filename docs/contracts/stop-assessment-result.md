@@ -3,10 +3,10 @@
 Version `1.0` is the Phase 2a stop-assessment-result contract. It is the
 versioned, deterministic output of `assess <trace-path> <ledger-path>
 <termination-declaration-path>`: a per-obligation and trace-level
-observational assessment of whether a trace's explicit obligations were
-stably attained by its declared termination, and, when termination is
-attested and every obligation is stably successful, how much later than
-necessary that termination occurred. The normative machine-readable
+single-trace deterministic assessment of whether a trace's explicit
+obligations were stably attained by its declared termination, and, when
+termination is attested and every obligation is stably successful, how much
+later than necessary that termination occurred. The normative machine-readable
 contract is `contracts/stop-assessment-result.schema.json`, implemented by
 Codex from this document; the .NET Core's stop-assessment algorithm in the
 `ProgressTrace.Core.Assessment` namespace applies the rank-distance,
@@ -19,8 +19,8 @@ invokes, but never reimplements, the unmodified Phase 1
 
 `StopAssessmentResult` reports, for a normalized trace envelope, a
 structurally and referentially valid obligation ledger, and a structurally
-and referentially valid termination declaration, an exact deterministic,
-purely observational assessment of whether each ledger-declared obligation
+and referentially valid termination declaration, an exact single-trace
+deterministic assessment of whether each ledger-declared obligation
 was stably attained through termination and, only when every obligation is
 stable and termination is attested, a single trace-level late-termination
 cost figure. This document never asserts, computes, or names a false-halt
@@ -49,48 +49,65 @@ those sections describe as `assess`'s sole successful output.
 
 ## Provenance labels
 
-Every field below is labeled with exactly one of six mutually exclusive
-provenance classes, so no unlike-provenance value is ever blended into
-another without a label, and no field is ever assigned more than one class:
+Every field below is labeled with exactly one of eight mutually exclusive
+artifact-lineage classes, so no unlike-lineage value is ever blended into
+another without a label, and no field is ever assigned more than one class.
+These classes name only the source artifact(s) a value was copied from and,
+for derived values, which input artifacts the computation consumed. They are
+deliberately not claims of truth, observation quality, producer identity, or
+evidence confidence: a value labelled `from-ledger` or `derived-from-trace-and-ledger`
+is not thereby asserted to be observed fact, and a value's producer and
+evidence basis are recorded only where a contract carries them. Only
+`TerminationDeclaration` `1.0`, in the copied `declarationSource` object,
+separates producer role from evidence basis; the trace envelope `1.0` records
+a document-level `source.name` and `source.version` but no per-field
+producer/evidence-basis metadata or adapter-transform manifest, and
+`ObligationLedger` `1.0` carries no producer/evidence-basis metadata at all,
+so its supplied annotations have unknown such provenance unless an external
+record exists.
 
 - **contract-constant**: a value fixed by this contract itself, identical
-  in every valid `1.0` result, and never computed from any of the three
-  input documents (for example `schemaVersion` and every member of
+  in every valid `1.0` result, and never copied or computed from any of the
+  three input documents (for example `schemaVersion` and every member of
   `algorithm`).
-- **authored**: copied by value from the termination declaration,
-  unchanged, with no computation applied.
-- **observed**: copied by value from the trace envelope or obligation
-  ledger, unchanged, with no computation applied.
-- **derived-from-authored**: computed purely from one or more authored
+- **from-trace**: copied by value from the trace envelope, unchanged, with
+  no computation applied.
+- **from-ledger**: copied by value from the obligation ledger, unchanged,
+  with no computation applied, or determined solely by the ledger's own
+  structure (such as which obligations exist and their order).
+- **from-declaration**: copied by value from the termination declaration,
+  unchanged, with no computation applied (for example `terminationEventId`,
+  `terminationKind`, and the entire `declarationSource` object, including
+  each of its nested members).
+- **derived-from-declaration**: computed purely from one or more declaration
   fields, via a fixed lookup table or rule, with no dependency on trace or
   ledger content.
-- **derived-from-observed**: computed purely from trace envelope and/or
-  obligation ledger content, with no dependency on any authored field.
-- **derived-from-authored-and-observed**: computed by combining an
-  authored field's value (directly, such as `terminationEventId`, or
-  indirectly through a derived-from-authored value such as
-  `terminationAttested`) with observed trace or ledger content; neither
-  the authored input alone nor the observed input alone determines the
-  value. This class covers both `terminationRank` (which dereferences the
-  authored `terminationEventId` against the observed trace's canonical
-  order) and every field whose value or nullness branches on
-  `terminationAttested` together with observed obligation outcomes
-  (`stopClassification`, `safeStopRank`, `traceOverhead`), and it also
-  covers `obligationResults[].overhead`, since `overhead` subtracts the
-  purely observed `stableAttainmentRank` from the authored-and-observed
-  `terminationRank` (`terminationRank - stableAttainmentRank`).
+- **derived-from-trace-and-declaration**: computed by combining declaration
+  content with trace content, where neither the declaration nor the trace
+  alone determines the value (for example `terminationRank`, which
+  dereferences the declaration's `terminationEventId` against the trace's
+  canonical order).
+- **derived-from-trace-and-ledger**: computed purely from trace and ledger
+  content, with no dependency on any declaration field (for example the
+  Phase 1 per-obligation and trace-level classifications and the
+  stable-attainment scan).
+- **derived-from-all-inputs**: computed from trace, ledger, and declaration
+  content together, where removing any one input could change the value (for
+  example `overhead`, `stopClassification`, `safeStopRank`, and
+  `traceOverhead`, each of which combines a stable-attainment or termination
+  rank with the declaration-derived `terminationAttested` or
+  `terminationRank`).
 
 No `sourceClass` or similar field is added to the `1.0` JSON shape itself:
-Task A's artifact boundary (one authored input document, one derived
-output document) and this document's normative provenance labels below are
-sufficient to fix provenance for every field without adding a redundant
-runtime property.
+Task A's artifact boundary (three input documents, one derived output
+document) and this document's normative lineage labels below are sufficient
+to fix each field's lineage without adding a redundant runtime property.
 
 ## Document structure
 
 - `schemaVersion` (contract-constant; string): contract major/minor
   version. Phase 2a accepts only `1.0`.
-- `traceId` (observed): the assessed trace envelope's `traceId`.
+- `traceId` (from-trace): the assessed trace envelope's `traceId`.
 - `algorithm` (contract-constant): required object identifying the
   deterministic stop-assessment algorithm that produced this result; both
   its members are fixed constants for every Phase 2a `1.0` result.
@@ -101,76 +118,99 @@ runtime property.
   constant value `"1.0.0"` for the Phase 2a stop-assessment algorithm;
   this identifies the algorithm implementation version, not the contract's
   `schemaVersion`.
-- `terminationEventId` (authored): copied by value from the validated
+- `terminationEventId` (from-declaration): copied by value from the validated
   termination declaration.
-- `terminationKind` (authored): copied by value from the validated
+- `terminationKind` (from-declaration): copied by value from the validated
   termination declaration; one of the fixed closed eight-value enum fixed
   in `docs/contracts/termination-declaration.md`.
-- `terminationAttested` (derived-from-authored boolean): `true` iff
+- `declarationSource` (from-declaration object): copied by value, unchanged,
+  from the validated termination declaration, preserving its exact nested
+  property order `producerType`, `producerName`, `producerVersion`,
+  `evidenceBasis`. It records who produced the declaration and on what
+  evidence, kept separate from the termination cause. The object itself and
+  each of its four nested members are individually `from-declaration`; no
+  member is derived, recomputed, or reinterpreted. Its presence in the result
+  preserves the declared producer and evidence basis (for example that an
+  input was `operator`-produced or `adapter-inference`-based), so a downstream
+  consumer never mistakes an annotated or inferred cause for a direct agent
+  assertion.
+  - `declarationSource.producerType` (from-declaration): copied by value; one
+    of the fixed closed four-value enum `agent`, `harness`, `operator`,
+    `adapter`.
+  - `declarationSource.producerName` (from-declaration): copied by value; a
+    non-empty string.
+  - `declarationSource.producerVersion` (from-declaration): copied by value; a
+    non-empty string or the JSON `null` literal, preserved exactly as
+    supplied.
+  - `declarationSource.evidenceBasis` (from-declaration): copied by value; one
+    of the fixed closed four-value enum `agent-output`, `harness-lifecycle`,
+    `operator-annotation`, `adapter-inference`.
+- `terminationAttested` (derived-from-declaration boolean): `true` iff
   `terminationKind` is not `capture-truncated` and not `unknown`, per the
   fixed lookup table in `docs/contracts/termination-declaration.md`'s
-  "Termination attestation" section; computed purely from the authored
+  "Termination attestation" section; computed purely from the declaration's
   `terminationKind`, with no dependency on trace or ledger content.
-- `terminationRank` (derived-from-authored-and-observed integer): the
-  canonical rank of the event dereferenced by the authored
-  `terminationEventId`, computed against the observed trace's canonical
+- `terminationRank` (derived-from-trace-and-declaration integer): the
+  canonical rank of the event dereferenced by the declaration's
+  `terminationEventId`, computed against the trace's canonical
   order; always equal to `N-1`, the maximum canonical rank present in the
   trace, guaranteed by the terminal-required validation already performed
-  on the declaration. Its value requires both the authored reference
-  (which event) and the observed trace (that event's rank), so it is
-  neither purely authored nor purely observed.
-- `obligationResults` (derived-from-observed array): one entry per
-  obligation declared in the paired ledger, in ledger order; which
-  obligations exist and their order are purely observed ledger facts. See
-  "obligationResults ordering" below and the per-entry field labels
-  immediately following, one of which (`overhead`) carries a different,
-  more specific class than the array's own membership and ordering.
-- `obligationResults[].obligationId` (observed): the classified
-  obligation's id.
-- `obligationResults[].classification` (derived-from-observed): the
+  on the declaration. Its value requires both the declaration's reference
+  (which event) and the trace (that event's rank), so neither input alone
+  determines it.
+- `obligationResults` (from-ledger array): one entry per obligation declared
+  in the paired ledger, in ledger order; which obligations exist and their
+  order are fixed by the ledger's own structure. See "obligationResults
+  ordering" below and the per-entry field labels immediately following, whose
+  classes are more specific than the array's own membership and ordering.
+- `obligationResults[].obligationId` (from-ledger): the classified
+  obligation's id, copied from the ledger.
+- `obligationResults[].classification` (derived-from-trace-and-ledger): the
   unmodified Phase 1 per-obligation classification, one of `progress`,
   `stagnation`, `regression`, `insufficient-evidence`, recomputed by
   invoking `ProgressTrace.Core.Evaluation.Evaluator` directly against the
   validated trace and ledger; identical in meaning and computation to
   `EvaluationResult.obligationResults[].classification`, with no
-  dependency on any authored declaration field.
-- `obligationResults[].evidenceEventIds` (derived-from-observed): the
+  dependency on any declaration field.
+- `obligationResults[].evidenceEventIds` (derived-from-trace-and-ledger): the
   unmodified Phase 1 evidence-event-id array for this obligation, computed
   and ordered exactly as `docs/contracts/evaluation-result.md`'s
   "evidenceEventIds content and ordering" section defines.
-- `obligationResults[].outcome` (derived-from-observed): one of the fixed
-  closed enum `stable-attainment`, `unmet-target-at-termination`; see "Per-
-  obligation stable-attainment algorithm" below. Computed purely from the
-  obligation's own signals, with no dependency on any authored field.
-- `obligationResults[].stableAttainmentRank` (derived-from-observed
+- `obligationResults[].outcome` (derived-from-trace-and-ledger): one of the
+  fixed closed enum `stable-attainment`, `unmet-target-at-termination`; see
+  "Per-obligation stable-attainment algorithm" below. Computed from the
+  obligation's own signals and their dereferenced trace events, with no
+  dependency on any declaration field.
+- `obligationResults[].stableAttainmentRank` (derived-from-trace-and-ledger
   integer or `null`): the canonical rank at which this obligation's
   maximal trailing all-`satisfied` run begins; `null` if and only if
   `outcome = unmet-target-at-termination`.
-- `obligationResults[].overhead` (derived-from-authored-and-observed
+- `obligationResults[].overhead` (derived-from-all-inputs
   integer or `null`): the rank distance from `stableAttainmentRank` to
   `terminationRank`; `null` under exactly the same condition as
   `stableAttainmentRank`, and always `>= 0` when not `null`. Its value
-  depends on the authored-and-observed `terminationRank` as well as the
-  purely observed `stableAttainmentRank`, so it is never purely observed.
-- `traceClassification` (derived-from-observed): the unmodified Phase 1
-  trace-level classification, one of `progress`, `stagnation`,
+  combines the ledger-and-trace-derived `stableAttainmentRank` with the
+  trace-and-declaration-derived `terminationRank`, so it consumes all three
+  inputs.
+- `traceClassification` (derived-from-trace-and-ledger): the unmodified
+  Phase 1 trace-level classification, one of `progress`, `stagnation`,
   `regression`, `insufficient-evidence`, computed by the unmodified
   precedence rule in `docs/contracts/evaluation-result.md`'s "Trace-level
   precedence" section over the `classification` values recomputed above,
-  with no dependency on any authored declaration field.
-- `stopClassification` (derived-from-authored-and-observed string): the
+  with no dependency on any declaration field.
+- `stopClassification` (derived-from-all-inputs string): the
   Phase 2a trace-level stop-assessment classification, one of the fixed
   closed enum `on-target`, `late-termination`,
   `unmet-target-at-termination-present`, `incomplete-observation`; see
   "Trace-level rollup" below. Its value branches first on the
-  derived-from-authored `terminationAttested`, then on observed
-  obligation outcomes, so neither input alone determines it.
-- `safeStopRank` (derived-from-authored-and-observed integer or `null`):
+  declaration-derived `terminationAttested`, then on the trace-and-ledger
+  obligation outcomes, so it consumes all three inputs.
+- `safeStopRank` (derived-from-all-inputs integer or `null`):
   the maximum `stableAttainmentRank` across all obligations; `null`
-  unless `terminationAttested = true` (an authored-derived condition) and
-  every obligation's `outcome` is `stable-attainment` (an observed
+  unless `terminationAttested = true` (a declaration-derived condition) and
+  every obligation's `outcome` is `stable-attainment` (a trace-and-ledger
   condition).
-- `traceOverhead` (derived-from-authored-and-observed integer or `null`):
+- `traceOverhead` (derived-from-all-inputs integer or `null`):
   the rank distance from `safeStopRank` to `terminationRank`; `null`
   under exactly the same condition as `safeStopRank`, and always `>= 0`
   when not `null`. Never a sum of `obligationResults[].overhead` values.
@@ -188,7 +228,8 @@ Required root properties and types: `schemaVersion` (string, exactly
 (string, fixed constant `"progresstrace-stop-assessor"`), `algorithm.version`
 (string, fixed constant `"1.0.0"`), `terminationEventId` (string,
 non-empty), `terminationKind` (string, one of the fixed closed eight-value
-enum), `terminationAttested` (boolean), `terminationRank` (integer, `>= 0`),
+enum), `declarationSource` (object, described below), `terminationAttested`
+(boolean), `terminationRank` (integer, `>= 0`),
 `obligationResults` (array; one entry per obligation in the paired ledger,
 never empty, since an empty `obligations` array is rejected before
 assessment per `docs/contracts/obligation-ledger.md`'s "Preconditions"
@@ -198,6 +239,17 @@ precedent), `traceClassification` (string, one of the fixed enum `progress`,
 `unmet-target-at-termination-present`, `incomplete-observation`),
 `safeStopRank` (integer `>= 0`, or `null`), `traceOverhead` (integer `>= 0`,
 or `null`).
+
+`declarationSource` is a JSON object with `additionalProperties: false`; all
+four of its members are required and always present, in this exact nested
+order: `producerType` (string, one of the fixed closed four-value enum
+`agent`, `harness`, `operator`, `adapter`), `producerName` (string,
+non-empty), `producerVersion` (string non-empty, or `null`), and
+`evidenceBasis` (string, one of the fixed closed four-value enum
+`agent-output`, `harness-lifecycle`, `operator-annotation`,
+`adapter-inference`). Every member is copied by value from the validated
+declaration; the result never adds, drops, reorders, or reinterprets a
+`declarationSource` member.
 
 Each entry of `obligationResults` is a JSON object with
 `additionalProperties: false`; all six properties are required and always
@@ -273,9 +325,14 @@ independent of `outcome`; this is the same ordering rule already fixed for
 
 ## Trace-level rollup
 
-`terminationAttested` and `terminationRank` are computed first, from the
-validated termination declaration and trace, as fixed in "Document
-structure" above and in
+`terminationEventId`, `terminationKind`, and the entire `declarationSource`
+object are copied by value from the validated termination declaration,
+unchanged and in their fixed nested order, before any derived field is
+computed; copying `declarationSource` never influences any derived value and
+never relabels a producer-supplied or producer-inferred cause as a direct
+agent assertion. `terminationAttested`
+and `terminationRank` are computed first, from the validated termination
+declaration and trace, as fixed in "Document structure" above and in
 `docs/contracts/termination-declaration.md`. Per-obligation
 `stableAttainmentRank`, `overhead`, and `outcome` are computed next, for
 every obligation, exactly as above, regardless of `terminationAttested`:
@@ -368,10 +425,12 @@ Serialization emits properties in exactly this order at every level, with
 no alternate or alphabetical ordering:
 
 - Root object: `schemaVersion`, `traceId`, `algorithm`, `terminationEventId`,
-  `terminationKind`, `terminationAttested`, `terminationRank`,
-  `obligationResults`, `traceClassification`, `stopClassification`,
-  `safeStopRank`, `traceOverhead`.
+  `terminationKind`, `declarationSource`, `terminationAttested`,
+  `terminationRank`, `obligationResults`, `traceClassification`,
+  `stopClassification`, `safeStopRank`, `traceOverhead`.
 - `algorithm` object: `name`, `version`.
+- `declarationSource` object: `producerType`, `producerName`,
+  `producerVersion`, `evidenceBasis`.
 - Each `obligationResults` entry: `obligationId`, `classification`,
   `evidenceEventIds`, `outcome`, `stableAttainmentRank`, `overhead`.
 
@@ -406,9 +465,10 @@ declaration always produces the byte-identical result.
 Baseline comparison and false-halt cost are completely absent from this
 contract: no field of `StopAssessmentResult` names, reserves, or implies a
 baseline or a false-halt value. `unmet-target-at-termination` and
-`unmet-target-at-termination-present` are purely observational; neither is
-computed relative to any independent reference, and neither is ever named
-or interpreted as a false halt, per
+`unmet-target-at-termination-present` are each a single-trace,
+non-counterfactual statement computed from supplied trace and ledger
+artifacts; neither is computed relative to any independent reference, and
+neither is ever named or interpreted as a false halt, per
 `docs/architecture/ADR-0003-phase-2-architecture-and-stop-assessment.md`'s
 "Why `unmet-target-at-termination` is not false halt" section. Any future
 Task B field is additive-only, introduced in a later minor or major version
@@ -444,7 +504,9 @@ synthetic and contains no employer, medical, credential, or production
 content, and correlates to the attested, natural-completion termination
 declaration example in `docs/contracts/termination-declaration.md`, paired
 with a trace whose terminal event `evt-2` has canonical rank `1`, and a
-single obligation `obl-1` whose sole signal at `evt-2` is `satisfied`:
+single obligation `obl-1` whose sole signal at `evt-2` is `satisfied`. The
+`declarationSource` object is copied by value from that declaration,
+preserving its nested order:
 
 ```json
 {
@@ -453,6 +515,12 @@ single obligation `obl-1` whose sole signal at `evt-2` is `satisfied`:
   "algorithm": { "name": "progresstrace-stop-assessor", "version": "1.0.0" },
   "terminationEventId": "evt-2",
   "terminationKind": "natural-completion",
+  "declarationSource": {
+    "producerType": "harness",
+    "producerName": "example-harness",
+    "producerVersion": "2.3.0",
+    "evidenceBasis": "harness-lifecycle"
+  },
   "terminationAttested": true,
   "terminationRank": 1,
   "obligationResults": [
