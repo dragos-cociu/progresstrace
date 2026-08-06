@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ProgressTrace.Core.Diagnostics;
+using ProgressTrace.Core.Assessment;
 using ProgressTrace.Core.Evaluation;
 using ProgressTrace.Core.Normalization;
 using ProgressTrace.Core.Validation;
@@ -12,12 +13,16 @@ static async Task<int> RunAsync(string[] args)
     {
         return await EvaluateAsync(args[1], args[2]);
     }
+    if (args.Length == 4 && args[0] == "assess")
+    {
+        return await AssessAsync(args[1], args[2], args[3]);
+    }
     if (args.Length != 2 || args[0] is not ("validate" or "normalize"))
     {
         WriteJson(Console.Error, new
         {
             error = "usage",
-            message = "Usage: progresstrace <validate|normalize> <path> | progresstrace evaluate <trace-path> <ledger-path>"
+            message = "Usage: progresstrace <validate|normalize> <path> | progresstrace evaluate <trace-path> <ledger-path> | progresstrace assess <trace-path> <ledger-path> <termination-declaration-path>"
         });
         return 2;
     }
@@ -42,6 +47,37 @@ static async Task<int> RunAsync(string[] args)
     {
         await Console.OpenStandardOutput().WriteAsync(TraceNormalizer.Normalize(result.Envelope!));
     }
+    return 0;
+}
+
+static async Task<int> AssessAsync(string tracePath, string ledgerPath, string declarationPath)
+{
+    var traceInput = await ReadAsync(tracePath, "trace");
+    if (traceInput.ExitCode is { } traceExit) return traceExit;
+    var traceResult = TraceValidator.ParseAndValidate(traceInput.Bytes!);
+    if (!traceResult.IsValid)
+    {
+        WriteJson(Console.Out, new { valid = false, document = "trace", diagnostics = traceResult.Diagnostics });
+        return traceResult.Diagnostics.Any(d => d.Code is DiagnosticCodes.InvalidJson or DiagnosticCodes.InputTooLarge) ? 2 : 1;
+    }
+    var ledgerInput = await ReadAsync(ledgerPath, "ledger");
+    if (ledgerInput.ExitCode is { } ledgerExit) return ledgerExit;
+    var ledgerResult = ObligationLedgerValidator.ParseAndValidate(ledgerInput.Bytes!, traceResult.Envelope!);
+    if (!ledgerResult.IsValid)
+    {
+        WriteJson(Console.Out, new { valid = false, document = "ledger", diagnostics = ledgerResult.Diagnostics });
+        return ledgerResult.Diagnostics.Any(d => d.Code is DiagnosticCodes.InvalidJson or DiagnosticCodes.InputTooLarge) ? 2 : 1;
+    }
+    var declarationInput = await ReadAsync(declarationPath, "declaration");
+    if (declarationInput.ExitCode is { } declarationExit) return declarationExit;
+    var declarationResult = TerminationDeclarationValidator.ParseAndValidate(declarationInput.Bytes!, traceResult.Envelope!);
+    if (!declarationResult.IsValid)
+    {
+        WriteJson(Console.Out, new { valid = false, document = "declaration", diagnostics = declarationResult.Diagnostics });
+        return declarationResult.Diagnostics.Any(d => d.Code is DiagnosticCodes.InvalidJson or DiagnosticCodes.InputTooLarge) ? 2 : 1;
+    }
+    var result = StopAssessor.Assess(traceResult.Envelope!, ledgerResult.Ledger!, declarationResult.Declaration!);
+    await Console.OpenStandardOutput().WriteAsync(StopAssessmentResultNormalizer.Normalize(result));
     return 0;
 }
 

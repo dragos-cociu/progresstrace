@@ -56,3 +56,13 @@ jobs:
 
       - name: Verify formatting
         run: dotnet format ProgressTrace.slnx --verify-no-changes --no-restore --verbosity minimal
+
+      - name: Assess termination fixtures
+        run: |
+          dotnet run --no-build --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj --configuration Release -- assess fixtures/valid/multi-event-trace.json fixtures/termination/ledgers/valid/on-target-ledger.json fixtures/termination/valid/on-target-declaration.json
+          dotnet run --no-build --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj --configuration Release -- assess fixtures/termination/traces/valid/non-contiguous-sequence-trace.json fixtures/termination/ledgers/valid/all-stable-rollup-ledger.json fixtures/termination/valid/all-stable-rollup-declaration.json
+
+      - name: Validate Phase 2a schema JSON
+        run: |
+          python3 -m json.tool contracts/termination-declaration.schema.json > /dev/null
+          python3 -m json.tool contracts/stop-assessment-result.schema.json > /dev/null

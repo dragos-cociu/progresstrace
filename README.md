@@ -16,9 +16,9 @@ The primary initial users are builders of early agent workflows that do not yet 
 
 ## Current phase
 
-**Phase 2a: Stop assessment (architecture documented; product implementation pending)**
+**Phase 2a Task A: Stop assessment implemented**
 
-Phase 0 and Phase 1 are implemented and integrated: a versioned trace envelope, deterministic validation and normalization, obligation-ledger validation, and evaluation-result output, all via a local .NET 10 CLI. Phase 2a's architecture and contracts are documented by ADR-0003 and its paired contract documents: a versioned termination declaration and a deterministic stop-assessment result, computed from the existing trace and obligation-ledger contracts, plus a fourth CLI verb, `assess <trace-path> <ledger-path> <termination-declaration-path>`. Architecture-document integration and product-code completion are distinct: the Phase 2a product implementation is pending and Phase 2a is not complete until that implementation lands. Phase 2 overall also includes Task B (baseline comparison and false-halt cost), which has only a decision-level boundary here; its exact contract architecture remains unauthored pending a further ADR-0004. Phase 2 is not complete until both tasks ship or Dragos explicitly amends the product claim.
+Phase 0, Phase 1, and Phase 2a Task A are implemented: the local .NET 10 CLI validates and normalizes trace envelopes, evaluates obligation ledgers, validates termination declarations, and emits deterministic stop-assessment results through `assess <trace-path> <ledger-path> <termination-declaration-path>`. Phase 2 overall also includes Task B, whose architecture and implementation remain out of scope pending ADR-0004.
 
 ## Architectural direction
 
@@ -106,6 +106,16 @@ Evaluate a trace and obligation ledger to a canonical evaluation result:
 dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj \
   --configuration Release -- evaluate fixtures/valid/multi-event-trace.json \
   fixtures/obligations/valid/partial-progress-ledger.json
+```
+
+Assess a trace, obligation ledger, and termination declaration to a canonical
+stop-assessment result:
+
+```sh
+dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj \
+  --configuration Release -- assess fixtures/valid/multi-event-trace.json \
+  fixtures/termination/ledgers/valid/on-target-ledger.json \
+  fixtures/termination/valid/on-target-declaration.json
 ```
 
 Run the conformance executable:

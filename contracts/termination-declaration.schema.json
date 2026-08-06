@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.progresstrace.dev/termination-declaration/1.0.0",
+  "title": "ProgressTrace termination declaration",
+  "type": "object",
+  "required": ["schemaVersion", "traceId", "terminationEventId", "terminationKind", "declarationSource"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "traceId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "terminationEventId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "terminationKind": {
+      "type": "string",
+      "enum": ["agent-self-reported-stop", "harness-declared-stop", "natural-completion", "external-cancellation", "timeout", "crash-or-error", "capture-truncated", "unknown"]
+    },
+    "declarationSource": {
+      "type": "object",
+      "required": ["producerType", "producerName", "producerVersion", "evidenceBasis"],
+      "properties": {
+        "producerType": { "type": "string", "enum": ["agent", "harness", "operator", "adapter"] },
+        "producerName": { "type": "string", "minLength": 1, "pattern": "\\S" },
+        "producerVersion": { "type": ["string", "null"], "minLength": 1, "pattern": "\\S" },
+        "evidenceBasis": { "type": "string", "enum": ["agent-output", "harness-lifecycle", "operator-annotation", "adapter-inference"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

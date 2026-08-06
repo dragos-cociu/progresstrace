@@ -20,4 +20,8 @@ public static class DiagnosticCodes
     public const string DanglingObligationId = "PT202";
     public const string DanglingEventId = "PT203";
     public const string AbandonedTerminal = "PT204";
+    public const string DanglingTerminationEventId = "PT300";
+    public const string NonTerminalTerminationEventId = "PT301";
+    public const string DeclarationTraceIdMismatch = "PT302";
+    public const string DeclarationSourceCoherence = "PT303";
 }
