@@ -24,4 +24,9 @@ public static class DiagnosticCodes
     public const string NonTerminalTerminationEventId = "PT301";
     public const string DeclarationTraceIdMismatch = "PT302";
     public const string DeclarationSourceCoherence = "PT303";
+    public const string DuplicateBaselineObligationId = "PT400";
+    public const string BaselineTraceIdMismatch = "PT401";
+    public const string DanglingBaselineObligationId = "PT402";
+    public const string MissingBaselineObligationCoverage = "PT403";
+    public const string BaselineSourceCoherence = "PT404";
 }

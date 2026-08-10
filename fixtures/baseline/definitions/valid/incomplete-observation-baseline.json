@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0","traceId":"synthetic-multi-event","baselineSource":{"producerType":"harness","producerName":"example-harness","producerVersion":"2.3.0","evidenceBasis":"harness-policy"},"obligationBudgets":[{"obligationId":"obl-a","eventBudget":5},{"obligationId":"obl-b","eventBudget":5}]}

@@ -6,7 +6,7 @@ static class SchemaConformance
     private static readonly HashSet<string> Supported = new(StringComparer.Ordinal)
     {
         "$schema", "$id", "title", "$defs", "$ref", "type", "required", "properties",
-        "additionalProperties", "items", "minItems", "minLength", "pattern", "const", "enum"
+        "additionalProperties", "items", "minItems", "minLength", "minimum", "maximum", "pattern", "const", "enum"
     };
 
     public static bool Validate(byte[] instanceBytes, byte[] schemaBytes, out string error)
@@ -69,6 +69,13 @@ static class SchemaConformance
                 return Fail(pointer, "minLength", out error);
             if (schema.TryGetProperty("pattern", out var pattern) && !Regex.IsMatch(text, pattern.GetString()!, RegexOptions.CultureInvariant))
                 return Fail(pointer, "pattern", out error);
+        }
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetDecimal(out var number))
+        {
+            if (schema.TryGetProperty("minimum", out var minimum) && number < minimum.GetDecimal())
+                return Fail(pointer, "minimum", out error);
+            if (schema.TryGetProperty("maximum", out var maximum) && number > maximum.GetDecimal())
+                return Fail(pointer, "maximum", out error);
         }
         if (value.ValueKind == JsonValueKind.Array)
         {

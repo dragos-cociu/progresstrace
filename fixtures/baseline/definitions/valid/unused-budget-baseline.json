@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0","traceId":"synthetic-multi-event","baselineSource":{"producerType":"agent","producerName":"example-agent","producerVersion":"1.0.0","evidenceBasis":"agent-estimate"},"obligationBudgets":[{"obligationId":"obl-a","eventBudget":10},{"obligationId":"obl-b","eventBudget":5}]}

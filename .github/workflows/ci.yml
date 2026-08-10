@@ -66,3 +66,14 @@ jobs:
         run: |
           python3 -m json.tool contracts/termination-declaration.schema.json > /dev/null
           python3 -m json.tool contracts/stop-assessment-result.schema.json > /dev/null
+
+      - name: Compare baseline fixtures
+        run: |
+          dotnet run --no-build --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj --configuration Release -- compare fixtures/valid/multi-event-trace.json fixtures/termination/ledgers/valid/mixed-rollup-ledger.json fixtures/termination/valid/mixed-rollup-declaration.json fixtures/baseline/definitions/valid/unused-budget-baseline.json
+          dotnet run --no-build --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj --configuration Release -- compare fixtures/valid/multi-event-trace.json fixtures/termination/ledgers/valid/mixed-rollup-ledger.json fixtures/termination/valid/mixed-rollup-declaration.json fixtures/baseline/definitions/valid/budget-exhausted-baseline.json
+          dotnet run --no-build --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj --configuration Release -- compare fixtures/termination/traces/valid/non-contiguous-sequence-trace.json fixtures/termination/ledgers/valid/dual-unmet-ledger.json fixtures/termination/valid/dual-unmet-declaration.json fixtures/baseline/definitions/valid/dual-unused-budget-baseline.json
+
+      - name: Validate Phase 2b schema JSON
+        run: |
+          python3 -m json.tool contracts/baseline-definition.schema.json > /dev/null
+          python3 -m json.tool contracts/baseline-comparison-result.schema.json > /dev/null

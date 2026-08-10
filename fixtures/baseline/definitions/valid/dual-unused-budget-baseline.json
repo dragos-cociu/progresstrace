@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0","traceId":"synthetic-non-contiguous","baselineSource":{"producerType":"operator","producerName":"release-operator-role","producerVersion":null,"evidenceBasis":"historical-analysis"},"obligationBudgets":[{"obligationId":"obl-a","eventBudget":10},{"obligationId":"obl-b","eventBudget":7}]}
