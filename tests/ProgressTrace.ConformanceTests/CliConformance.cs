@@ -31,12 +31,17 @@ static class CliConformance
             var oversizedTrace = WriteOversized(temp, "oversized-trace.json");
             var oversizedLedger = WriteOversized(temp, "oversized-ledger.json");
             var oversizedDeclaration = WriteOversized(temp, "oversized-declaration.json");
+            var malformedBaseline = Write(temp, "malformed-baseline.json", Encoding.UTF8.GetBytes("{\"producerName\":\"SYNTHETIC_UNTRUSTED_MARKER\""));
+            var oversizedBaseline = WriteOversized(temp, "oversized-baseline.json");
+            var missingBaseline = Path.Combine(temp, marker + "-missing-baseline.json");
             var boundary = Write(temp, "boundary.json", new byte[TraceValidator.MaximumInputSizeBytes]);
             var validTrace = Path.Combine(root, "fixtures", "valid", "multi-event-trace.json");
             var validLedger = Path.Combine(root, "fixtures", "obligations", "valid", "partial-progress-ledger.json");
             var invalidLedger = Path.Combine(root, "fixtures", "obligations", "invalid", "mismatched-trace-id.PT201.json");
             var assessLedger = Path.Combine(root, "fixtures", "termination", "ledgers", "valid", "on-target-ledger.json");
             var validDeclaration = Path.Combine(root, "fixtures", "termination", "valid", "on-target-declaration.json");
+            var validBaseline = Path.Combine(root, "fixtures", "baseline", "definitions", "valid", "stable-attainment-baseline.json");
+            var invalidBaseline = Path.Combine(root, "fixtures", "baseline", "definitions", "invalid", "trace-id-mismatch.PT401.json");
 
             Check("bad usage", Run(cli), 2, stdout: false, stderr: true, failures, marker);
             Check("unreadable trace", Run(cli, "evaluate", missingTrace, missingLedger), 2, false, true, failures, marker);
@@ -67,6 +72,31 @@ static class CliConformance
             var assessGolden = File.ReadAllText(Path.Combine(root, "fixtures", "termination", "golden", "on-target-declaration.json"));
             if (assessSuccess.Stdout != assessGolden + (assessGolden.EndsWith('\n') ? "" : "\n"))
                 failures.Add("cli assess valid triple: stdout did not equal the canonical golden result");
+
+            const string usageMessage = "Usage: progresstrace <validate|normalize> <path> | progresstrace evaluate <trace-path> <ledger-path> | progresstrace assess <trace-path> <ledger-path> <termination-declaration-path> | progresstrace compare <trace-path> <ledger-path> <termination-declaration-path> <baseline-definition-path>";
+            var usage = JsonSerializer.Serialize(new { error = "usage", message = usageMessage });
+            var compareUsage = Run(cli, "compare", validTrace, assessLedger, validDeclaration);
+            Check("compare bad usage", compareUsage, 2, false, true, failures, marker);
+            if (compareUsage.Stderr != usage + Environment.NewLine)
+                failures.Add("cli compare bad usage: stderr did not equal the exact usage contract");
+
+            // Each failure is paired with unreadable marker-bearing later paths. If ordering regresses,
+            // the resulting input error (or marker echo) makes the asserted earlier response fail.
+            CheckInputError("compare unreadable trace precedence", Run(cli, "compare", missingTrace, missingLedger, missingDeclaration, missingBaseline), "trace", failures, marker);
+            CheckDiagnostic("compare malformed trace precedence", Run(cli, "compare", malformedTrace, missingLedger, missingDeclaration, missingBaseline), 2, "trace", "PT000", failures, marker);
+            CheckDiagnostic("compare invalid ledger precedence", Run(cli, "compare", validTrace, invalidLedger, missingDeclaration, missingBaseline), 1, "ledger", "PT201", failures, marker);
+            CheckDiagnostic("compare invalid declaration precedence", Run(cli, "compare", validTrace, assessLedger, malformedDeclaration, missingBaseline), 2, "declaration", "PT000", failures, marker);
+
+            CheckDiagnostic("compare malformed baseline", Run(cli, "compare", validTrace, assessLedger, validDeclaration, malformedBaseline), 2, "baseline", "PT000", failures, marker);
+            CheckDiagnostic("compare oversized baseline", Run(cli, "compare", validTrace, assessLedger, validDeclaration, oversizedBaseline), 2, "baseline", "PT005", failures, marker);
+            CheckInputError("compare unreadable baseline", Run(cli, "compare", validTrace, assessLedger, validDeclaration, missingBaseline), "baseline", failures, marker);
+            CheckDiagnostic("compare semantic baseline", Run(cli, "compare", validTrace, assessLedger, validDeclaration, invalidBaseline), 1, "baseline", "PT401", failures, marker);
+
+            var compareSuccess = Run(cli, "compare", validTrace, assessLedger, validDeclaration, validBaseline);
+            Check("compare valid quartet", compareSuccess, 0, true, false, failures, marker);
+            var compareGolden = File.ReadAllText(Path.Combine(root, "fixtures", "baseline", "golden", "stable-attainment-baseline.json"));
+            if (compareSuccess.Stdout != compareGolden + (compareGolden.EndsWith('\n') ? "" : "\n"))
+                failures.Add("cli compare valid quartet: stdout did not equal the canonical Phase 2b golden result");
         }
         finally
         {
@@ -125,6 +155,41 @@ static class CliConformance
         catch (Exception exception) when (exception is JsonException or InvalidOperationException or KeyNotFoundException)
         {
             failures.Add($"cli {name}: stdout was not a diagnostic response");
+        }
+    }
+
+    private static void CheckDiagnostic(string name, Result result, int exit, string expectedDocument, string code, List<string> failures, string marker)
+    {
+        Check(name, result, exit, true, false, failures, marker);
+        try
+        {
+            using var response = JsonDocument.Parse(result.Stdout);
+            var root = response.RootElement;
+            var diagnostics = root.GetProperty("diagnostics");
+            if (root.GetProperty("document").GetString() != expectedDocument)
+                failures.Add($"cli {name}: expected document={expectedDocument}");
+            if (diagnostics.GetArrayLength() != 1 || diagnostics[0].GetProperty("code").GetString() != code)
+                failures.Add($"cli {name}: expected only {code}");
+        }
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException or KeyNotFoundException)
+        {
+            failures.Add($"cli {name}: stdout was not a diagnostic response");
+        }
+    }
+
+    private static void CheckInputError(string name, Result result, string expectedDocument, List<string> failures, string marker)
+    {
+        Check(name, result, 2, false, true, failures, marker);
+        try
+        {
+            using var response = JsonDocument.Parse(result.Stderr);
+            var root = response.RootElement;
+            if (root.GetProperty("error").GetString() != "input" || root.GetProperty("document").GetString() != expectedDocument)
+                failures.Add($"cli {name}: expected input error for document={expectedDocument}");
+        }
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException or KeyNotFoundException)
+        {
+            failures.Add($"cli {name}: stderr was not an input error response");
         }
     }
 

@@ -47,6 +47,7 @@ AssertUnknownPropertyPointerEscaping(failures);
 AssertObligationFixtures(repositoryRoot, failures);
 AssertLedgerStructuralBranches(repositoryRoot, failures);
 AssessmentConformance.Assert(repositoryRoot, failures);
+BaselineComparisonConformance.Assert(repositoryRoot, failures);
 CliConformance.Assert(repositoryRoot, failures);
 
 if (failures.Count == 0)
@@ -55,7 +56,9 @@ if (failures.Count == 0)
     var phase1Invalid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "obligations", "invalid"), "*.json").Count();
     var phase2Valid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "termination", "valid"), "*.json").Count();
     var phase2Invalid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "termination", "invalid"), "*.json").Count();
-    Console.WriteLine($"PASS: Phase 0 {Directory.EnumerateFiles(validDirectory, "*.json").Count()} valid/{Directory.EnumerateFiles(invalidDirectory, "*.json").Count()} invalid; Phase 1 {phase1Valid} valid/{phase1Invalid} invalid; Phase 2a {phase2Valid} valid/{phase2Invalid} invalid fixtures.");
+    var phase2bValid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "baseline", "definitions", "valid"), "*.json").Count();
+    var phase2bInvalid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "baseline", "definitions", "invalid"), "*.json").Count();
+    Console.WriteLine($"PASS: Phase 0 {Directory.EnumerateFiles(validDirectory, "*.json").Count()} valid/{Directory.EnumerateFiles(invalidDirectory, "*.json").Count()} invalid; Phase 1 {phase1Valid} valid/{phase1Invalid} invalid; Phase 2a {phase2Valid} valid/{phase2Invalid} invalid; Phase 2b {phase2bValid} valid/{phase2bInvalid} invalid fixtures.");
     return 0;
 }
 

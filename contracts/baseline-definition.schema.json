@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.progresstrace.dev/baseline-definition/1.0.0",
+  "title": "ProgressTrace baseline definition",
+  "type": "object",
+  "required": ["schemaVersion", "traceId", "baselineSource", "obligationBudgets"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "traceId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "baselineSource": { "$ref": "#/$defs/baselineSource" },
+    "obligationBudgets": { "type": "array", "items": { "$ref": "#/$defs/obligationBudget" } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "baselineSource": {
+      "type": "object", "required": ["producerType", "producerName", "producerVersion", "evidenceBasis"],
+      "properties": {
+        "producerType": { "type": "string", "enum": ["agent", "harness", "operator", "adapter"] },
+        "producerName": { "type": "string", "minLength": 1, "pattern": "\\S" },
+        "producerVersion": { "type": ["string", "null"], "minLength": 1, "pattern": "\\S" },
+        "evidenceBasis": { "type": "string", "enum": ["agent-estimate", "harness-policy", "operator-estimate", "historical-analysis", "adapter-inference"] }
+      }, "additionalProperties": false
+    },
+    "obligationBudget": {
+      "type": "object", "required": ["obligationId", "eventBudget"],
+      "properties": {
+        "obligationId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+        "eventBudget": { "type": "integer", "minimum": 1, "maximum": 2147483647 }
+      }, "additionalProperties": false
+    }
+  }
+}

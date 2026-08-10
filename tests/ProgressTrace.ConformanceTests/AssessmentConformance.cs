@@ -15,12 +15,13 @@ static class AssessmentConformance
         var resultSchema = File.ReadAllBytes(Path.Combine(root, "contracts", "stop-assessment-result.schema.json"));
         var multiTrace = TraceValidator.ParseAndValidate(File.ReadAllBytes(Path.Combine(root, "fixtures", "valid", "multi-event-trace.json"))).Envelope!;
         var nonContiguousTrace = TraceValidator.ParseAndValidate(File.ReadAllBytes(Path.Combine(termination, "traces", "valid", "non-contiguous-sequence-trace.json"))).Envelope!;
-        var expectedValid = new HashSet<string>(StringComparer.Ordinal)
+        var expectedAssessment = new HashSet<string>(StringComparer.Ordinal)
         {
             "all-stable-rollup-declaration.json", "capture-truncated-declaration.json", "late-termination-declaration.json",
             "mixed-rollup-declaration.json", "on-target-declaration.json", "regression-no-recovery-declaration.json",
             "regression-then-recovery-declaration.json", "unknown-declaration.json", "zero-signal-declaration.json"
         };
+        var expectedValid = new HashSet<string>(expectedAssessment, StringComparer.Ordinal) { "dual-unmet-declaration.json" };
         var expectedInvalid = new HashSet<string>(StringComparer.Ordinal)
         {
             "malformed-json.PT000.json","unsupported-version.PT100.json","missing-termination-event-id.PT001.json",
@@ -36,12 +37,12 @@ static class AssessmentConformance
             "coherence-adapter-inference-producer.PT303.json"
         };
         AssertSet(validDirectory, expectedValid, failures);
-        AssertSet(goldenDirectory, expectedValid, failures);
+        AssertSet(goldenDirectory, expectedAssessment, failures);
         AssertSet(invalidDirectory, expectedInvalid, failures);
 
         var producerTypes = new HashSet<string>(StringComparer.Ordinal);
         var evidenceBases = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var name in expectedValid.Order(StringComparer.Ordinal))
+        foreach (var name in expectedAssessment.Order(StringComparer.Ordinal))
         {
             var trace = name is "on-target-declaration.json" or "capture-truncated-declaration.json" or
                 "unknown-declaration.json" or "zero-signal-declaration.json" or "mixed-rollup-declaration.json"

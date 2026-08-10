@@ -16,9 +16,9 @@ The primary initial users are builders of early agent workflows that do not yet 
 
 ## Current phase
 
-**Phase 2a Task A: Stop assessment implemented. Phase 2b Task B: contract architecture independently reviewed, accepted, and integrated through ADR-0004; implementation not authorized.**
+**Phase 2a Task A: Stop assessment implemented. Phase 2b Task B: baseline comparison implemented.**
 
-Phase 0, Phase 1, and Phase 2a Task A are implemented: the local .NET 10 CLI validates and normalizes trace envelopes, evaluates obligation ledgers, validates termination declarations, and emits deterministic stop-assessment results through `assess <trace-path> <ledger-path> <termination-declaration-path>`. Phase 2 overall also includes Task B, baseline comparison against an externally authored counterfactual event budget. ADR-0004 fixes Task B's exact contract architecture — `BaselineDefinition`, `BaselineComparisonResult`, a future `compare` CLI verb, and a `PT4xx` diagnostic block — and its independent architecture review and integration are complete, but the ADR authorizes no implementation; Task B implementation remains out of scope pending a separate, Dragos-approved task contract and explicit implementation authorization.
+Phase 0, Phase 1, Phase 2a Task A, and Phase 2b Task B are implemented. The local .NET 10 CLI validates and normalizes trace envelopes, evaluates obligation ledgers, assesses termination, and compares an externally authored counterfactual event budget through the deterministic `compare` verb.
 
 ## Architectural direction
 
@@ -88,16 +88,20 @@ stopped run's own counterfactual future — and a new
 that recomputes Task A's stop-assessment context internally (never from a
 precomputed file) and compares each unmet obligation's observed event count
 against its authored budget, classified into a closed `applicability`
-enum. A future `compare <trace-path> <ledger-path>
+enum. The `compare <trace-path> <ledger-path>
 <termination-declaration-path> <baseline-definition-path>` CLI verb and a
-fresh `PT4xx` diagnostic block (`PT400`-`PT404`) are fixed but not
-implemented. This is architecture and contract documentation only: no
-schema, code, fixture, or task contract for Task B implementation exists
-yet, and none is authorized until a separate, Dragos-approved task contract
-is authored and implementation is explicitly authorized. See
+fresh `PT4xx` diagnostic block (`PT400`-`PT404`) are implemented. See
 `docs/architecture/ADR-0004-baseline-comparison-and-authored-estimate.md`,
 `docs/contracts/baseline-definition.md`, and
 `docs/contracts/baseline-comparison-result.md`.
+
+### Phase 2b usage
+
+Compare a validated trace, ledger, termination declaration, and baseline definition:
+
+```sh
+dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj --configuration Release -- compare fixtures/valid/multi-event-trace.json fixtures/termination/ledgers/valid/mixed-rollup-ledger.json fixtures/termination/valid/mixed-rollup-declaration.json fixtures/baseline/definitions/valid/unused-budget-baseline.json
+```
 
 ## Phase 0 usage
 

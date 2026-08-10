@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://schemas.progresstrace.dev/baseline-comparison-result/1.0.0", "title": "ProgressTrace baseline comparison result",
+  "type": "object",
+  "required": ["schemaVersion", "traceId", "algorithm", "baselineSource", "terminationEventId", "terminationKind", "terminationAttested", "terminationRank", "observedEventCount", "obligationComparisons", "authoredEstimateFalseHaltPresent", "maxAuthoredEstimateUnusedEventBudget"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" }, "traceId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "algorithm": { "type": "object", "required": ["name", "version"], "properties": { "name": { "const": "progresstrace-baseline-comparator" }, "version": { "const": "1.0.0" } }, "additionalProperties": false },
+    "baselineSource": { "$ref": "#/$defs/baselineSource" },
+    "terminationEventId": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "terminationKind": { "type": "string", "enum": ["agent-self-reported-stop", "harness-declared-stop", "natural-completion", "external-cancellation", "timeout", "crash-or-error", "capture-truncated", "unknown"] },
+    "terminationAttested": { "type": "boolean" }, "terminationRank": { "type": "integer", "minimum": 0 }, "observedEventCount": { "type": "integer", "minimum": 1 },
+    "obligationComparisons": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/obligationComparison" } },
+    "authoredEstimateFalseHaltPresent": { "type": "boolean" }, "maxAuthoredEstimateUnusedEventBudget": { "type": ["integer", "null"], "minimum": 1 }
+  }, "additionalProperties": false,
+  "$defs": {
+    "baselineSource": { "type": "object", "required": ["producerType", "producerName", "producerVersion", "evidenceBasis"], "properties": { "producerType": { "type": "string", "enum": ["agent", "harness", "operator", "adapter"] }, "producerName": { "type": "string", "minLength": 1, "pattern": "\\S" }, "producerVersion": { "type": ["string", "null"], "minLength": 1, "pattern": "\\S" }, "evidenceBasis": { "type": "string", "enum": ["agent-estimate", "harness-policy", "operator-estimate", "historical-analysis", "adapter-inference"] } }, "additionalProperties": false },
+    "obligationComparison": { "type": "object", "required": ["obligationId", "outcome", "eventBudget", "applicability", "authoredEstimateUnusedEventBudget"], "properties": { "obligationId": { "type": "string", "minLength": 1, "pattern": "\\S" }, "outcome": { "type": "string", "enum": ["stable-attainment", "unmet-target-at-termination"] }, "eventBudget": { "type": "integer", "minimum": 1, "maximum": 2147483647 }, "applicability": { "type": "string", "enum": ["incomplete-observation", "not-applicable-stable-attainment", "unused-authored-budget", "budget-exhausted-exactly", "budget-exceeded"] }, "authoredEstimateUnusedEventBudget": { "type": ["integer", "null"], "minimum": 0 } }, "additionalProperties": false }
+  }
+}

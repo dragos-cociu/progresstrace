@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0","traceId":"synthetic-multi-event","baselineSource":{"producerType":"adapter","producerName":"example-otel-adapter","producerVersion":"0.9.1","evidenceBasis":"adapter-inference"},"obligationBudgets":[{"obligationId":"obl-a","eventBudget":10},{"obligationId":"obl-b","eventBudget":2}]}
