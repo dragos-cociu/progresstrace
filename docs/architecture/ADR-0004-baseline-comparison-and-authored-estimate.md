@@ -2,15 +2,15 @@
 
 ## Status
 
-Accepted for implementation planning — independent review approved;
-integration pending. The human decisions this document transcribes
+Accepted and integrated — independent review approved. The human decisions
+this document transcribes
 (`B1`-`B5`) and the scope of architecture-only materialization they authorize
 were discovered, itemized, and approved by Dragos through the
 external-audit-record process described in "Context" below, and that approval
 is not reopened by this document. The independent review required below has
 also completed with a clean approval against the immutable architecture
-candidate. This status authorizes neither Task B implementation nor its
-integration; both remain subject to the separate gates below.
+candidate. This status does not authorize Task B implementation; a separate
+task contract and explicit implementation approval remain mandatory.
 Extends ADR-0003's Task B follow-up gate by fixing the exact unit, formula,
 and interpretation that gate's first two conditions required, and records
 the third condition, independent review, as satisfied — see

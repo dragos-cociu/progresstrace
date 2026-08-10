@@ -16,9 +16,9 @@ The primary initial users are builders of early agent workflows that do not yet 
 
 ## Current phase
 
-**Phase 2a Task A: Stop assessment implemented. Phase 2b Task B: contract architecture independently reviewed and accepted for implementation planning in ADR-0004; integration pending and implementation not authorized.**
+**Phase 2a Task A: Stop assessment implemented. Phase 2b Task B: contract architecture independently reviewed, accepted, and integrated through ADR-0004; implementation not authorized.**
 
-Phase 0, Phase 1, and Phase 2a Task A are implemented: the local .NET 10 CLI validates and normalizes trace envelopes, evaluates obligation ledgers, validates termination declarations, and emits deterministic stop-assessment results through `assess <trace-path> <ledger-path> <termination-declaration-path>`. Phase 2 overall also includes Task B, baseline comparison against an externally authored counterfactual event budget. ADR-0004 fixes Task B's exact contract architecture — `BaselineDefinition`, `BaselineComparisonResult`, a future `compare` CLI verb, and a `PT4xx` diagnostic block — and its independent architecture review is approved, but integration remains pending and the ADR authorizes no implementation; Task B implementation remains out of scope pending a separate, Dragos-approved task contract and explicit implementation authorization.
+Phase 0, Phase 1, and Phase 2a Task A are implemented: the local .NET 10 CLI validates and normalizes trace envelopes, evaluates obligation ledgers, validates termination declarations, and emits deterministic stop-assessment results through `assess <trace-path> <ledger-path> <termination-declaration-path>`. Phase 2 overall also includes Task B, baseline comparison against an externally authored counterfactual event budget. ADR-0004 fixes Task B's exact contract architecture — `BaselineDefinition`, `BaselineComparisonResult`, a future `compare` CLI verb, and a `PT4xx` diagnostic block — and its independent architecture review and integration are complete, but the ADR authorizes no implementation; Task B implementation remains out of scope pending a separate, Dragos-approved task contract and explicit implementation authorization.
 
 ## Architectural direction
 
@@ -78,8 +78,7 @@ Task B ships or Dragos explicitly amends the product claim. See
 
 ## Phase 2b
 
-Phase 2b, via ADR-0004 (status: Accepted for implementation planning;
-integration pending),
+Phase 2b, via ADR-0004 (status: Accepted and integrated),
 fixes Task B's contract architecture: a new `BaselineDefinition`
 (`docs/contracts/baseline-definition.md`), an authored, per-obligation
 `eventBudget` — an externally authored counterfactual event-slot count,
