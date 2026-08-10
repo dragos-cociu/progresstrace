@@ -42,6 +42,15 @@ Task B begins only after a further ADR-0004 fixes the exact evidentiary
 model, unit, and formula for false-halt cost and that ADR is itself
 independently reviewed.
 
+Extended by ADR-0004 (baseline comparison and the authored-estimate evidence
+model), which fixes Task B's exact unit, formula, interpretation ceiling,
+`BaselineDefinition`/`BaselineComparisonResult` contract text, and `PT4xx`
+diagnostic allocation, and records the independent-review gate this
+document's "Task B follow-up gate" section required as still pending at the
+time ADR-0004 was authored. ADR-0004's status is Proposed, pending that
+independent review; it is not Accepted, and this paragraph does not assert
+otherwise. No other line of this document's decision is modified.
+
 ## Decision
 
 1. **Phase 2 decomposes into two composable, bounded tasks (`P2-D5`)**: Task

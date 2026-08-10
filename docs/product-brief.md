@@ -4,12 +4,14 @@
 
 ProgressTrace is designed as a 3–5 year product, not as a disposable MVP. The mature product may include trace contracts, ingestion adapters, a deterministic obligation-aware evaluation core, benchmark corpora, local/CI/batch execution, comparison and reporting, process-isolated plugins, and eventually hosted history or collaboration.
 
-Phase 0's contract/conformance foundation and Phase 1's obligation-aware
-evaluation are both implemented and integrated. Phase 2a stop assessment is
-defined at the architecture and contract level by ADR-0003 and its paired
-contract documents; architecture-document integration and product-code
-completion are distinct, and the Phase 2a product implementation is pending,
-so Phase 2a is not complete until that implementation lands. See the phase
+Phase 0's contract/conformance foundation, Phase 1's obligation-aware
+evaluation, and Phase 2a Task A's stop assessment are all implemented and
+integrated. Phase 2b (Task B, baseline comparison against an externally
+authored counterfactual event budget) has now been materialized at the
+architecture and contract level as a proposed draft, by ADR-0004 and its
+paired contract documents; ADR-0004's independent review is pending, and
+Task B implementation is not authorized, so the core product claim's
+false-halt-cost half below remains unmet until it lands. See the phase
 objectives below.
 
 ## Core product claim
