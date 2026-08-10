@@ -2,18 +2,18 @@
 
 ## Status
 
-Proposed — pending independent review; not Accepted. The human decisions
-this document transcribes (`B1`-`B5`) and the scope of architecture-only
-materialization they authorize were discovered, itemized, and approved by
-Dragos through the external-audit-record process described in "Context"
-below, and that approval is not reopened by this document. What remains
-outstanding is this ADR's own independent review (see "Independent-review
-gate" below), which has not yet occurred; until it does, this document's
-status is Proposed, not Accepted, and no Task B implementation is
-authorized by it, exactly as "Implementation gate" below already states.
+Accepted for implementation planning — independent review approved;
+integration pending. The human decisions this document transcribes
+(`B1`-`B5`) and the scope of architecture-only materialization they authorize
+were discovered, itemized, and approved by Dragos through the
+external-audit-record process described in "Context" below, and that approval
+is not reopened by this document. The independent review required below has
+also completed with a clean approval against the immutable architecture
+candidate. This status authorizes neither Task B implementation nor its
+integration; both remain subject to the separate gates below.
 Extends ADR-0003's Task B follow-up gate by fixing the exact unit, formula,
 and interpretation that gate's first two conditions required, and records
-the third condition, independent review, as still pending — see
+the third condition, independent review, as satisfied — see
 "Independent-review gate" below. Extends ADR-0002 and ADR-0001 transitively,
 through ADR-0003;
 no line of ADR-0001, ADR-0002, or ADR-0003 is modified in substance by this
@@ -609,17 +609,17 @@ contract text.
 reviewed under the same controller-verification and Antigravity Mode A
 strict read-only review pattern used for [ADR-0003's] own architecture
 review, before any implementation task contract for Task B is authored."
-This document fixes this ADR's contract text and satisfies that gate's
-first two conditions (the exact unit/formula and the exact interpretation
-ceiling); it does not, and cannot, self-certify the third condition. That
-independent Mode A review — a reviewer holding no repository, build, run,
-or write tool of any kind, never checking out a working copy, reviewing
-only this document and its two paired contract documents for structural and
-security soundness — is a required step that occurs after this document is
-authored, not before, and this document's Status section above records it
-as pending, not complete. No Task B implementation task contract may be
-authored until that review is recorded and Dragos has reviewed both this
-ADR and that review's verdict.
+This document fixes this ADR's contract text and satisfies that gate's first
+two conditions (the exact unit/formula and the exact interpretation ceiling).
+The third condition was subsequently satisfied by an independent stateless,
+tool-free review of immutable candidate commit
+`dfdc4b9a206bc231706fcc981cc8d811e96d49c8`. The controller validated the
+review packet and verdict identities; the verdict was `approve`, with no
+findings and no unverified assumptions. That review did not execute or claim
+to execute repository, build, run, network, or write tools. It therefore
+records completion of this architecture-review gate without authorizing
+implementation. A separate Dragos-approved Task B implementation contract
+and explicit implementation authorization remain mandatory.
 
 ## Falsification criteria
 

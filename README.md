@@ -16,9 +16,9 @@ The primary initial users are builders of early agent workflows that do not yet 
 
 ## Current phase
 
-**Phase 2a Task A: Stop assessment implemented. Phase 2b Task B: contract architecture materialized as a proposed draft in ADR-0004, pending independent review; implementation not authorized.**
+**Phase 2a Task A: Stop assessment implemented. Phase 2b Task B: contract architecture independently reviewed and accepted for implementation planning in ADR-0004; integration pending and implementation not authorized.**
 
-Phase 0, Phase 1, and Phase 2a Task A are implemented: the local .NET 10 CLI validates and normalizes trace envelopes, evaluates obligation ledgers, validates termination declarations, and emits deterministic stop-assessment results through `assess <trace-path> <ledger-path> <termination-declaration-path>`. Phase 2 overall also includes Task B, baseline comparison against an externally authored counterfactual event budget. ADR-0004 proposes Task B's exact contract architecture — `BaselineDefinition`, `BaselineComparisonResult`, a future `compare` CLI verb, and a `PT4xx` diagnostic block — but is itself Proposed, pending independent review, and authorizes no implementation; Task B implementation remains out of scope pending ADR-0004's independent-review gate and a separate, Dragos-approved task contract.
+Phase 0, Phase 1, and Phase 2a Task A are implemented: the local .NET 10 CLI validates and normalizes trace envelopes, evaluates obligation ledgers, validates termination declarations, and emits deterministic stop-assessment results through `assess <trace-path> <ledger-path> <termination-declaration-path>`. Phase 2 overall also includes Task B, baseline comparison against an externally authored counterfactual event budget. ADR-0004 fixes Task B's exact contract architecture — `BaselineDefinition`, `BaselineComparisonResult`, a future `compare` CLI verb, and a `PT4xx` diagnostic block — and its independent architecture review is approved, but integration remains pending and the ADR authorizes no implementation; Task B implementation remains out of scope pending a separate, Dragos-approved task contract and explicit implementation authorization.
 
 ## Architectural direction
 
@@ -68,8 +68,8 @@ ledger artifacts, never as a counterfactual claim. A fourth CLI
 verb, `assess <trace-path> <ledger-path> <termination-declaration-path>`,
 extends `validate`/`normalize`/`evaluate`'s exit-code contract unchanged.
 Phase 2 also includes Task B (baseline comparison and false-halt cost),
-whose contract architecture is now proposed by ADR-0004, pending
-independent review (see "Phase 2b" below); Phase 2 is not complete until
+whose contract architecture is now independently reviewed and accepted for
+implementation planning in ADR-0004 (see "Phase 2b" below); Phase 2 is not complete until
 Task B ships or Dragos explicitly amends the product claim. See
 `docs/architecture/ADR-0003-phase-2-architecture-and-stop-assessment.md`,
 `docs/contracts/termination-declaration.md`,
@@ -78,7 +78,8 @@ Task B ships or Dragos explicitly amends the product claim. See
 
 ## Phase 2b
 
-Phase 2b, via ADR-0004 (status: Proposed, pending independent review),
+Phase 2b, via ADR-0004 (status: Accepted for implementation planning;
+integration pending),
 fixes Task B's contract architecture: a new `BaselineDefinition`
 (`docs/contracts/baseline-definition.md`), an authored, per-obligation
 `eventBudget` — an externally authored counterfactual event-slot count,
@@ -93,8 +94,8 @@ enum. A future `compare <trace-path> <ledger-path>
 fresh `PT4xx` diagnostic block (`PT400`-`PT404`) are fixed but not
 implemented. This is architecture and contract documentation only: no
 schema, code, fixture, or task contract for Task B implementation exists
-yet, and none is authorized until ADR-0004's independent-review gate clears
-and a separate, Dragos-approved task contract is authored. See
+yet, and none is authorized until a separate, Dragos-approved task contract
+is authored and implementation is explicitly authorized. See
 `docs/architecture/ADR-0004-baseline-comparison-and-authored-estimate.md`,
 `docs/contracts/baseline-definition.md`, and
 `docs/contracts/baseline-comparison-result.md`.

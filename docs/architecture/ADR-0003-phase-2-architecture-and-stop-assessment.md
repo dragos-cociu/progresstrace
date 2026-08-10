@@ -46,10 +46,11 @@ Extended by ADR-0004 (baseline comparison and the authored-estimate evidence
 model), which fixes Task B's exact unit, formula, interpretation ceiling,
 `BaselineDefinition`/`BaselineComparisonResult` contract text, and `PT4xx`
 diagnostic allocation, and records the independent-review gate this
-document's "Task B follow-up gate" section required as still pending at the
-time ADR-0004 was authored. ADR-0004's status is Proposed, pending that
-independent review; it is not Accepted, and this paragraph does not assert
-otherwise. No other line of this document's decision is modified.
+document's "Task B follow-up gate" section required. That independent review
+subsequently approved the immutable architecture candidate with no findings
+or unverified assumptions. ADR-0004 is therefore Accepted for implementation
+planning, with integration and implementation still subject to their separate
+human gates. No other line of this document's decision is modified.
 
 ## Decision
 
