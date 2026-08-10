@@ -48,9 +48,9 @@ model), which fixes Task B's exact unit, formula, interpretation ceiling,
 diagnostic allocation, and records the independent-review gate this
 document's "Task B follow-up gate" section required. That independent review
 subsequently approved the immutable architecture candidate with no findings
-or unverified assumptions. ADR-0004 is therefore Accepted for implementation
-planning, with integration and implementation still subject to their separate
-human gates. No other line of this document's decision is modified.
+or unverified assumptions. ADR-0004 is therefore Accepted and integrated;
+implementation remains subject to its separate task-contract and human gates.
+No other line of this document's decision is modified.
 
 ## Decision
 
