@@ -11,6 +11,22 @@ is not complete and its contracts are not authored here: the exact unit,
 formula, and interpretation of false-halt magnitude remain unfixed until a
 future ADR-0004, per "Task B follow-up gate" below.
 
+Task B has since been fixed by ADR-0004, independently reviewed, separately
+authorized under its own task contract, and shipped and integrated on
+`main`, satisfying this document's "Task B follow-up gate" and Decision 1's
+completion condition. This integration status is recorded here, in
+`docs/architecture/ADR-0004-baseline-comparison-and-authored-estimate.md`'s
+own Status section, and in `docs/product-brief.md`/`README.md`; it does not
+rewrite the future-tense Decision, Context, or "Task B follow-up gate" text
+below, which is preserved as originally accepted.
+`docs/architecture/ADR-0005-external-review-and-clean-room-reproducibility.md`
+supersedes only this document's "Execution ownership" section's
+Antigravity-named review-execution mechanics (including its Mode A/Mode B
+distinction) with capability-role, provider-agnostic mechanics; it reopens
+none of this document's Decision, Normative boundaries, or "Why
+`unmet-target-at-termination` is not false halt" sections, which remain
+unchanged and in force exactly as accepted.
+
 ## Context
 
 Phase 1 stabilized the obligation ledger and evaluation-result contracts but

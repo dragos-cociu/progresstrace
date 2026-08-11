@@ -5,14 +5,18 @@
 ProgressTrace is designed as a 3–5 year product, not as a disposable MVP. The mature product may include trace contracts, ingestion adapters, a deterministic obligation-aware evaluation core, benchmark corpora, local/CI/batch execution, comparison and reporting, process-isolated plugins, and eventually hosted history or collaboration.
 
 Phase 0's contract/conformance foundation, Phase 1's obligation-aware
-evaluation, and Phase 2a Task A's stop assessment are all implemented and
-integrated. Phase 2b (Task B, baseline comparison against an externally
-authored counterfactual event budget) has now been materialized at the
-architecture and contract level as a proposed draft, by ADR-0004 and its
-paired contract documents; ADR-0004's independent review is pending, and
-Task B implementation is not authorized, so the core product claim's
-false-halt-cost half below remains unmet until it lands. See the phase
-objectives below.
+evaluation, Phase 2a Task A's stop assessment, and Phase 2b Task B's
+baseline comparison against an externally authored counterfactual event
+budget are all implemented and integrated. ADR-0004 fixed Task B's
+architecture and contracts, cleared its independent-review gate, and a
+separately authorized task contract shipped `BaselineDefinition`,
+`BaselineComparisonResult`, and the `compare` CLI verb. The core product
+claim below is therefore implemented in full, subject to ADR-0004's fixed
+interpretation ceiling: every `BaselineComparisonResult` value derived from
+an authored `eventBudget` is a counterfactual proxy against that authored
+budget, never an observed fact, a measurement, and never proof of the
+stopped run's own counterfactual future. See the phase objectives below and
+`docs/architecture/ADR-0004-baseline-comparison-and-authored-estimate.md`.
 
 ## Core product claim
 
@@ -22,7 +26,7 @@ ProgressTrace analyzes the outputs and evidence that agents and their environmen
 
 ## Target users and dogfooding
 
-The primary initial users are builders of early agent workflows that do not yet have a mature harness; for them an operator or a thin adapter authors the input artifacts by hand or from simple logs. Mature systems may instead integrate through adapters, independent audit, or conformance, and ProgressTrace does not presume to replace their existing harnesses. ProgressTrace's own Claude/Codex/Hermes/Antigravity development workflow is the first planned reference corpus and adapter source — agent text stays arbitrary, task contracts supply obligations, and controller/tool/build/test/CI/verifier/human-gate events supply evidence — but that adapter is planned, not implemented, is not an industry standard, and is not claimed to exist yet. Hosted history, UI, collaboration, and persistent storage remain optional and out of current scope.
+The primary initial users are builders of early agent workflows that do not yet have a mature harness; for them an operator or a thin adapter authors the input artifacts by hand or from simple logs. Mature systems may instead integrate through adapters, independent audit, or conformance, and ProgressTrace does not presume to replace their existing harnesses. ProgressTrace's own Claude/Codex/controller/external-reviewer development workflow (see `docs/architecture/ADR-0005-external-review-and-clean-room-reproducibility.md` for the current, provider-agnostic role definitions) is the first planned reference corpus and adapter source — agent text stays arbitrary, task contracts supply obligations, and controller/tool/build/test/CI/verifier/human-gate events supply evidence — but that adapter is planned, not implemented, is not an industry standard, and is not claimed to exist yet. Hosted history, UI, collaboration, and persistent storage remain optional and out of current scope.
 
 ## Stable early
 

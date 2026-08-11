@@ -22,6 +22,24 @@ document, beyond the single Status-linkage paragraph
 appends noting this extension, mirroring the append-only precedent ADR-0002
 and ADR-0003 each already established for their own predecessor.
 
+Task B implementation was subsequently authorized under a separate task
+contract, `tasks/phase-2b-baseline-comparison.json`, and has since shipped
+and integrated on `main`: `contracts/baseline-definition.schema.json`,
+`contracts/baseline-comparison-result.schema.json`, the `compare` CLI verb,
+and the `fixtures/baseline/**` subtree all exist and pass conformance. The
+"This status does not authorize Task B implementation" sentence above
+reflects this document's own scope at authoring time and is superseded, on
+that narrow implementation-authorization point only, by that later,
+separately recorded authorization; it is not rewritten here, and every unit,
+formula, interpretation ceiling, and other contract or product semantic
+fixed below remains unchanged and in force exactly as accepted.
+`docs/architecture/ADR-0005-external-review-and-clean-room-reproducibility.md`
+supersedes only this document's and ADR-0003's Antigravity-named
+review-execution mechanics referenced in "Execution ownership" and the
+"Independent-review gate" below, with capability-role, provider-agnostic
+mechanics; it reopens none of this document's Decision, Claim taxonomy, or
+Normative boundaries sections.
+
 ## Context
 
 `docs/architecture/ADR-0003-phase-2-architecture-and-stop-assessment.md`

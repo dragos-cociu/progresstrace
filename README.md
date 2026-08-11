@@ -32,7 +32,10 @@ Phase 0, Phase 1, Phase 2a Task A, and Phase 2b Task B are implemented. The loca
 - deterministic checks outrank model verdicts;
 - no automatic merge or publication.
 
-See `docs/product-brief.md` and `docs/architecture/ADR-0001-contract-first-modular-monolith.md`.
+See `docs/product-brief.md`, `docs/architecture/ADR-0001-contract-first-modular-monolith.md`,
+and `docs/architecture/ADR-0005-external-review-and-clean-room-reproducibility.md` for the
+current deterministic-verifier/external-reviewer roles and clean-room reproduction policy
+behind the last two points above.
 
 ## Phase 1
 
@@ -68,9 +71,10 @@ ledger artifacts, never as a counterfactual claim. A fourth CLI
 verb, `assess <trace-path> <ledger-path> <termination-declaration-path>`,
 extends `validate`/`normalize`/`evaluate`'s exit-code contract unchanged.
 Phase 2 also includes Task B (baseline comparison and false-halt cost),
-whose contract architecture is now independently reviewed and accepted for
-implementation planning in ADR-0004 (see "Phase 2b" below); Phase 2 is not complete until
-Task B ships or Dragos explicitly amends the product claim. See
+whose contract architecture was independently reviewed and accepted for
+implementation planning in ADR-0004, and which has since been implemented
+and integrated as Phase 2b (see "Phase 2b" below); Phase 2 is complete
+under that ADR's authored-estimate interpretation ceiling. See
 `docs/architecture/ADR-0003-phase-2-architecture-and-stop-assessment.md`,
 `docs/contracts/termination-declaration.md`,
 `docs/contracts/stop-assessment-result.md`, and
