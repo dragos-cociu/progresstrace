@@ -9,6 +9,14 @@ text.
 Extended by ADR-0003 (Phase 2 architecture and stop-assessment contracts) for
 Phase 2a; no other line of this decision is modified.
 
+`docs/architecture/ADR-0005-external-review-and-clean-room-reproducibility.md`
+supersedes only this document's "Execution ownership" section's
+Antigravity-named review-execution mechanics below with capability-role,
+provider-agnostic mechanics; it defines no new obligation-ledger or
+evaluation-result product semantics and does not reopen this document's
+Decision, Normative boundaries, or Consequences sections, which remain
+unchanged and in force exactly as accepted.
+
 ## Context
 
 Phase 0 stabilized the trace-envelope contract and a deterministic
