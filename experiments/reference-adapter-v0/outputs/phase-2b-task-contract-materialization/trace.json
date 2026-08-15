@@ -1,0 +1,63 @@
+{
+  "createdAt": "2026-01-01T00:00:00Z",
+  "events": [
+    {
+      "actor": "system",
+      "id": "event-001",
+      "payload": {
+        "annotationKind": "operator-authored-projection",
+        "label": "materialization in progress",
+        "observedMetadata": {
+          "authorityDigest": "153c842e155d0eaecfba788162071f5dc043262da5f285dd97b5e0ec2bd11daa",
+          "metadataKind": "observed-invocation-metadata",
+          "model": "sonnet",
+          "processExit": 0,
+          "provider": "anthropic",
+          "sourceDigest": "ef8f891bec28a72185d859b9cad504eb41b2d6216532c92a4a84bc13a35df62c",
+          "sourceType": "claude-materialization-repair-invocation",
+          "status": "completed"
+        }
+      },
+      "provenance": {
+        "sourceEventId": "synthetic-phase-2b-task-contract-materialization-001"
+      },
+      "sequence": 0,
+      "timestamp": "2026-01-01T00:00:00Z",
+      "type": "redacted-projection"
+    },
+    {
+      "actor": "system",
+      "id": "event-002",
+      "payload": {
+        "annotationKind": "operator-authored-projection",
+        "label": "materialization satisfied"
+      },
+      "provenance": {
+        "sourceEventId": "synthetic-phase-2b-task-contract-materialization-002"
+      },
+      "sequence": 1,
+      "timestamp": "2026-01-02T00:00:00Z",
+      "type": "redacted-projection"
+    },
+    {
+      "actor": "system",
+      "id": "event-003",
+      "payload": {
+        "annotationKind": "operator-authored-projection",
+        "label": "normal completion"
+      },
+      "provenance": {
+        "sourceEventId": "synthetic-phase-2b-task-contract-materialization-003"
+      },
+      "sequence": 2,
+      "timestamp": "2026-01-03T00:00:00Z",
+      "type": "redacted-projection-terminal"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "source": {
+    "name": "experimental-redacted-projection-adapter",
+    "version": "0"
+  },
+  "traceId": "redacted-phase-2b-task-contract-materialization"
+}

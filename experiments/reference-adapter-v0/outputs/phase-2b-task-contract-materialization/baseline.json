@@ -1,0 +1,16 @@
+{
+  "baselineSource": {
+    "evidenceBasis": "adapter-inference",
+    "producerName": "reference-adapter-v0",
+    "producerType": "adapter",
+    "producerVersion": "0"
+  },
+  "obligationBudgets": [
+    {
+      "eventBudget": 3,
+      "obligationId": "task-contract-materialization"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "traceId": "redacted-phase-2b-task-contract-materialization"
+}
