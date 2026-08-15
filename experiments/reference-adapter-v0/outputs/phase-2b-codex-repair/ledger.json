@@ -1,0 +1,31 @@
+{
+  "obligations": [
+    {
+      "description": "Operator-authored projection: implementation remains satisfied.",
+      "id": "implementation"
+    },
+    {
+      "description": "Operator-authored projection: path policy recovers to satisfied.",
+      "id": "path-policy"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "signals": [
+    {
+      "eventId": "event-001",
+      "obligationId": "implementation",
+      "status": "satisfied"
+    },
+    {
+      "eventId": "event-001",
+      "obligationId": "path-policy",
+      "status": "regressed"
+    },
+    {
+      "eventId": "event-002",
+      "obligationId": "path-policy",
+      "status": "satisfied"
+    }
+  ],
+  "traceId": "redacted-phase-2b-codex-repair"
+}

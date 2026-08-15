@@ -1,0 +1,12 @@
+{
+  "declarationSource": {
+    "evidenceBasis": "adapter-inference",
+    "producerName": "reference-adapter-v0",
+    "producerType": "adapter",
+    "producerVersion": "0"
+  },
+  "schemaVersion": "1.0",
+  "terminationEventId": "event-004",
+  "terminationKind": "natural-completion",
+  "traceId": "redacted-phase-2b-semantic-review-and-integration"
+}

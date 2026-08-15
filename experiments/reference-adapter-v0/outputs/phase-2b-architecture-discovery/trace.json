@@ -1,0 +1,49 @@
+{
+  "createdAt": "2026-01-01T00:00:00Z",
+  "events": [
+    {
+      "actor": "system",
+      "id": "event-001",
+      "payload": {
+        "annotationKind": "operator-authored-projection",
+        "label": "architecture discovery starts",
+        "observedMetadata": {
+          "authorityDigest": "f445ba1ba5448b0077c6e30d460cd645a654cff7bcce53a14b40a1efbe0acaa0",
+          "metadataKind": "observed-invocation-metadata",
+          "model": "sonnet",
+          "processExit": 0,
+          "provider": "anthropic",
+          "sourceDigest": "955333a1190cad41e617a17278edc97baf01d49323fe303ccbb3101c8240d8c5",
+          "sourceType": "claude-architect-invocation",
+          "status": "completed"
+        }
+      },
+      "provenance": {
+        "sourceEventId": "synthetic-phase-2b-architecture-discovery-001"
+      },
+      "sequence": 0,
+      "timestamp": "2026-01-01T00:00:00Z",
+      "type": "redacted-projection"
+    },
+    {
+      "actor": "system",
+      "id": "event-002",
+      "payload": {
+        "annotationKind": "operator-authored-projection",
+        "label": "architecture discovery satisfied before completion"
+      },
+      "provenance": {
+        "sourceEventId": "synthetic-phase-2b-architecture-discovery-002"
+      },
+      "sequence": 1,
+      "timestamp": "2026-01-02T00:00:00Z",
+      "type": "redacted-projection-terminal"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "source": {
+    "name": "experimental-redacted-projection-adapter",
+    "version": "0"
+  },
+  "traceId": "redacted-phase-2b-architecture-discovery"
+}

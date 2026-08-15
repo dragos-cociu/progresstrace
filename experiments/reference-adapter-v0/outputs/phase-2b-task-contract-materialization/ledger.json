@@ -1,0 +1,22 @@
+{
+  "obligations": [
+    {
+      "description": "Operator-authored projection: task contract materialization is completed.",
+      "id": "task-contract-materialization"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "signals": [
+    {
+      "eventId": "event-001",
+      "obligationId": "task-contract-materialization",
+      "status": "in-progress"
+    },
+    {
+      "eventId": "event-002",
+      "obligationId": "task-contract-materialization",
+      "status": "satisfied"
+    }
+  ],
+  "traceId": "redacted-phase-2b-task-contract-materialization"
+}

@@ -1,0 +1,36 @@
+{
+  "obligations": [
+    {
+      "description": "Operator-authored projection: implementation makes progress.",
+      "id": "implementation"
+    },
+    {
+      "description": "Operator-authored projection: path policy remains unmet at stop.",
+      "id": "path-policy"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "signals": [
+    {
+      "eventId": "event-001",
+      "obligationId": "implementation",
+      "status": "in-progress"
+    },
+    {
+      "eventId": "event-001",
+      "obligationId": "path-policy",
+      "status": "satisfied"
+    },
+    {
+      "eventId": "event-002",
+      "obligationId": "implementation",
+      "status": "satisfied"
+    },
+    {
+      "eventId": "event-002",
+      "obligationId": "path-policy",
+      "status": "regressed"
+    }
+  ],
+  "traceId": "redacted-phase-2b-codex-build-path-policy-recovery"
+}

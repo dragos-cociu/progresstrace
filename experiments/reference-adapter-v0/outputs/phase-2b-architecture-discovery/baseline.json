@@ -1,0 +1,16 @@
+{
+  "baselineSource": {
+    "evidenceBasis": "adapter-inference",
+    "producerName": "reference-adapter-v0",
+    "producerType": "adapter",
+    "producerVersion": "0"
+  },
+  "obligationBudgets": [
+    {
+      "eventBudget": 2,
+      "obligationId": "architecture-discovery"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "traceId": "redacted-phase-2b-architecture-discovery"
+}

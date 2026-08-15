@@ -1,0 +1,22 @@
+{
+  "obligations": [
+    {
+      "description": "Operator-authored projection: architecture discovery is completed.",
+      "id": "architecture-discovery"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "signals": [
+    {
+      "eventId": "event-001",
+      "obligationId": "architecture-discovery",
+      "status": "open"
+    },
+    {
+      "eventId": "event-002",
+      "obligationId": "architecture-discovery",
+      "status": "satisfied"
+    }
+  ],
+  "traceId": "redacted-phase-2b-architecture-discovery"
+}

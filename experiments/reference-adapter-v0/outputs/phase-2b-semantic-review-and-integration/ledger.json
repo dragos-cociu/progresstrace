@@ -1,0 +1,35 @@
+{
+  "obligations": [
+    {
+      "description": "Operator-authored projection: semantic review is satisfied.",
+      "id": "semantic-review"
+    },
+    {
+      "description": "Operator-authored projection: integration is satisfied.",
+      "id": "integration"
+    },
+    {
+      "description": "Operator-authored projection: hosted verification is satisfied.",
+      "id": "hosted-verification"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "signals": [
+    {
+      "eventId": "event-001",
+      "obligationId": "semantic-review",
+      "status": "satisfied"
+    },
+    {
+      "eventId": "event-002",
+      "obligationId": "integration",
+      "status": "satisfied"
+    },
+    {
+      "eventId": "event-003",
+      "obligationId": "hosted-verification",
+      "status": "satisfied"
+    }
+  ],
+  "traceId": "redacted-phase-2b-semantic-review-and-integration"
+}

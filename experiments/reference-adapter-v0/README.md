@@ -1,0 +1,14 @@
+# Experimental reference adapter v0
+
+This internal dogfood adapter converts exactly five concise case manifests, each labeled as a redacted projection of a real run, into the existing canonical `trace.json`, `ledger.json`, `declaration.json`, and `baseline.json` inputs. The .NET CLI remains the sole evaluator.
+
+Run from the repository root:
+
+```sh
+python3 experiments/reference-adapter-v0/run_dogfood.py
+python3 -m unittest discover -s experiments/reference-adapter-v0/tests -p 'test_*.py'
+```
+
+Outputs are retained under `outputs/`, with one directory per case and an aggregate `summary.json`. The runner builds the existing CLI once and executes `evaluate`, `assess`, and `compare` for every case.
+
+This is an intentionally narrow, Python-standard-library-only experiment. Its manifest shape is internal v0 and may change; no stable adapter contract, compatibility promise, general ingestion framework, or semantic interpretation is claimed. Observed invocation/closeout metadata is kept separate from operator-authored obligation and signal projections. Digests identify controller sources but do not prove projected obligations.

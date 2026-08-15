@@ -1,0 +1,99 @@
+{
+  "caseCount": 5,
+  "manifestVersion": "0",
+  "stageCount": 15,
+  "stages": [
+    {
+      "caseId": "phase-2b-architecture-discovery",
+      "exitCode": 0,
+      "stage": "evaluate",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-architecture-discovery",
+      "exitCode": 0,
+      "stage": "assess",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-architecture-discovery",
+      "exitCode": 0,
+      "stage": "compare",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-task-contract-materialization",
+      "exitCode": 0,
+      "stage": "evaluate",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-task-contract-materialization",
+      "exitCode": 0,
+      "stage": "assess",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-task-contract-materialization",
+      "exitCode": 0,
+      "stage": "compare",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-codex-build-path-policy-recovery",
+      "exitCode": 0,
+      "stage": "evaluate",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-codex-build-path-policy-recovery",
+      "exitCode": 0,
+      "stage": "assess",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-codex-build-path-policy-recovery",
+      "exitCode": 0,
+      "stage": "compare",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-codex-repair",
+      "exitCode": 0,
+      "stage": "evaluate",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-codex-repair",
+      "exitCode": 0,
+      "stage": "assess",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-codex-repair",
+      "exitCode": 0,
+      "stage": "compare",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-semantic-review-and-integration",
+      "exitCode": 0,
+      "stage": "evaluate",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-semantic-review-and-integration",
+      "exitCode": 0,
+      "stage": "assess",
+      "success": true
+    },
+    {
+      "caseId": "phase-2b-semantic-review-and-integration",
+      "exitCode": 0,
+      "stage": "compare",
+      "success": true
+    }
+  ],
+  "successfulCaseCount": 5,
+  "successfulStageCount": 15
+}

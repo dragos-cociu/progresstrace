@@ -1,0 +1,12 @@
+{
+  "declarationSource": {
+    "evidenceBasis": "adapter-inference",
+    "producerName": "reference-adapter-v0",
+    "producerType": "adapter",
+    "producerVersion": "0"
+  },
+  "schemaVersion": "1.0",
+  "terminationEventId": "event-003",
+  "terminationKind": "natural-completion",
+  "traceId": "redacted-phase-2b-task-contract-materialization"
+}

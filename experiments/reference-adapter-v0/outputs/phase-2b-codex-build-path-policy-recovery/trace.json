@@ -1,0 +1,63 @@
+{
+  "createdAt": "2026-01-01T00:00:00Z",
+  "events": [
+    {
+      "actor": "system",
+      "id": "event-001",
+      "payload": {
+        "annotationKind": "operator-authored-projection",
+        "label": "implementation progress and policy initially satisfied",
+        "observedMetadata": {
+          "authorityDigest": "00bcb8376a15bdcc55c4ff9269193c9e844284e7bf44441ee04ef101cced3745",
+          "metadataKind": "observed-invocation-metadata",
+          "model": "gpt-5.6-sol",
+          "processExit": 0,
+          "provider": "openai",
+          "sourceDigest": "2f7101b195b888166e97e1af9fad3d67bfb29e26e24c80a8b27a7839ff04ea22",
+          "sourceType": "codex-build-invocation",
+          "status": "failed"
+        }
+      },
+      "provenance": {
+        "sourceEventId": "synthetic-phase-2b-codex-build-path-policy-recovery-001"
+      },
+      "sequence": 0,
+      "timestamp": "2026-01-01T00:00:00Z",
+      "type": "redacted-projection"
+    },
+    {
+      "actor": "system",
+      "id": "event-002",
+      "payload": {
+        "annotationKind": "operator-authored-projection",
+        "label": "implementation progresses while path policy regresses"
+      },
+      "provenance": {
+        "sourceEventId": "synthetic-phase-2b-codex-build-path-policy-recovery-002"
+      },
+      "sequence": 1,
+      "timestamp": "2026-01-02T00:00:00Z",
+      "type": "redacted-projection"
+    },
+    {
+      "actor": "system",
+      "id": "event-003",
+      "payload": {
+        "annotationKind": "operator-authored-projection",
+        "label": "harness declares stop with unmet path policy"
+      },
+      "provenance": {
+        "sourceEventId": "synthetic-phase-2b-codex-build-path-policy-recovery-003"
+      },
+      "sequence": 2,
+      "timestamp": "2026-01-03T00:00:00Z",
+      "type": "redacted-projection-terminal"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "source": {
+    "name": "experimental-redacted-projection-adapter",
+    "version": "0"
+  },
+  "traceId": "redacted-phase-2b-codex-build-path-policy-recovery"
+}

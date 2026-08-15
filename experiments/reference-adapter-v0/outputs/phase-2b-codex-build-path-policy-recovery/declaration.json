@@ -1,0 +1,12 @@
+{
+  "declarationSource": {
+    "evidenceBasis": "harness-lifecycle",
+    "producerName": "redacted-projected-harness",
+    "producerType": "harness",
+    "producerVersion": "0"
+  },
+  "schemaVersion": "1.0",
+  "terminationEventId": "event-003",
+  "terminationKind": "harness-declared-stop",
+  "traceId": "redacted-phase-2b-codex-build-path-policy-recovery"
+}

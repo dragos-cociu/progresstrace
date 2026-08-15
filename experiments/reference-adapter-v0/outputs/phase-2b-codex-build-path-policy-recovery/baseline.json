@@ -1,0 +1,20 @@
+{
+  "baselineSource": {
+    "evidenceBasis": "adapter-inference",
+    "producerName": "reference-adapter-v0",
+    "producerType": "adapter",
+    "producerVersion": "0"
+  },
+  "obligationBudgets": [
+    {
+      "eventBudget": 4,
+      "obligationId": "implementation"
+    },
+    {
+      "eventBudget": 3,
+      "obligationId": "path-policy"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "traceId": "redacted-phase-2b-codex-build-path-policy-recovery"
+}
