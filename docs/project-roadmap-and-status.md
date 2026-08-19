@@ -693,10 +693,13 @@ Componente implementate:
   metamorfic și coerența conformance, cu rezultate `InvariantResult` 1.0;
 - **4.0.D:** CLI de escaladare tipizată cu cap per interval și stare `deferred`.
 
-Raportul independent pentru implementarea 4.0 rămâne `PASS`, cu `7/7` verificări trecute. Pentru
-implementarea 4.1/4.2, conformance locală trece validarea schemelor, fixture-urile,
-normalizarea idempotentă și proiecția gate outcome. Raportul independent pentru
-runner-ul 4.1/4.2 va fi generat după commitul documentar final.
+Raportul independent pentru implementarea 4.1/4.2 este `PASS`, cu `7/7`
+verificări trecute pe commitul `7436659092ac9c2c3a5623e279a1e3fe3ac2d1a0`.
+Raportul este păstrat în afara repository-ului:
+
+```text
+/srv/projects/.tooling/progresstrace-verification/reports/verification-7436659.json
+```
 
 Clasificarea implementării 4.1/4.2 este **Clasa C**, deoarece adaugă scheme noi și
 semantică de contract. Integrarea finală rămâne supusă human gate-ului.
