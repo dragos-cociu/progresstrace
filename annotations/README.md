@@ -4,12 +4,11 @@ This directory is the input package for two independent human evaluators.
 
 ## Contents
 
-- `blind-cases/*.json`: 60 cases containing only `caseId`, `maxTurns`, the
-  trace envelope, and the obligation ledger. Fixture `groundTruth` metadata
-  and all derived ProgressTrace output are intentionally excluded.
-- `evaluator-1-template.csv`: blank response template for evaluator 1.
-- `evaluator-2-template.csv`: blank response template for evaluator 2.
+- `blind-cases/*.json`: 60 cazuri anonimizate, cu identificatori `case-01` ... `case-60`, conținând doar `caseId`, `maxTurns`, trace envelope și obligation ledger. Numele originale și orice rezultat derivat sunt excluse.
+- `evaluator-1-template.csv`: blank response template pentru evaluator 1.
+- `evaluator-2-template.csv`: blank response template pentru evaluator 2.
 
+**Important:** pachetele și răspunsurile generate înainte de anonimizare nu mai sunt considerate blind, deoarece identificatorii originali conțineau uneori etichete semantice. Pentru orice evaluare nouă se folosește numai pachetul anonimizat curent.
 The two evaluators must receive the case files and their own CSV copy through
 separate channels. Do not give either evaluator the original files under
 `fixtures/benchmarks`, because those contain authored expectations.

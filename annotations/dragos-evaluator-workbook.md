@@ -1,11 +1,11 @@
 # ProgressTrace — workbook personal de evaluare blind
 
-**Evaluator:** Dragos Cociu  
-**Corpus:** 60 de cazuri blind  
-**Scop:** etichetare independentă, fără acces la `groundTruth` sau la output-urile agenților  
-**Instrucțiune:** fă o copie a acestui fișier înainte de completare și păstrează răspunsurile în afara repository-ului.
+**Evaluator:** Dragos Cociu
+**Corpus:** 60 de cazuri anonimizate
+**Scop:** etichetare independentă, fără acces la output-urile agenților
+**Instrucțiune:** fă o copie înainte de completare și păstrează răspunsurile în afara repository-ului.
 
-> **Regulă:** evaluează doar evidența din fiecare caz. Nu presupune evenimente viitoare, nu trata afirmația „am terminat” ca dovadă fără un semnal relevant și nu consulta `fixtures/benchmarks/`.
+> **Regulă:** evaluează doar evidența din fiecare caz. Nu presupune evenimente viitoare și nu consulta `fixtures/benchmarks/`.
 
 ## Cum completezi documentul
 
@@ -23,7 +23,7 @@ Pentru fiecare caz completează câmpurile de la finalul secțiunii:
 2. `insufficient-evidence`: nu există evidență suficientă pentru o judecată sigură;
 3. `stagnation`: există activitate, dar nu există avans material sau obiectivul rămâne deschis;
 4. `progress`: obiectivul a avansat material sau a ajuns satisfăcut;
-5. La nivel de trace, prioritatea este: `regression > insufficient-evidence > stagnation > progress`.
+5. Prioritatea la nivel de trace: `regression > insufficient-evidence > stagnation > progress`.
 
 ### Baseline-uri
 
@@ -31,24 +31,16 @@ Pentru fiecare caz completează câmpurile de la finalul secțiunii:
 - `exact-repeat`: s-ar opri la repetarea exactă a unei semnături de eveniment;
 - `fuzzy-repeat/cycle`: s-ar opri la repetare aproximativă sau ciclu.
 
-Nu confunda oprirea unui baseline cu stagnarea semantică. Un repeat poate apărea într-un caz care încă progresează.
-
 ### Convenția pentru `rank`
 
-În acest workbook, `rank` înseamnă **poziția 0-based a evenimentului în ordinea trace-ului**, nu numărul turei 1-based:
-
-- primul eveniment: `rank = 0`;
-- al doilea eveniment: `rank = 1`;
-- al treilea eveniment: `rank = 2`.
-
-Pentru corpusul actual, aceasta coincide cu câmpul `sequence`. La `max-turns`, dacă limita este `3`, oprirea la al treilea eveniment se notează `rank = 2`. Dacă vrei să explici și în limbaj uman, poți scrie opțional „tura 3” în `ambiguityNote`, dar câmpul `rank` rămâne 0-based.
+În acest workbook, `rank` este poziția 0-based a evenimentului în ordinea trace-ului: primul eveniment `0`, al doilea `1`, al treilea `2`. Pentru corpusul actual coincide cu `sequence`. La limita `maxTurns = 3`, oprirea la al treilea eveniment se notează `rank = 2`.
 
 ---
 
-## 1. 01-progress
+## Caz 01
 
-**maxTurns:** `5`  
-**traceId:** `benchmark-01`
+**caseId intern:** `case-01`
+**maxTurns:** `5`
 
 ### Obligații
 
@@ -63,10 +55,10 @@ Pentru corpusul actual, aceasta coincide cu câmpul `sequence`. La `max-turns`, 
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > start task
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > complete task
 
 ### Răspunsul meu
@@ -74,21 +66,21 @@ Pentru corpusul actual, aceasta coincide cu câmpul `sequence`. La `max-turns`, 
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 2. 02-insufficient
+## Caz 02
 
-**maxTurns:** `4`  
-**traceId:** `benchmark-02`
+**caseId intern:** `case-02`
+**maxTurns:** `4`
 
 ### Obligații
 
@@ -100,7 +92,7 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > unrelated note
 
 ### Răspunsul meu
@@ -108,21 +100,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 3. 03-regression
+## Caz 03
 
-**maxTurns:** `5`  
-**traceId:** `benchmark-03`
+**caseId intern:** `case-03`
+**maxTurns:** `5`
 
 ### Obligații
 
@@ -137,10 +129,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > make progress
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > undo progress
 
 ### Răspunsul meu
@@ -148,21 +140,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 4. 04-stagnation
+## Caz 04
 
-**maxTurns:** `4`  
-**traceId:** `benchmark-04`
+**caseId intern:** `case-04`
+**maxTurns:** `4`
 
 ### Obligații
 
@@ -177,10 +169,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > waiting
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > still waiting
 
 ### Răspunsul meu
@@ -188,21 +180,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 5. 05-max-turns
+## Caz 05
 
-**maxTurns:** `3`  
-**traceId:** `benchmark-05`
+**caseId intern:** `case-05`
+**maxTurns:** `3`
 
 ### Obligații
 
@@ -216,16 +208,16 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > step one
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > step two
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > step three
 
-**e4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`  
+**e4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`
 > step four
 
 ### Răspunsul meu
@@ -233,21 +225,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 6. 06-exact-repeat
+## Caz 06
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-06`
+**caseId intern:** `case-06`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -261,13 +253,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `tool-call`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `tool-call`, timestamp `2026-01-01T00:00:01Z`
 > read file
 
-**e2** — sequence `1`, actor `assistant`, type `tool-call`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `tool-call`, timestamp `2026-01-01T00:00:02Z`
 > read file
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > stop
 
 ### Răspunsul meu
@@ -275,21 +267,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 7. 07-fuzzy-repeat
+## Caz 07
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-07`
+**caseId intern:** `case-07`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -303,13 +295,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > need install package
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > need install package now
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > done
 
 ### Răspunsul meu
@@ -317,21 +309,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 8. 08-cycle-ab
+## Caz 08
 
-**maxTurns:** `9`  
-**traceId:** `benchmark-08`
+**caseId intern:** `case-08`
+**maxTurns:** `9`
 
 ### Obligații
 
@@ -343,16 +335,16 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:01Z`
 > inspect alpha
 
-**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > inspect beta
 
-**e3** — sequence `2`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:03Z`
 > inspect alpha
 
-**e4** — sequence `3`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:04Z`  
+**e4** — sequence `3`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:04Z`
 > inspect beta
 
 ### Răspunsul meu
@@ -360,21 +352,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 9. 09-cycle-abc
+## Caz 09
 
-**maxTurns:** `10`  
-**traceId:** `benchmark-09`
+**caseId intern:** `case-09`
+**maxTurns:** `10`
 
 ### Obligații
 
@@ -386,22 +378,22 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:01Z`
 > alpha
 
-**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > beta
 
-**e3** — sequence `2`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:03Z`
 > gamma
 
-**e4** — sequence `3`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:04Z`  
+**e4** — sequence `3`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:04Z`
 > alpha
 
-**e5** — sequence `4`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:05Z`  
+**e5** — sequence `4`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:05Z`
 > beta
 
-**e6** — sequence `5`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:06Z`  
+**e6** — sequence `5`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:06Z`
 > gamma
 
 ### Răspunsul meu
@@ -409,21 +401,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 10. 10-no-repeat
+## Caz 10
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-10`
+**caseId intern:** `case-10`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -437,13 +429,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > plan
 
-**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > execute
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > verify
 
 ### Răspunsul meu
@@ -451,21 +443,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 11. 11-late-max-turns
+## Caz 11
 
-**maxTurns:** `2`  
-**traceId:** `benchmark-11`
+**caseId intern:** `case-11`
+**maxTurns:** `2`
 
 ### Obligații
 
@@ -479,13 +471,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > first
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > second
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > third
 
 ### Răspunsul meu
@@ -493,21 +485,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 12. 12-exact-tool-repeat
+## Caz 12
 
-**maxTurns:** `7`  
-**traceId:** `benchmark-12`
+**caseId intern:** `case-12`
+**maxTurns:** `7`
 
 ### Obligații
 
@@ -519,13 +511,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `tool`, type `tool`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `tool`, type `tool`, timestamp `2026-01-01T00:00:01Z`
 > {"name": "search", "query": "alpha"}
 
-**e2** — sequence `1`, actor `tool`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `tool`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > {"name": "search", "query": "alpha"}
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > no result
 
 ### Răspunsul meu
@@ -533,21 +525,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 13. 13-fuzzy-paraphrase
+## Caz 13
 
-**maxTurns:** `7`  
-**traceId:** `benchmark-13`
+**caseId intern:** `case-13`
+**maxTurns:** `7`
 
 ### Obligații
 
@@ -559,13 +551,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > check build status
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > checking build statuses
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > finish
 
 ### Răspunsul meu
@@ -573,21 +565,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 14. 14-regression-recovery
+## Caz 14
 
-**maxTurns:** `7`  
-**traceId:** `benchmark-14`
+**caseId intern:** `case-14`
+**maxTurns:** `7`
 
 ### Obligații
 
@@ -604,16 +596,16 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > open
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > bad change
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > repair
 
-**e4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`  
+**e4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`
 > done
 
 ### Răspunsul meu
@@ -621,21 +613,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 15. 15-mixed-obligations
+## Caz 15
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-15`
+**caseId intern:** `case-15`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -651,10 +643,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > first goal done
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > second goal open
 
 ### Răspunsul meu
@@ -662,21 +654,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 16. 16-empty-signal
+## Caz 16
 
-**maxTurns:** `3`  
-**traceId:** `benchmark-16`
+**caseId intern:** `case-16`
+**maxTurns:** `3`
 
 ### Obligații
 
@@ -688,10 +680,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `user`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `user`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > request
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > answer
 
 ### Răspunsul meu
@@ -699,21 +691,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 17. 17-repeated-progress
+## Caz 17
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-17`
+**caseId intern:** `case-17`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -729,13 +721,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > start
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > continue
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > finish
 
 ### Răspunsul meu
@@ -743,21 +735,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 18. 18-long-stagnation
+## Caz 18
 
-**maxTurns:** `6`  
-**traceId:** `benchmark-18`
+**caseId intern:** `case-18`
+**maxTurns:** `6`
 
 ### Obligații
 
@@ -775,19 +767,19 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > waiting one
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > waiting two
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > waiting three
 
-**e4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`  
+**e4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`
 > waiting four
 
-**e5** — sequence `4`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:05Z`  
+**e5** — sequence `4`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:05Z`
 > waiting five
 
 ### Răspunsul meu
@@ -795,21 +787,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 19. 19-short-max-turns
+## Caz 19
 
-**maxTurns:** `5`  
-**traceId:** `benchmark-19`
+**caseId intern:** `case-19`
+**maxTurns:** `5`
 
 ### Obligații
 
@@ -823,10 +815,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > only step
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > done
 
 ### Răspunsul meu
@@ -834,21 +826,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 20. 20-clean-completion
+## Caz 20
 
-**maxTurns:** `6`  
-**traceId:** `benchmark-20`
+**caseId intern:** `case-20`
+**maxTurns:** `6`
 
 ### Obligații
 
@@ -864,13 +856,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > inspect
 
-**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > change
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > verify complete
 
 ### Răspunsul meu
@@ -878,21 +870,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 21. 21-variant-progress
+## Caz 21
 
-**maxTurns:** `5`  
-**traceId:** `benchmark-21`
+**caseId intern:** `case-21`
+**maxTurns:** `5`
 
 ### Obligații
 
@@ -907,10 +899,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > start task variant-21
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > complete task variant-21
 
 ### Răspunsul meu
@@ -918,21 +910,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 22. 22-variant-insufficient
+## Caz 22
 
-**maxTurns:** `4`  
-**traceId:** `benchmark-22`
+**caseId intern:** `case-22`
+**maxTurns:** `4`
 
 ### Obligații
 
@@ -944,7 +936,7 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > unrelated note
 
 ### Răspunsul meu
@@ -952,21 +944,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 23. 23-variant-regression
+## Caz 23
 
-**maxTurns:** `5`  
-**traceId:** `benchmark-23`
+**caseId intern:** `case-23`
+**maxTurns:** `5`
 
 ### Obligații
 
@@ -981,10 +973,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > make progress
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > undo progress
 
 ### Răspunsul meu
@@ -992,21 +984,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 24. 24-variant-stagnation
+## Caz 24
 
-**maxTurns:** `4`  
-**traceId:** `benchmark-24`
+**caseId intern:** `case-24`
+**maxTurns:** `4`
 
 ### Obligații
 
@@ -1021,10 +1013,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > waiting
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > still waiting
 
 ### Răspunsul meu
@@ -1032,21 +1024,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 25. 25-variant-max-turns
+## Caz 25
 
-**maxTurns:** `3`  
-**traceId:** `benchmark-25`
+**caseId intern:** `case-25`
+**maxTurns:** `3`
 
 ### Obligații
 
@@ -1060,16 +1052,16 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > step one variant-25
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > step two variant-25
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > step three variant-25
 
-**e4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`  
+**e4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`
 > step four variant-25
 
 ### Răspunsul meu
@@ -1077,21 +1069,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 26. 26-variant-exact-repeat
+## Caz 26
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-26`
+**caseId intern:** `case-26`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -1105,13 +1097,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `tool-call`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `tool-call`, timestamp `2026-01-01T00:00:01Z`
 > read file
 
-**e2** — sequence `1`, actor `assistant`, type `tool-call`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `tool-call`, timestamp `2026-01-01T00:00:02Z`
 > read file
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > stop
 
 ### Răspunsul meu
@@ -1119,21 +1111,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 27. 27-variant-fuzzy-repeat
+## Caz 27
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-27`
+**caseId intern:** `case-27`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -1147,13 +1139,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > need install package
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > need install package now
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > done
 
 ### Răspunsul meu
@@ -1161,21 +1153,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 28. 28-variant-cycle-ab
+## Caz 28
 
-**maxTurns:** `9`  
-**traceId:** `benchmark-28`
+**caseId intern:** `case-28`
+**maxTurns:** `9`
 
 ### Obligații
 
@@ -1187,16 +1179,16 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:01Z`
 > inspect alpha
 
-**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > inspect beta
 
-**e3** — sequence `2`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:03Z`
 > inspect alpha
 
-**e4** — sequence `3`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:04Z`  
+**e4** — sequence `3`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:04Z`
 > inspect beta
 
 ### Răspunsul meu
@@ -1204,21 +1196,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 29. 29-variant-cycle-abc
+## Caz 29
 
-**maxTurns:** `10`  
-**traceId:** `benchmark-29`
+**caseId intern:** `case-29`
+**maxTurns:** `10`
 
 ### Obligații
 
@@ -1230,22 +1222,22 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:01Z`
 > alpha
 
-**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > beta
 
-**e3** — sequence `2`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:03Z`
 > gamma
 
-**e4** — sequence `3`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:04Z`  
+**e4** — sequence `3`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:04Z`
 > alpha
 
-**e5** — sequence `4`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:05Z`  
+**e5** — sequence `4`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:05Z`
 > beta
 
-**e6** — sequence `5`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:06Z`  
+**e6** — sequence `5`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:06Z`
 > gamma
 
 ### Răspunsul meu
@@ -1253,21 +1245,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 30. 30-variant-no-repeat
+## Caz 30
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-30`
+**caseId intern:** `case-30`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -1281,13 +1273,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > plan
 
-**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > execute
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > verify
 
 ### Răspunsul meu
@@ -1295,21 +1287,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 31. 31-variant-late-max-turns
+## Caz 31
 
-**maxTurns:** `2`  
-**traceId:** `benchmark-31`
+**caseId intern:** `case-31`
+**maxTurns:** `2`
 
 ### Obligații
 
@@ -1323,13 +1315,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > first
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > second
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > third
 
 ### Răspunsul meu
@@ -1337,21 +1329,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 32. 32-variant-exact-tool-repeat
+## Caz 32
 
-**maxTurns:** `7`  
-**traceId:** `benchmark-32`
+**caseId intern:** `case-32`
+**maxTurns:** `7`
 
 ### Obligații
 
@@ -1363,13 +1355,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `tool`, type `tool`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `tool`, type `tool`, timestamp `2026-01-01T00:00:01Z`
 > {"name": "search", "query": "alpha"}
 
-**e2** — sequence `1`, actor `tool`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `tool`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > {"name": "search", "query": "alpha"}
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > no result variant-32
 
 ### Răspunsul meu
@@ -1377,21 +1369,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 33. 33-variant-fuzzy-paraphrase
+## Caz 33
 
-**maxTurns:** `7`  
-**traceId:** `benchmark-33`
+**caseId intern:** `case-33`
+**maxTurns:** `7`
 
 ### Obligații
 
@@ -1403,13 +1395,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > check build status variant-33
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > checking build statuses
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > finish
 
 ### Răspunsul meu
@@ -1417,21 +1409,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 34. 34-variant-regression-recovery
+## Caz 34
 
-**maxTurns:** `7`  
-**traceId:** `benchmark-34`
+**caseId intern:** `case-34`
+**maxTurns:** `7`
 
 ### Obligații
 
@@ -1448,16 +1440,16 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > open
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > bad change
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > repair
 
-**e4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`  
+**e4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`
 > done
 
 ### Răspunsul meu
@@ -1465,21 +1457,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 35. 35-variant-mixed-obligations
+## Caz 35
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-35`
+**caseId intern:** `case-35`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -1495,10 +1487,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > first goal done variant-35
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > second goal open variant-35
 
 ### Răspunsul meu
@@ -1506,21 +1498,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 36. 36-variant-empty-signal
+## Caz 36
 
-**maxTurns:** `3`  
-**traceId:** `benchmark-36`
+**caseId intern:** `case-36`
+**maxTurns:** `3`
 
 ### Obligații
 
@@ -1532,10 +1524,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `user`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `user`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > request
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > answer
 
 ### Răspunsul meu
@@ -1543,21 +1535,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 37. 37-variant-repeated-progress
+## Caz 37
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-37`
+**caseId intern:** `case-37`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -1573,13 +1565,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > start
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > continue
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > finish
 
 ### Răspunsul meu
@@ -1587,21 +1579,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 38. 38-variant-long-stagnation
+## Caz 38
 
-**maxTurns:** `6`  
-**traceId:** `benchmark-38`
+**caseId intern:** `case-38`
+**maxTurns:** `6`
 
 ### Obligații
 
@@ -1619,19 +1611,19 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > waiting one variant-38
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > waiting two variant-38
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > waiting three variant-38
 
-**e4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`  
+**e4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`
 > waiting four variant-38
 
-**e5** — sequence `4`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:05Z`  
+**e5** — sequence `4`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:05Z`
 > waiting five variant-38
 
 ### Răspunsul meu
@@ -1639,21 +1631,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 39. 39-variant-short-max-turns
+## Caz 39
 
-**maxTurns:** `5`  
-**traceId:** `benchmark-39`
+**caseId intern:** `case-39`
+**maxTurns:** `5`
 
 ### Obligații
 
@@ -1667,10 +1659,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > only step
 
-**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > done
 
 ### Răspunsul meu
@@ -1678,21 +1670,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 40. 40-variant-clean-completion
+## Caz 40
 
-**maxTurns:** `6`  
-**traceId:** `benchmark-40`
+**caseId intern:** `case-40`
+**maxTurns:** `6`
 
 ### Obligații
 
@@ -1708,13 +1700,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**e1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > inspect
 
-**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**e2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > change
 
-**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**e3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > verify complete
 
 ### Răspunsul meu
@@ -1722,21 +1714,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 41. 41-variant-progress
+## Caz 41
 
-**maxTurns:** `5`  
-**traceId:** `benchmark-41`
+**caseId intern:** `case-41`
+**maxTurns:** `5`
 
 ### Obligații
 
@@ -1751,10 +1743,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > start task variant-41
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > complete task variant-41
 
 ### Răspunsul meu
@@ -1762,21 +1754,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 42. 42-variant-insufficient
+## Caz 42
 
-**maxTurns:** `4`  
-**traceId:** `benchmark-42`
+**caseId intern:** `case-42`
+**maxTurns:** `4`
 
 ### Obligații
 
@@ -1788,7 +1780,7 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > unrelated note
 
 ### Răspunsul meu
@@ -1796,21 +1788,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 43. 43-variant-regression
+## Caz 43
 
-**maxTurns:** `5`  
-**traceId:** `benchmark-43`
+**caseId intern:** `case-43`
+**maxTurns:** `5`
 
 ### Obligații
 
@@ -1825,10 +1817,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > make progress
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > undo progress
 
 ### Răspunsul meu
@@ -1836,21 +1828,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 44. 44-variant-stagnation
+## Caz 44
 
-**maxTurns:** `4`  
-**traceId:** `benchmark-44`
+**caseId intern:** `case-44`
+**maxTurns:** `4`
 
 ### Obligații
 
@@ -1865,10 +1857,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > waiting
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > still waiting
 
 ### Răspunsul meu
@@ -1876,21 +1868,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 45. 45-variant-max-turns
+## Caz 45
 
-**maxTurns:** `3`  
-**traceId:** `benchmark-45`
+**caseId intern:** `case-45`
+**maxTurns:** `3`
 
 ### Obligații
 
@@ -1904,16 +1896,16 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > step one variant-45
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > step two variant-45
 
-**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > step three variant-45
 
-**x4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`  
+**x4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`
 > step four variant-45
 
 ### Răspunsul meu
@@ -1921,21 +1913,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 46. 46-variant-exact-repeat
+## Caz 46
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-46`
+**caseId intern:** `case-46`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -1949,13 +1941,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `tool-call`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `tool-call`, timestamp `2026-01-01T00:00:01Z`
 > read file
 
-**x2** — sequence `1`, actor `assistant`, type `tool-call`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `tool-call`, timestamp `2026-01-01T00:00:02Z`
 > read file
 
-**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > stop
 
 ### Răspunsul meu
@@ -1963,21 +1955,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 47. 47-variant-fuzzy-repeat
+## Caz 47
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-47`
+**caseId intern:** `case-47`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -1991,13 +1983,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > need install package
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > need install package now
 
-**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > done
 
 ### Răspunsul meu
@@ -2005,21 +1997,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 48. 48-variant-cycle-ab
+## Caz 48
 
-**maxTurns:** `9`  
-**traceId:** `benchmark-48`
+**caseId intern:** `case-48`
+**maxTurns:** `9`
 
 ### Obligații
 
@@ -2031,16 +2023,16 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:01Z`
 > inspect alpha
 
-**x2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > inspect beta
 
-**x3** — sequence `2`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:03Z`
 > inspect alpha
 
-**x4** — sequence `3`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:04Z`  
+**x4** — sequence `3`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:04Z`
 > inspect beta
 
 ### Răspunsul meu
@@ -2048,21 +2040,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 49. 49-variant-cycle-abc
+## Caz 49
 
-**maxTurns:** `10`  
-**traceId:** `benchmark-49`
+**caseId intern:** `case-49`
+**maxTurns:** `10`
 
 ### Obligații
 
@@ -2074,22 +2066,22 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:01Z`
 > alpha
 
-**x2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > beta
 
-**x3** — sequence `2`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:03Z`
 > gamma
 
-**x4** — sequence `3`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:04Z`  
+**x4** — sequence `3`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:04Z`
 > alpha
 
-**x5** — sequence `4`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:05Z`  
+**x5** — sequence `4`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:05Z`
 > beta
 
-**x6** — sequence `5`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:06Z`  
+**x6** — sequence `5`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:06Z`
 > gamma
 
 ### Răspunsul meu
@@ -2097,21 +2089,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 50. 50-variant-no-repeat
+## Caz 50
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-50`
+**caseId intern:** `case-50`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -2125,13 +2117,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > plan
 
-**x2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > execute
 
-**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > verify
 
 ### Răspunsul meu
@@ -2139,21 +2131,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 51. 51-variant-late-max-turns
+## Caz 51
 
-**maxTurns:** `2`  
-**traceId:** `benchmark-51`
+**caseId intern:** `case-51`
+**maxTurns:** `2`
 
 ### Obligații
 
@@ -2167,13 +2159,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > first
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > second
 
-**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > third
 
 ### Răspunsul meu
@@ -2181,21 +2173,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 52. 52-variant-exact-tool-repeat
+## Caz 52
 
-**maxTurns:** `7`  
-**traceId:** `benchmark-52`
+**caseId intern:** `case-52`
+**maxTurns:** `7`
 
 ### Obligații
 
@@ -2207,13 +2199,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `tool`, type `tool`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `tool`, type `tool`, timestamp `2026-01-01T00:00:01Z`
 > {"name": "search", "query": "alpha"}
 
-**x2** — sequence `1`, actor `tool`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `tool`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > {"name": "search", "query": "alpha"}
 
-**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > no result variant-52
 
 ### Răspunsul meu
@@ -2221,21 +2213,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 53. 53-variant-fuzzy-paraphrase
+## Caz 53
 
-**maxTurns:** `7`  
-**traceId:** `benchmark-53`
+**caseId intern:** `case-53`
+**maxTurns:** `7`
 
 ### Obligații
 
@@ -2247,13 +2239,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > check build status variant-53
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > checking build statuses
 
-**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > finish
 
 ### Răspunsul meu
@@ -2261,21 +2253,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 54. 54-variant-regression-recovery
+## Caz 54
 
-**maxTurns:** `7`  
-**traceId:** `benchmark-54`
+**caseId intern:** `case-54`
+**maxTurns:** `7`
 
 ### Obligații
 
@@ -2292,16 +2284,16 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > open
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > bad change
 
-**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > repair
 
-**x4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`  
+**x4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`
 > done
 
 ### Răspunsul meu
@@ -2309,21 +2301,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 55. 55-variant-mixed-obligations
+## Caz 55
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-55`
+**caseId intern:** `case-55`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -2339,10 +2331,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > first goal done variant-55
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > second goal open variant-55
 
 ### Răspunsul meu
@@ -2350,21 +2342,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 56. 56-variant-empty-signal
+## Caz 56
 
-**maxTurns:** `3`  
-**traceId:** `benchmark-56`
+**caseId intern:** `case-56`
+**maxTurns:** `3`
 
 ### Obligații
 
@@ -2376,10 +2368,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `user`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `user`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > request
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > answer
 
 ### Răspunsul meu
@@ -2387,21 +2379,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 57. 57-variant-repeated-progress
+## Caz 57
 
-**maxTurns:** `8`  
-**traceId:** `benchmark-57`
+**caseId intern:** `case-57`
+**maxTurns:** `8`
 
 ### Obligații
 
@@ -2417,13 +2409,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > start
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > continue
 
-**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > finish
 
 ### Răspunsul meu
@@ -2431,21 +2423,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 58. 58-variant-long-stagnation
+## Caz 58
 
-**maxTurns:** `6`  
-**traceId:** `benchmark-58`
+**caseId intern:** `case-58`
+**maxTurns:** `6`
 
 ### Obligații
 
@@ -2463,19 +2455,19 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > waiting one variant-58
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > waiting two variant-58
 
-**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > waiting three variant-58
 
-**x4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`  
+**x4** — sequence `3`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:04Z`
 > waiting four variant-58
 
-**x5** — sequence `4`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:05Z`  
+**x5** — sequence `4`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:05Z`
 > waiting five variant-58
 
 ### Răspunsul meu
@@ -2483,21 +2475,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 59. 59-variant-short-max-turns
+## Caz 59
 
-**maxTurns:** `5`  
-**traceId:** `benchmark-59`
+**caseId intern:** `case-59`
+**maxTurns:** `5`
 
 ### Obligații
 
@@ -2511,10 +2503,10 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > only step
 
-**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:02Z`
 > done
 
 ### Răspunsul meu
@@ -2522,21 +2514,21 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
-## 60. 60-variant-clean-completion
+## Caz 60
 
-**maxTurns:** `6`  
-**traceId:** `benchmark-60`
+**caseId intern:** `case-60`
+**maxTurns:** `6`
 
 ### Obligații
 
@@ -2552,13 +2544,13 @@ _Nu există semnale în ledger._
 
 ### Evenimente observate
 
-**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`  
+**x1** — sequence `0`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:01Z`
 > inspect
 
-**x2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`  
+**x2** — sequence `1`, actor `assistant`, type `tool`, timestamp `2026-01-01T00:00:02Z`
 > change
 
-**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`  
+**x3** — sequence `2`, actor `assistant`, type `message`, timestamp `2026-01-01T00:00:03Z`
 > verify complete
 
 ### Răspunsul meu
@@ -2566,39 +2558,33 @@ _Nu există semnale în ledger._
 - **traceLabel:** `[ ] progress`  `[ ] stagnation`  `[ ] regression`  `[ ] insufficient-evidence`
 - **obligationLabels** (JSON array, în ordinea obligațiilor):
   ```json
-  
+
   ```
 - **max-turns halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **exact-repeat halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **fuzzy-repeat/cycle halt:** `[ ] yes`  `[ ] no`  **rank:** `__________`
 - **confidence:** `[ ] high`  `[ ] medium`  `[ ] low`
 - **ambiguityNote:**
-  
+
 
 ---
 
 ## Sinteză personală după cele 60 de cazuri
 
-- Cazuri cu etichetă `progress`: `__________`
-- Cazuri cu etichetă `stagnation`: `__________`
-- Cazuri cu etichetă `regression`: `__________`
-- Cazuri cu etichetă `insufficient-evidence`: `__________`
+- Cazuri `progress`: `__________`
+- Cazuri `stagnation`: `__________`
+- Cazuri `regression`: `__________`
+- Cazuri `insufficient-evidence`: `__________`
 - Cazuri ambigue / confidence low: `__________`
 
-### Observații despre ProgressTrace
+### Observații
 
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
-### Observații despre baseline-uri
+### Cazuri pentru adjudicare
 
-1. 
-2. 
-3. 
-
-### Cazuri care trebuie discutate la adjudicare
-
-1. 
-2. 
-3. 
+1.
+2.
+3.
