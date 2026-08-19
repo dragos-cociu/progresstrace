@@ -1,0 +1,98 @@
+{
+  "id": "phase-4-1-agent-session",
+  "title": "Define and implement the AgentSession and invocation-attempt contract",
+  "objective": "Implement a versioned AgentSession 1.0 contract and deterministic session-level evaluation boundary for grouping ordered invocations that address the same task obligations. The contract must make session identity, invocation ordering, obligation coverage, and attempt number explicit, so repeated attempts can be evaluated as one session rather than as unrelated single traces. Preserve all existing Phase 0–3 contracts and Core semantics. Do not infer obligations or progress from free-form payload text. Follow the Phase 4 directive: Hermes gate-log ingestion is the only intended source, dogfooding produces product issues rather than project viability verdicts, and the 60-case benchmark remains an unchanged CI regression suite.",
+  "repository": "/srv/projects/progresstrace",
+  "base_branch": "main",
+  "depends_on": [
+    "phase-4-2-gate-outcome must be designed jointly with this task; implementation may proceed only after the shared session/event boundary is reviewed"
+  ],
+  "allowed_paths": [
+    "contracts/agent-session.schema.json",
+    "docs/contracts/agent-session.md",
+    "docs/architecture/**",
+    "src/ProgressTrace.Core/Models/**",
+    "src/ProgressTrace.Core/Validation/**",
+    "src/ProgressTrace.Core/Evaluation/**",
+    "src/ProgressTrace.Core/Normalization/**",
+    "src/ProgressTrace.Core/Sessions/**",
+    "src/ProgressTrace.Cli/**",
+    "tests/ProgressTrace.ConformanceTests/**",
+    "fixtures/session/**",
+    "tasks/phase-4-1-agent-session.json",
+    "README.md",
+    ".github/workflows/ci.yml"
+  ],
+  "protected_paths": [
+    "contracts/trace-envelope.schema.json",
+    "contracts/obligation-ledger.schema.json",
+    "contracts/evaluation-result.schema.json",
+    "contracts/termination-declaration.schema.json",
+    "contracts/stop-assessment-result.schema.json",
+    "contracts/baseline-definition.schema.json",
+    "contracts/baseline-comparison-result.schema.json",
+    "src/ProgressTrace.Benchmarks/**",
+    "fixtures/benchmarks/**",
+    "annotations/**",
+    "experiments/reference-adapter-v0/**",
+    "AGENTS.md",
+    "global.json"
+  ],
+  "required_contract_decisions": [
+    "AgentSession 1.0 has an explicit non-empty session identifier and a canonical ordered invocation collection.",
+    "Each invocation has an explicit stable identifier, deterministic ordering metadata, attempt number, and the obligation identifiers it targets.",
+    "Invocation ordering is defined independently of filesystem order and is stable across repeated normalization.",
+    "An invocation may target zero or more obligations only if the contract documents how such an invocation is represented and validated; no obligation is inferred from payload text.",
+    "Session-level evaluation consumes explicit obligation/signals and existing evaluator semantics; it does not duplicate or silently alter Phase 1 classification rules.",
+    "Repeated attempts without obligation advancement are represented as a deterministic derived session observation, with an explicit closed vocabulary and no automatic stop action.",
+    "Missing, ambiguous, or insufficient cross-invocation evidence fails closed as insufficient-evidence rather than being treated as progress or permission to stop.",
+    "The contract carries enough provenance to distinguish session/invocation metadata from derived classifications, without claiming that authored metadata is observed truth."
+  ],
+  "deliverables": [
+    "AgentSession 1.0 JSON Schema and normative contract documentation",
+    "Deterministic model, validator, normalizer, and session evaluation boundary",
+    "Stable diagnostic codes and pointers for malformed, duplicate, out-of-order, dangling, and incoherent session references",
+    "Valid, invalid, and golden fixtures covering one invocation, multiple ordered attempts, repeated attempts without advancement, recovery after a failed attempt, missing evidence, duplicate identifiers, and dangling obligation references",
+    "Conformance and determinism checks, including byte-idempotent normalization",
+    "CLI or library entry point sufficient for local deterministic evaluation, without persistence or online interruption",
+    "README and CI usage updates limited to this contract",
+    "Self-check evidence listing exact commands, fixture counts, changed paths, frozen-path verification, and unresolved items"
+  ],
+  "non_goals": [
+    "No persistence, database, hosted service, UI, or network calls",
+    "No automatic interruption or active-mode control of an agent",
+    "No parsing or semantic interpretation of conversation text",
+    "No OpenTelemetry compatibility or generic ingestion adapter",
+    "No changes to the existing Phase 0–3 contract semantics or benchmark fixtures",
+    "No new synthetic benchmark corpus and no threshold tuning against blind-evaluation results",
+    "No model calls or LLM-as-judge",
+    "No cryptographic attestation layer from ADR-0006"
+  ],
+  "acceptance_commands": [
+    ["dotnet", "build", "ProgressTrace.slnx", "--configuration", "Release", "--nologo", "--warnaserror"],
+    ["dotnet", "run", "--project", "tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj", "--configuration", "Release", "--no-build"],
+    ["python3", "-m", "json.tool", "contracts/agent-session.schema.json"],
+    ["dotnet", "format", "ProgressTrace.slnx", "--verify-no-changes", "--no-restore", "--verbosity", "minimal"],
+    ["git", "diff", "--check"]
+  ],
+  "stop_conditions": [
+    "The shared AgentSession/GateOutcome boundary requires changing an existing integrated contract without an approved architecture revision",
+    "The implementation requires free-form semantic inference or a model call",
+    "The implementation needs persistence, network access, or an online interruption path",
+    "Existing Phase 0–3 fixtures, schemas, CLI behavior, or deterministic semantics regress",
+    "A required field cannot be supported by explicit task-contract or gate-log evidence and would require an invented default",
+    "The allowed path set is exceeded",
+    "Two bounded repair attempts are exhausted"
+  ],
+  "human_gates": [
+    "architecture_scope_change",
+    "final_integration"
+  ],
+  "max_repair_attempts": 2,
+  "timeouts_seconds": {
+    "architect": 300,
+    "builder": 900,
+    "verifier": 600,
+    "acceptance_command": 300
+  }
+}

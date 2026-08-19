@@ -1,0 +1,100 @@
+{
+  "id": "phase-4-2-gate-outcome",
+  "title": "Define and implement Hermes-native GateOutcome ingestion",
+  "objective": "Implement a versioned GateOutcome 1.0 contract and deterministic Hermes-native adapter boundary that converts explicit gate-log outcomes into ProgressTrace events and signals. The adapter must use only structured deterministic gate-log data, preserve provenance for derived fields, and leave unsupported semantic fields authored and explicitly marked rather than guessed. Design this task jointly with phase-4-1-agent-session because emitted outcomes become the ordered invocation/session evidence. Preserve all existing Phase 0–3 contracts and Core semantics. Do not parse conversation text, call an LLM, or promise OpenTelemetry/generic adapter compatibility.",
+  "repository": "/srv/projects/progresstrace",
+  "base_branch": "main",
+  "depends_on": [
+    "phase-4-1-agent-session must be reviewed jointly with this task before implementation"
+  ],
+  "allowed_paths": [
+    "contracts/gate-outcome.schema.json",
+    "docs/contracts/gate-outcome.md",
+    "docs/architecture/**",
+    "src/ProgressTrace.Core/Models/**",
+    "src/ProgressTrace.Core/Validation/**",
+    "src/ProgressTrace.Core/Normalization/**",
+    "src/ProgressTrace.Core/Adapters/**",
+    "src/ProgressTrace.Core/Sessions/**",
+    "src/ProgressTrace.Cli/**",
+    "tests/ProgressTrace.ConformanceTests/**",
+    "fixtures/gate-outcome/**",
+    "experiments/reference-adapter-v0/**",
+    "tasks/phase-4-2-gate-outcome.json",
+    "README.md",
+    ".github/workflows/ci.yml"
+  ],
+  "protected_paths": [
+    "contracts/trace-envelope.schema.json",
+    "contracts/obligation-ledger.schema.json",
+    "contracts/evaluation-result.schema.json",
+    "contracts/termination-declaration.schema.json",
+    "contracts/stop-assessment-result.schema.json",
+    "contracts/baseline-definition.schema.json",
+    "contracts/baseline-comparison-result.schema.json",
+    "src/ProgressTrace.Benchmarks/**",
+    "fixtures/benchmarks/**",
+    "annotations/**",
+    "AGENTS.md",
+    "global.json"
+  ],
+  "required_contract_decisions": [
+    "GateOutcome 1.0 records the gate command or stable command identifier, exit code, timestamp, targeted obligation identifier when available, closed verdict (pass, fail, skipped, error), and source digest.",
+    "The contract distinguishes observed gate-log fields from derived canonical trace fields and from authored fields; provenance is explicit and no field is promoted to observed truth merely because an adapter produced it.",
+    "A missing obligation target remains missing or explicitly unresolved; the adapter never guesses an obligation from command names or free-form text.",
+    "Timestamp and ordering normalization are deterministic and compatible with the reviewed AgentSession ordering boundary.",
+    "Gate-log to trace-event and signal mapping is a pure local transformation with no network, database, shell execution, model invocation, or hidden state.",
+    "The adapter fails closed on malformed, incoherent, duplicate, unsupported, or unverifiable source records and does not echo untrusted values in diagnostics.",
+    "The adapter can emit the existing canonical inputs needed by the unchanged .NET evaluator while preserving fields it cannot derive for explicit authoring.",
+    "The existing reference-adapter-v0 remains experimental/internal; this task does not create a universal adapter or compatibility promise."
+  ],
+  "deliverables": [
+    "GateOutcome 1.0 JSON Schema and normative contract documentation",
+    "Deterministic validator, normalizer, and Hermes gate-log projection adapter",
+    "Explicit provenance representation for source, derived, and authored fields",
+    "Valid, invalid, and golden fixtures covering pass, fail, skipped, error, repeated gate outcomes, missing obligation target, malformed source, duplicate records, unsupported verdict, and source digest handling",
+    "Integration fixtures showing gate outcomes projected into existing trace/ledger inputs without changing Core semantics",
+    "Conformance, schema, determinism, redaction, and regression tests",
+    "README and CI usage updates limited to this contract",
+    "Self-check evidence listing exact commands, fixture counts, changed paths, frozen-path verification, and unresolved items"
+  ],
+  "non_goals": [
+    "No parsing of conversation content or semantic interpretation of free-form command output",
+    "No OpenTelemetry, framework-generic, or external-provider adapter",
+    "No persistence, hosted service, UI, or network calls",
+    "No automatic agent interruption or action on a gate verdict",
+    "No changes to existing Phase 0–3 schemas, semantics, or benchmark corpus",
+    "No synthetic benchmark expansion and no threshold tuning",
+    "No cryptographic attestation implementation from ADR-0006",
+    "No model calls or LLM-as-judge"
+  ],
+  "acceptance_commands": [
+    ["dotnet", "build", "ProgressTrace.slnx", "--configuration", "Release", "--nologo", "--warnaserror"],
+    ["dotnet", "run", "--project", "tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj", "--configuration", "Release", "--no-build"],
+    ["python3", "-m", "json.tool", "contracts/gate-outcome.schema.json"],
+    ["python3", "experiments/reference-adapter-v0/run_dogfood.py"],
+    ["python3", "-m", "unittest", "discover", "-s", "experiments/reference-adapter-v0/tests", "-p", "test_*.py"],
+    ["dotnet", "format", "ProgressTrace.slnx", "--verify-no-changes", "--no-restore", "--verbosity", "minimal"],
+    ["git", "diff", "--check"]
+  ],
+  "stop_conditions": [
+    "The shared AgentSession/GateOutcome boundary requires changing an existing integrated contract without an approved architecture revision",
+    "A source field can only be populated by conversation interpretation, model inference, or an invented default",
+    "The adapter requires network, database, shell, persistence, or hidden state",
+    "Existing Phase 0–3 fixtures, schemas, CLI behavior, reference-adapter regression, or deterministic semantics regress",
+    "Untrusted source values would be echoed in diagnostics or treated as instructions",
+    "The allowed path set is exceeded",
+    "Two bounded repair attempts are exhausted"
+  ],
+  "human_gates": [
+    "architecture_scope_change",
+    "final_integration"
+  ],
+  "max_repair_attempts": 2,
+  "timeouts_seconds": {
+    "architect": 300,
+    "builder": 900,
+    "verifier": 600,
+    "acceptance_command": 300
+  }
+}
