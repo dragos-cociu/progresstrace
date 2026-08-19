@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://progresstrace.local/contracts/escalation.schema.json",
+  "title": "EscalationQueue",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "interval", "cap", "status", "entries", "deferredCount"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "interval": {"type": "string", "minLength": 1},
+    "cap": {"type": "integer", "minimum": 0},
+    "status": {"enum": ["ok", "deferred"]},
+    "deferredCount": {"type": "integer", "minimum": 0},
+    "entries": {"type": "array", "items": {"type": "object", "required": ["type", "question"], "properties": {"type": {"enum": ["class-c-change", "golden-update", "invariant-violation", "advisory-disagreement", "novel-behavior"]}, "question": {"type": "string", "minLength": 1}}}}
+  }
+}

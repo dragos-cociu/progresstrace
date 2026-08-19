@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "defaultClass": "C",
+  "rules": [
+    {"id": "normative-schema", "class": "C", "patterns": ["contracts/**/*.json", "contracts/*.json"]},
+    {"id": "policy-itself", "class": "C", "patterns": ["policy/**"]},
+    {"id": "runner-and-verification", "class": "C", "patterns": ["verification/**", ".github/workflows/**", "tools/verification/**"]},
+    {"id": "normative-source", "class": "C", "patterns": ["src/ProgressTrace.Core/**", "src/ProgressTrace.Cli/**"]},
+    {"id": "new-runtime-dependency", "class": "C", "patterns": ["**/*.csproj", "Directory.Packages.props", "Directory.Build.props"]},
+    {"id": "golden-change", "class": "C", "patterns": ["fixtures/**/golden/**", "fixtures/**/golden-*.json"]},
+    {"id": "non-normative-tests", "class": "A", "patterns": ["tests/**", "fixtures/**"]},
+    {"id": "documentation", "class": "A", "patterns": ["docs/**", "README.md", "**/*.md"]},
+    {"id": "task-contract", "class": "A", "patterns": ["tasks/**"]}
+  ],
+  "invariantViolationForces": "C"
+}

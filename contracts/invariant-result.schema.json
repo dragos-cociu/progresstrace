@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://progresstrace.local/contracts/invariant-result.schema.json",
+  "title": "InvariantResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "status", "results"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "status": {"enum": ["pass", "fail"]},
+    "results": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "seed", "reproducer", "details"], "properties": {"id": {"type": "string"}, "status": {"enum": ["pass", "fail"]}, "seed": {"type": "integer"}, "reproducer": {"type": "array", "items": {"type": "string"}}, "details": {"type": "object"}}}}
+  }
+}

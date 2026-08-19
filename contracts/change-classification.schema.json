@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://progresstrace.local/contracts/change-classification.schema.json",
+  "title": "ChangeClassification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "classification", "baseCommit", "candidateCommit", "policyVersion", "policyDigest", "triggeringRules"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "classification": {"enum": ["A", "B", "C"]},
+    "baseCommit": {"type": "string", "minLength": 1},
+    "candidateCommit": {"type": "string", "minLength": 1},
+    "policyVersion": {"type": "string", "minLength": 1},
+    "policyDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "triggeringRules": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["ruleId", "path", "class"], "properties": {"ruleId": {"type": "string"}, "path": {"type": "string"}, "class": {"enum": ["A", "B", "C"]}}}}
+  }
+}

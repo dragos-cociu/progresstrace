@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://progresstrace.local/contracts/verification-report.schema.json",
+  "title": "VerificationReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "reportType", "status", "evaluatedCommit", "cleanCheckout", "runner", "checks", "commandSetDigest", "evaluatedTreeDigest"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "reportType": {"const": "VerificationReport"},
+    "status": {"enum": ["pass", "fail"]},
+    "evaluatedCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "cleanCheckout": {"const": true},
+    "runner": {"type": "object", "additionalProperties": false, "required": ["name", "version"], "properties": {"name": {"type": "string", "minLength": 1}, "version": {"type": "string", "minLength": 1}}},
+    "checks": {"type": "array", "minItems": 7, "items": {"type": "object", "additionalProperties": false, "required": ["name", "command", "exitCode", "durationSeconds", "status", "outputDigest"], "properties": {"name": {"type": "string"}, "command": {"type": "array", "items": {"type": "string"}}, "exitCode": {"type": "integer"}, "durationSeconds": {"type": "number", "minimum": 0}, "status": {"enum": ["pass", "fail"]}, "outputDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}},
+    "commandSetDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "evaluatedTreeDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reportDigestBasis": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
