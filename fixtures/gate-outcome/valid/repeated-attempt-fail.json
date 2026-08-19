@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0","outcomeId":"outcome-retry","sessionId":"session-001","invocationId":"inv-002","sequence":1,"command":"dotnet test","exitCode":1,"timestamp":"2026-01-01T00:02:30Z","obligationId":"obl-1","verdict":"fail","sourceDigest":"2222222222222222222222222222222222222222222222222222222222222222"}

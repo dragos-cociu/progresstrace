@@ -29,4 +29,13 @@ public static class DiagnosticCodes
     public const string DanglingBaselineObligationId = "PT402";
     public const string MissingBaselineObligationCoverage = "PT403";
     public const string BaselineSourceCoherence = "PT404";
+    public const string DuplicateInvocationId = "PT502";
+    public const string NonMonotonicInvocationSequence = "PT503";
+    public const string InvalidAttempt = "PT504";
+    public const string InvalidInvocationWindow = "PT505";
+    public const string EmptyObligationId = "PT506";
+    public const string DuplicateOutcomeId = "PT507";
+    public const string SessionReferenceMismatch = "PT508";
+    public const string InvocationReferenceMismatch = "PT509";
+    public const string ProjectionOverflow = "PT515";
 }

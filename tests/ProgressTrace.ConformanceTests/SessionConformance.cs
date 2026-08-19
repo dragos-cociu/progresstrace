@@ -1,5 +1,8 @@
 using ProgressTrace.Core.Adapters;
+using ProgressTrace.Core.Diagnostics;
+using ProgressTrace.Core.Models;
 using ProgressTrace.Core.Normalization;
+using ProgressTrace.Core.Sessions;
 using ProgressTrace.Core.Validation;
 
 static class SessionConformance
@@ -49,5 +52,29 @@ static class SessionConformance
             var result = GateOutcomeValidator.ParseAndValidate(File.ReadAllBytes(path));
             if (result.IsValid || result.Diagnostics.All(item => item.Code != expected)) failures.Add($"{Path.GetFileName(path)}: expected diagnostic {expected}");
         }
+        AssertSessionBoundary(root, failures);
+    }
+
+    private static void AssertSessionBoundary(string root, List<string> failures)
+    {
+        var session = AgentSessionValidator.ParseAndValidate(File.ReadAllBytes(Path.Combine(root, "fixtures", "session", "valid", "retry-session.json"))).Session!;
+        var repeated = GateOutcomeValidator.ParseAndValidate(File.ReadAllBytes(Path.Combine(root, "fixtures", "gate-outcome", "valid", "repeated-attempt-fail.json"))).Outcome!;
+        var evaluation = SessionEvaluator.Evaluate(session, [repeated]);
+        if (evaluation.Classification != SessionEvaluator.RepeatedAttemptWithoutObligationAdvancement || evaluation.StopRequested)
+            failures.Add("session boundary did not classify a retry without advancement fail-closed and without stop");
+
+        var pass = GateOutcomeValidator.ParseAndValidate(File.ReadAllBytes(Path.Combine(root, "fixtures", "gate-outcome", "valid", "pass.json"))).Outcome!;
+        var single = new AgentSession("1.0", "session-001", "phase-4-1-agent-session", [session.Invocations![0]]);
+        var integration = SessionTraceBuilder.Build(single, [pass]);
+        if (integration.Trace.Events!.Count != 1 || integration.Ledger.Signals!.Count != 1 || integration.Evaluation.TraceClassification != "progress")
+            failures.Add("gate outcome integration did not reach trace, ledger, and evaluator");
+
+        var duplicate = System.Text.Json.JsonSerializer.Deserialize<GateOutcome[]>(File.ReadAllBytes(Path.Combine(root, "fixtures", "gate-outcome", "integration", "duplicate-outcomes.json")), new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+        var duplicateResult = SessionContractValidator.Validate(single with { Invocations = [session.Invocations![0], session.Invocations![1]] }, duplicate);
+        if (duplicateResult.IsValid || duplicateResult.Diagnostics.All(d => d.Code != DiagnosticCodes.DuplicateOutcomeId))
+            failures.Add("duplicate outcome fixture did not fail closed");
+        var mismatch = GateOutcomeValidator.ParseAndValidate(File.ReadAllBytes(Path.Combine(root, "fixtures", "gate-outcome", "integration", "session-reference-mismatch.PT508.json"))).Outcome!;
+        if (SessionContractValidator.Validate(single, [mismatch]).Diagnostics.All(d => d.Code != DiagnosticCodes.SessionReferenceMismatch))
+            failures.Add("cross-contract session mismatch did not fail closed");
     }
 }

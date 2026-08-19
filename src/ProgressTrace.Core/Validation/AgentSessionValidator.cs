@@ -29,12 +29,12 @@ public static class AgentSessionValidator
                 var ids = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var item in invocations)
                 {
-                    if (item.InvocationId is not null && !ids.Add(item.InvocationId)) diagnostics.Add(new("PT502", "/invocations", "Invocation identifiers must be unique."));
-                    if (item.Sequence is not null && previousSequence is not null && item.Sequence <= previousSequence) diagnostics.Add(new("PT503", "/invocations", "Invocation sequence must be strictly increasing."));
+                    if (item.InvocationId is not null && !ids.Add(item.InvocationId)) diagnostics.Add(new(DiagnosticCodes.DuplicateInvocationId, "/invocations", "Invocation identifiers must be unique."));
+                    if (item.Sequence is not null && previousSequence is not null && item.Sequence <= previousSequence) diagnostics.Add(new(DiagnosticCodes.NonMonotonicInvocationSequence, "/invocations", "Invocation sequence must be strictly increasing."));
                     previousSequence = item.Sequence;
-                    if (item.Attempt is not null && item.Attempt < 1) diagnostics.Add(new("PT504", "/invocations", "Attempt must be positive."));
-                    if (item.StartedAt is not null && item.EndedAt is not null && item.EndedAt < item.StartedAt) diagnostics.Add(new("PT505", "/invocations", "Invocation end must not precede start."));
-                    if (item.ObligationIds is not null && item.ObligationIds.Any(string.IsNullOrWhiteSpace)) diagnostics.Add(new("PT506", "/invocations", "Obligation identifiers must not be empty."));
+                    if (item.Attempt is not null && item.Attempt < 1) diagnostics.Add(new(DiagnosticCodes.InvalidAttempt, "/invocations", "Attempt must be positive."));
+                    if (item.StartedAt is not null && item.EndedAt is not null && item.EndedAt < item.StartedAt) diagnostics.Add(new(DiagnosticCodes.InvalidInvocationWindow, "/invocations", "Invocation end must not precede start."));
+                    if (item.ObligationIds is not null && item.ObligationIds.Any(string.IsNullOrWhiteSpace)) diagnostics.Add(new(DiagnosticCodes.EmptyObligationId, "/invocations", "Obligation identifiers must not be empty."));
                 }
             }
             var session = new AgentSession(version, sessionId, taskContractId, invocations);
@@ -56,7 +56,8 @@ public static class AgentSessionValidator
             var id = String(item, "invocationId", p, diagnostics); var sequence = Integer(item, "sequence", p, diagnostics); var attempt = Integer(item, "attempt", p, diagnostics);
             var traceId = String(item, "traceId", p, diagnostics); var obligations = Strings(item, "obligationIds", p, diagnostics);
             var started = Timestamp(item, "startedAt", p, diagnostics); var ended = Timestamp(item, "endedAt", p, diagnostics);
-            result.Add(new(id, sequence, attempt is null ? null : checked((int)attempt.Value), traceId, obligations, started, ended));
+            var safeAttempt = attempt is >= 1 and <= int.MaxValue ? (int?)attempt.Value : null;
+            result.Add(new(id, sequence, safeAttempt, traceId, obligations, started, ended));
         }
         return result;
     }

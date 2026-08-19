@@ -14,3 +14,10 @@ public sealed record SessionInvocation(
     IReadOnlyList<string>? ObligationIds,
     DateTimeOffset? StartedAt,
     DateTimeOffset? EndedAt);
+
+public sealed record SessionEvaluation(
+    string SessionId,
+    string Classification,
+    IReadOnlyList<string> ObligationIds,
+    IReadOnlyList<string> EvidenceIds,
+    bool StopRequested);

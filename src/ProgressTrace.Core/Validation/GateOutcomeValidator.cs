@@ -29,7 +29,15 @@ public static class GateOutcomeValidator
             if (sequence is not null && sequence < 0) diagnostics.Add(new("PT512", "/sequence", "Sequence must be non-negative."));
             if (verdict is not null && !Verdicts.Contains(verdict)) diagnostics.Add(new("PT513", "/verdict", "Verdict is not supported."));
             if (sourceDigest is not null && !Digest.IsMatch(sourceDigest)) diagnostics.Add(new("PT514", "/sourceDigest", "Source digest must be a lowercase SHA-256 hex digest."));
-            var outcome = new GateOutcome(version, outcomeId, sessionId, invocationId, sequence, command, exitCode is null ? null : checked((int)exitCode.Value), timestamp, obligationId, verdict, sourceDigest);
+            int? safeExitCode = null;
+            if (exitCode is not null)
+            {
+                if (exitCode < int.MinValue || exitCode > int.MaxValue)
+                    diagnostics.Add(new(DiagnosticCodes.ProjectionOverflow, "/exitCode", "Exit code is outside the supported integer range."));
+                else
+                    safeExitCode = (int)exitCode.Value;
+            }
+            var outcome = new GateOutcome(version, outcomeId, sessionId, invocationId, sequence, command, safeExitCode, timestamp, obligationId, verdict, sourceDigest);
             return new(outcome, diagnostics);
         }
         catch (JsonException) { return new(null, [new(DiagnosticCodes.InvalidJson, "", "Input is not valid JSON.")]); }

@@ -10,6 +10,10 @@ return await RunAsync(args);
 
 static async Task<int> RunAsync(string[] args)
 {
+    if (args.Length == 3 && (args[0] is "validate" or "normalize") && (args[1] is "session" or "gate-outcome"))
+    {
+        return await RunContractAsync(args[0], args[1], args[2]);
+    }
     if (args.Length == 3 && args[0] == "evaluate")
     {
         return await EvaluateAsync(args[1], args[2]);
@@ -52,6 +56,25 @@ static async Task<int> RunAsync(string[] args)
     {
         await Console.OpenStandardOutput().WriteAsync(TraceNormalizer.Normalize(result.Envelope!));
     }
+    return 0;
+}
+
+static async Task<int> RunContractAsync(string operation, string kind, string path)
+{
+    var input = await ReadAsync(path, kind);
+    if (input.ExitCode is { } exit) return exit;
+    if (kind == "session")
+    {
+        var result = AgentSessionValidator.ParseAndValidate(input.Bytes!);
+        if (!result.IsValid) { WriteJson(Console.Out, new { valid = false, diagnostics = result.Diagnostics }); return FailureExit(result.Diagnostics); }
+        if (operation == "validate") WriteJson(Console.Out, new { valid = true, diagnostics = Array.Empty<Diagnostic>() });
+        else await Console.OpenStandardOutput().WriteAsync(AgentSessionNormalizer.Normalize(result.Session!));
+        return 0;
+    }
+    var gate = GateOutcomeValidator.ParseAndValidate(input.Bytes!);
+    if (!gate.IsValid) { WriteJson(Console.Out, new { valid = false, diagnostics = gate.Diagnostics }); return FailureExit(gate.Diagnostics); }
+    if (operation == "validate") WriteJson(Console.Out, new { valid = true, diagnostics = Array.Empty<Diagnostic>() });
+    else await Console.OpenStandardOutput().WriteAsync(GateOutcomeNormalizer.Normalize(gate.Outcome!));
     return 0;
 }
 
