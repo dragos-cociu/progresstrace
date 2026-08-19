@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://progresstrace.local/contracts/agent-session.schema.json",
+  "title": "AgentSession",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sessionId", "taskContractId", "invocations"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "sessionId": {"type": "string", "minLength": 1},
+    "taskContractId": {"type": "string", "minLength": 1},
+    "invocations": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["invocationId", "sequence", "attempt", "traceId", "obligationIds", "startedAt", "endedAt"], "properties": {
+      "invocationId": {"type": "string", "minLength": 1},
+      "sequence": {"type": "integer", "minimum": 0},
+      "attempt": {"type": "integer", "minimum": 1},
+      "traceId": {"type": "string", "minLength": 1},
+      "obligationIds": {"type": "array", "items": {"type": "string", "minLength": 1}},
+      "startedAt": {"type": "string", "minLength": 1},
+      "endedAt": {"type": "string", "minLength": 1}
+    }}}
+  }
+}

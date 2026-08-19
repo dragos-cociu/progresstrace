@@ -49,6 +49,7 @@ AssertLedgerStructuralBranches(repositoryRoot, failures);
 AssessmentConformance.Assert(repositoryRoot, failures);
 BaselineComparisonConformance.Assert(repositoryRoot, failures);
 CliConformance.Assert(repositoryRoot, failures);
+SessionConformance.Assert(repositoryRoot, failures);
 
 if (failures.Count == 0)
 {

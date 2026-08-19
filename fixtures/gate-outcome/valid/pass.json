@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0","outcomeId":"outcome-001","sessionId":"session-001","invocationId":"inv-001","sequence":0,"command":"dotnet test","exitCode":0,"timestamp":"2026-01-01T00:00:30Z","obligationId":"obl-1","verdict":"pass","sourceDigest":"0000000000000000000000000000000000000000000000000000000000000000"}

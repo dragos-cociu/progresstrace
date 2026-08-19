@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://progresstrace.local/contracts/gate-outcome.schema.json",
+  "title": "GateOutcome",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "outcomeId", "sessionId", "invocationId", "sequence", "command", "exitCode", "timestamp", "verdict", "sourceDigest"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "outcomeId": {"type": "string", "minLength": 1},
+    "sessionId": {"type": "string", "minLength": 1},
+    "invocationId": {"type": "string", "minLength": 1},
+    "sequence": {"type": "integer", "minimum": 0},
+    "command": {"type": "string", "minLength": 1},
+    "exitCode": {"type": "integer"},
+    "timestamp": {"type": "string", "minLength": 1},
+    "obligationId": {"type": "string", "minLength": 1},
+    "verdict": {"enum": ["pass", "fail", "skipped", "error"]},
+    "sourceDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
