@@ -3,10 +3,9 @@
 **Document de referință:** 2026-08-19  
 **Repository:** `/srv/projects/progresstrace`  
 **Branch analizat:** `task/benchmark-analysis`  
-**HEAD la momentul analizei:** `3c54d93` — `docs: save ProgressTrace validation checkpoint`
-**Commitul acestui document:** `e8edf77` — `docs: consolidate project roadmap and status`
+**HEAD la momentul analizei:** `d65e2e2` — `docs: consolidate project roadmap and status`
 **Stare working tree la verificare:** curat
-**Relația cu `main`:** branch-ul conține 10 commituri peste `main`; `main`/`origin/main` sunt la `8474fba`.
+**Relația cu `main`:** branch-ul conține 11 commituri peste `main`; `main`/`origin/main` sunt la `8474fba`.
 
 Acest document separă:
 
@@ -585,7 +584,6 @@ successfulStageCount: 15
 - `docs/architecture/ADR-0004-baseline-comparison-and-authored-estimate.md`
 - `docs/architecture/ADR-0005-external-review-and-clean-room-reproducibility.md`
 - `docs/architecture/ADR-0006-session-provenance-and-attestation.md`
-- `docs/project-status-checkpoint-2026-08-19.md`
 - `docs/benchmark-analysis.md`
 - `docs/benchmark-corpus-expansion.md`
 - `docs/benchmark-annotation-rubric.md`
@@ -623,214 +621,190 @@ Artefactele brute de audit pentru evaluarea blind sunt în afara repository-ului
 
 ---
 
-## 6. Backlog curent
+## 6. Phase 4 — utilizare operațională în pipeline-ul Hermes
 
-## P0 — alinierea documentației cu starea reală
+Directiva Phase 4 înlocuiește backlog-ul P2 și schimbă scopul proiectului de la
+validare externă la dogfooding operațional.
 
-Checkpoint-ul a fost scris înainte de finalizarea explicită a rulării celor 5
-cazuri reale. Trebuie actualizate documentele de status pentru a reflecta:
+### Decizii închise
 
-- vertical slice-ul real finalizat;
-- `5/5` cazuri;
-- `15/15` etape CLI;
-- concluzia că adapterul rămâne experimental;
-- faptul că următoarea decizie este despre authoring friction și manifest, nu despre
-  primul run real.
+- **Narrow:** singura sursă de ingestie este gate log-ul Hermes.
+- Nu se promite compatibilitate universală, OpenTelemetry sau adaptor generic.
+- Track-ul de adjudicare/oracle al celor 60 de cazuri este închis.
+- Corpusul de 60 de cazuri rămâne exclusiv regression suite în CI.
+- Nu se adaugă cazuri sintetice noi și nu se ajustează praguri pentru agreement.
+- `fuzzyRepeatCycle` este explorator; raportarea implicită folosește `maxTurns`
+  și `exactRepeat`.
+- Review-ul extern adversarial este opțional și non-blocant.
+- Dogfooding-ul produce issue-uri de produs, nu verdicte `continue/stop` despre
+  viabilitatea proiectului.
 
-Acest document este primul artefact de aliniere.
+### Schimbarea de surse
 
-## P0 — review și integrare Git
+În Phase 4, inputurile nu mai sunt reconstruite retrospectiv din conversație:
 
-Branch-ul curent are 10 commituri peste `main` și este curat, dar nu este integrat.
-Rămâne necesar:
+| Input canonic | Sursa Phase 4 |
+|---|---|
+| `ledger.json` | task contract-ul scris înainte de rulare |
+| semnale | gate log Hermes și verdicte deterministe |
+| `declaration.json` | motivul de terminare raportat de orchestrator |
+| buget operațional | consum observat: invocări, tokeni, timp |
 
-1. review al diff-ului agregat față de `main`;
-2. verificarea documentelor și artefactelor permise;
-3. PR/merge prin human gate;
-4. actualizarea `main` numai după decizia lui Dragos.
+Obligațiile se citesc din plan, iar semnalele din verificări deterministe. Core-ul
+nu primește interpretare de text liber și rămâne offline, fail-closed și fără
+dependențe runtime terțe.
 
-Nu se face merge automat și nu se publică direct în `main`.
+### Taskuri Phase 4
 
-## P1 — măsurarea authoring friction pe vertical slice
+#### Task 4.1 — Contract de sesiune și tentative
 
-Trebuie documentat sistematic pentru cele 5 cazuri:
+De implementat:
 
-- câte câmpuri au fost completate manual;
-- ce informații au putut fi extrase mecanic;
-- ce informații au rămas nejustificate de sursă;
-- cât timp/efort a consumat proiecția;
-- ce output a fost util pentru diagnostic;
-- ce output a schimbat sau ar putea schimba o decizie operațională;
-- unde schema v0 a fost incomodă sau ambiguă.
+- contract `AgentSession` 1.0;
+- identificator de sesiune;
+- listă ordonată de invocări;
+- mapare invocare → obligații vizate;
+- număr de tentativă;
+- ordering determinist între invocări;
+- evaluare la nivel de sesiune;
+- detecție de tentativă repetată fără avans;
+- fixture-uri valide/invalide, diagnostice, conformance și CI.
 
-## P1 — decizie privind manifestul intern
+Excluderi: fără persistență, network sau UI.
 
-După măsurarea fricțiunii, alegem una dintre variante:
+#### Task 4.2 — Ingestie Hermes-native din gate log
 
-### Continue
+De implementat:
 
-- stabilizăm un manifest minimal intern;
-- păstrăm obligațiile și semnalele explicit authored;
-- mecanizăm doar extragerea sigură de lifecycle metadata și source digests;
-- adăugăm teste pentru manifest;
-- păstrăm core-ul .NET ca evaluator unic.
+- contract `GateOutcome` 1.0;
+- comandă, exit code, timestamp, obligație vizată și digest sursă;
+- verdict închis: `pass`, `fail`, `skipped`, `error`;
+- emitere după fiecare verificare deterministă Hermes;
+- adaptor gate log → trace events + signals;
+- provenance explicit pentru câmpurile derivate;
+- câmpurile nederivabile rămân authored și marcate ca atare.
 
-### Narrow
+Excluderi: fără parsing conversațional și fără OpenTelemetry.
 
-- limităm adaptorul la un singur controller/export;
-- nu promitem compatibilitate universală;
-- păstrăm restul câmpurilor ca authoring explicit;
-- documentăm exact limitele sursei.
+#### Task 4.3 — Generator de ledger din task contract
 
-### Stop/archive
+De implementat:
 
-- păstrăm core-ul și fixture-urile;
-- arhivăm adaptorul ca experiment;
-- nu investim în contract de ingestie stabil dacă authoring-ul rămâne prea costisitor.
+- `tasks/phase-*.json` → `ObligationLedger` 1.0;
+- trasabilitate pentru fiecare obligație către clauza task contract-ului;
+- raport de coverage: derivat automat, manual, fără suport în sursă;
+- validare referențială cu core-ul existent.
 
-## P1 — cazuri reale suplimentare doar dacă aduc informație nouă
+#### Task 4.4 — Assessment in-flight advisory
 
-Cele 5 cazuri sunt suficiente pentru concluzia de integrare. Nu este necesar să
-forțăm un număr de 10.
+De implementat:
 
-Dacă dorim o decizie mai robustă, următoarele cazuri ar trebui să fie diferite
-semantic, nu duplicate:
+- CLI `advise <session> <ledger>` fără declarație de terminare;
+- output cu `continue`, `stop-recommended` sau `insufficient-evidence`;
+- motiv corelat cu obligații și semnale;
+- fail-closed: lipsa evidenței produce `insufficient-evidence`;
+- recomandarea nu întrerupe automat nimic.
 
-- `insufficient-evidence` autentic;
-- abandon;
-- `capture-truncated`;
-- oprire prematură;
-- baseline authored cu buget contrafactual relevant.
+#### Task 4.5 — Observed budget
 
-## P2 — adjudicare formală a blind evaluation
+De implementat:
 
-Aceasta rămâne opțională și nu este următorul pas operațional imediat.
+- contract `ObservedBudget` 1.0 pentru invocări, tokeni și timp;
+- comparație între costul observat și avansul obligațiilor;
+- folosirea lui în contextul operațional în locul dependenței de `eventBudget`;
+- păstrarea `eventBudget` pentru benchmark, cu limitarea semantică actuală.
 
-Este necesară doar dacă vrem să susținem public sau formal:
+#### Task 4.6 — Integrare în shadow mode
 
-- accuracy;
-- precision/recall;
-- false-halt rate;
-- late-halt cost;
-- generalization.
+De implementat:
 
-Ar necesita:
+- hook Hermes după fiecare gate;
+- apel `advise` și persistarea rezultatului;
+- verdict ProgressTrace comparat cu decizia reală;
+- shadow mode obligatoriu: rezultatele se înregistrează, nu acționează;
+- trecerea la mod activ rămâne o decizie separată, ulterioară.
 
-1. clarificarea rubricii pentru baseline-urile fuzzy/cycle;
-2. doi evaluatori independenți reali sau un protocol acceptat;
-3. adjudicator;
-4. oracle final;
-5. confusion matrices;
-6. metrici calculate față de oracle.
-
-Nu trebuie prezentată majoritatea actuală 2/3 drept oracle.
-
-## P2 — posibilă stabilizare a baseline detectors
-
-`fuzzyRepeatCycle` are agreement-ul cel mai slab și rămâne experimental.
-Înainte de optimizare trebuie decis dacă detectorul este:
-
-- definit suficient de clar pentru evaluare;
-- un baseline de cercetare sau unul operațional;
-- util pentru decizie sau doar pentru explorare.
-
-Nu se modifică pragurile doar pentru a potrivi evaluatorii existenți.
-
----
-
-## 7. Lucruri propuse, dar amânate intenționat
-
-### Adaptor OpenTelemetry/Hermes stabil
-
-Amânat. Adapterul v0 a demonstrat integrarea, dar nu justifică încă un contract
-universal sau un framework de ingestie.
-
-### Provenance/attestation layer complet
-
-ADR-0006 este `Proposed`, neimplementat.
-Nu se implementează încă:
-
-- hash chain canonical;
-- Merkle root;
-- cheie externă workspace-ului agentului;
-- semnătură;
-- timestamp anchoring;
-- provider receipt;
-- verifier independent.
-
-### UI, hosted service și persistent storage
-
-Rămân în afara scope-ului actual. Nu există încă dovadă că output-ul core este
-suficient de stabil și valoros pentru a justifica aceste componente.
-
-### Plugin execution și online interruption
-
-Nu fac parte din vertical slice-ul actual.
-
-### Semantic inference din payload text
-
-Nu se adaugă în core fără o decizie arhitecturală nouă. Core-ul trebuie să rămână
-onest atunci când evidența structurată lipsește.
-
-### Product alpha / product-market fit
-
-Nu sunt justificate de rezultatele actuale.
-
----
-
-## 8. Ordinea recomandată de lucru de aici
-
-1. **Integrare documentară:** actualizează checkpoint-ul și README-ul pentru
-   rezultatul real `5/5`, `15/15`.
-2. **Review Git:** review și human gate pentru branch-ul cu cele 10 commituri.
-3. **Authoring-friction report:** măsoară concret costul proiecției celor 5 cazuri.
-4. **Decizie manifest v0:** continue, narrow sau archive.
-5. **Doar dacă decizia este continue:** implementează mecanizarea lifecycle/source
-   metadata pentru o singură sursă/controller export.
-6. **Adaugă cazuri reale noi numai pentru acoperirea unor situații neacoperite.**
-7. **Reevaluează după datele operaționale:** utilitate, cost, limite și valoare
-   distinctă față de baseline-uri.
-8. **Abia ulterior:** adaptor mai stabil, raportare mai bogată sau un nou ADR de
-   provenance.
-
-Ordinea nu trebuie inversată în:
+### Ordine obligatorie
 
 ```text
-adaptor universal → UI/hosted → încercăm să demonstrăm valoarea
+4.1 + 4.2
+→ 4.3
+→ 4.4
+→ 4.5
+→ 4.6
 ```
 
-Ci:
+4.1 și 4.2 trebuie proiectate împreună, deoarece schema de sesiune determină
+forma evenimentelor provenite din gate log.
+
+### Bucla de feedback
+
+Fiecare task Hermes devine o sesiune observată:
 
 ```text
-core deterministic
-→ benchmark regression suite
-→ vertical slice real
-→ măsurare authoring friction/utilitate
-→ manifest limitat, dacă este justificat
-→ adaptor mai stabil
-→ eventual raportare/hosted
+task contract
+→ ledger generat
+→ gate log → sesiune + semnale
+→ advise în shadow mode
+→ feedback.json
 ```
+
+Nicio sesiune nu se închide fără `feedback.json`. Acesta trebuie să noteze:
+
+- câmpuri indisponibile la momentul utilizării;
+- authoring manual și motivul;
+- ambiguități de schemă;
+- `advise` versus decizia reală;
+- output-uri utile;
+- output-uri neacționabile.
+
+Fiecare observație devine issue de produs sau trebuie închisă explicit cu
+confirmarea că nimic nu a lipsit.
+
+### Indicatori de progres
+
+Sunt ținte de îmbunătățire, nu porți de arhivare:
+
+- proporția câmpurilor de ledger derivate automat;
+- efortul manual per sesiune;
+- sesiuni cu verdict `advise` acționabil;
+- diferențe între verdictul ProgressTrace și decizia umană;
+- issue-uri de contract deschise și închise.
 
 ---
 
-## 9. Concluzia de proiect
+## 7. Lucruri în afara Phase 4
 
-ProgressTrace a trecut de etapa de prototip pur contractual:
+Rămân în afara scope-ului:
 
-- contractele principale există;
-- evaluatorul este deterministic;
-- stop assessment și baseline comparison funcționează;
-- benchmarkul de 60 de cazuri este reproductibil;
-- blind evaluation a oferit un semnal de agreement, dar nu un oracle;
-- 5 proiecții reale au trecut prin pipeline-ul complet.
+- layer complet de attestation din ADR-0006;
+- UI;
+- serviciu hosted;
+- persistence;
+- plugin execution;
+- întrerupere online automată;
+- inferență semantică din payload text în core;
+- adaptor universal sau OpenTelemetry;
+- product-market-fit claims;
+- adjudicare formală a celor 60 de cazuri;
+- oracle uman și confusion matrices pentru corpusul sintetic.
 
-Proiectul nu a demonstrat încă o soluție universală de semantic-progress
-inference. A demonstrat însă ceva mai precis și util:
+---
 
-> **Dacă obligațiile, semnalele și contextul de termination sunt explicit
-> authorate sau furnizate de un controller/harness, ProgressTrace poate produce
-> evaluări și comparații deterministe, auditabile și explicabile pe un workflow
-> real. Întrebarea deschisă este dacă acest authoring poate fi redus suficient
-> pentru a avea valoare operațională repetabilă.**
+## 8. Concluzia de proiect
 
-Aceasta este întrebarea care trebuie să ghideze următorul increment.
+ProgressTrace are acum un core deterministic implementat și verificat, un benchmark
+regression suite de 60 de cazuri și un adaptor experimental care a trecut prin
+5 proiecții reale și 15 etape CLI.
+
+Phase 4 nu mai încearcă să demonstreze dacă proiectul trebuie continuat. El
+folosește proiectul în propriul pipeline pentru a descoperi cerințe de produs.
+
+Întrebarea operațională devine:
+
+> **Cât dintr-o sesiune ProgressTrace poate fi derivat în mod sigur din task
+> contract și gate log, fără authoring retrospectiv și fără inferență semantică
+> în core?**
+
+Răspunsul trebuie obținut prin implementarea în ordine a taskurilor 4.1–4.6,
+cu shadow mode obligatoriu și cu `feedback.json` pentru fiecare sesiune.
