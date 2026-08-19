@@ -3,9 +3,9 @@
 **Document de referință:** 2026-08-19
 **Repository:** `/srv/projects/progresstrace`
 **Branch analizat:** `main`
-**HEAD la momentul analizei:** `c478359` — `docs: record verified Phase 4 control plane`
+**Commit implementare Task 4.0:** `0e354b2` — `test: cover evidence monotonicity invariants`
 **Stare working tree la verificare:** curat
-**Relația cu `origin/main`:** `main` este ahead cu 16 commituri locale; nu sunt împinse la remote.
+**Relația cu `origin/main`:** există commituri locale nepushed; nu s-a făcut push la remote.
 
 Acest document separă:
 
@@ -684,12 +684,12 @@ Componente implementate:
   metamorfic și coerența conformance, cu rezultate `InvariantResult` 1.0;
 - **4.0.D:** CLI de escaladare tipizată cu cap per interval și stare `deferred`.
 
-Raportul independent pentru commitul `712940071b3a0ce9ba9f28e065b1883be4c659ed`
+Raportul independent pentru commitul `0e354b2934de467adc4f89554d9544da37927190`
 este `PASS`, cu `7/7` verificări trecute. Raportul este păstrat în afara
 repository-ului:
 
 ```text
-/srv/projects/.tooling/progresstrace-verification/reports/verification-7129400.json
+/srv/projects/.tooling/progresstrace-verification/reports/verification-0e354b2.json
 ```
 
 Clasificarea commitului este **Clasa C**, conform regulii pentru policy, runner,
