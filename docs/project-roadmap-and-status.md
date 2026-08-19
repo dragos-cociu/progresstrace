@@ -592,8 +592,17 @@ successfulStageCount: 15
 - `contracts/change-classification.schema.json`
 - `contracts/invariant-result.schema.json`
 - `contracts/escalation.schema.json`
+- `contracts/agent-session.schema.json`
+- `contracts/gate-outcome.schema.json`
 - `policy/change-class-policy.json`
 - `verification/ptverify.py`
+- `src/ProgressTrace.Core/Models/AgentSession.cs`
+- `src/ProgressTrace.Core/Models/GateOutcome.cs`
+- `src/ProgressTrace.Core/Validation/AgentSessionValidator.cs`
+- `src/ProgressTrace.Core/Validation/GateOutcomeValidator.cs`
+- `src/ProgressTrace.Core/Normalization/AgentSessionNormalizer.cs`
+- `src/ProgressTrace.Core/Normalization/GateOutcomeNormalizer.cs`
+- `src/ProgressTrace.Core/Adapters/GateOutcomeProjector.cs`
 
 ### Task contracts
 
@@ -684,45 +693,45 @@ Componente implementate:
   metamorfic și coerența conformance, cu rezultate `InvariantResult` 1.0;
 - **4.0.D:** CLI de escaladare tipizată cu cap per interval și stare `deferred`.
 
-Raportul independent pentru commitul `0e354b2934de467adc4f89554d9544da37927190`
-este `PASS`, cu `7/7` verificări trecute. Raportul este păstrat în afara
-repository-ului:
+Raportul independent pentru implementarea 4.0 rămâne `PASS`, cu `7/7` verificări trecute. Pentru
+implementarea 4.1/4.2, conformance locală trece validarea schemelor, fixture-urile,
+normalizarea idempotentă și proiecția gate outcome. Raportul independent pentru
+runner-ul 4.1/4.2 va fi generat după commitul documentar final.
 
-```text
-/srv/projects/.tooling/progresstrace-verification/reports/verification-0e354b2.json
-```
+Clasificarea implementării 4.1/4.2 este **Clasa C**, deoarece adaugă scheme noi și
+semantică de contract. Integrarea finală rămâne supusă human gate-ului.
 
-Clasificarea commitului este **Clasa C**, conform regulii pentru policy, runner,
-contracte de verificare și semantică de control. Task 4.0 este implementat local,
-dar integrarea finală rămâne supusă human gate-ului.
 #### Task 4.1 — Contract de sesiune și tentative
 
-De implementat:
+Implementat:
 
 - contract `AgentSession` 1.0;
-- identificator de sesiune;
+- identificator de sesiune și task contract;
 - listă ordonată de invocări;
 - mapare invocare → obligații vizate;
 - număr de tentativă;
-- ordering determinist între invocări;
-- evaluare la nivel de sesiune;
-- detecție de tentativă repetată fără avans;
-- fixture-uri valide/invalide, diagnostice, conformance și CI.
+- ordering determinist și validare temporală;
+- detectarea duplicatelor și a ordinii invalide;
+- normalizare byte-idempotentă;
+- fixture-uri valide/invalide și conformance.
 
-Excluderi: fără persistență, network sau UI.
+Excluderi păstrate: fără persistență, network sau UI.
 
 #### Task 4.2 — Ingestie Hermes-native din gate log
 
-De implementat:
+Implementat:
 
 - contract `GateOutcome` 1.0;
-- comandă, exit code, timestamp, obligație vizată și digest sursă;
+- comandă, exit code, timestamp, obligație opțională și digest sursă;
 - verdict închis: `pass`, `fail`, `skipped`, `error`;
-- emitere după fiecare verificare deterministă Hermes;
-- adaptor gate log → trace events + signals;
-- provenance explicit pentru câmpurile derivate;
-- câmpurile nederivabile rămân authored și marcate ca atare.
+- validator fail-closed și digest SHA-256 în lowercase;
+- normalizare byte-idempotentă;
+- adaptor `GateOutcomeProjector` → trace event + signal;
+- provenance explicit prin `sourceEventId` și `sourceDigest`;
+- lipsa obligației nu inventează signal.
 
+Câmpurile care nu pot fi derivate din gate log rămân în contract ca valori
+explicite, nu sunt inferate din text liber.
 Excluderi: fără parsing conversațional și fără OpenTelemetry.
 
 #### Task 4.3 — Generator de ledger din task contract
