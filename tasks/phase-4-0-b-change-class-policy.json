@@ -1,0 +1,88 @@
+{
+  "id": "phase-4-0-b-change-class-policy",
+  "title": "Implement the deterministic change-classification policy",
+  "objective": "Implement a versioned, fail-closed change-class policy calculated from the candidate diff against main. The classification must never be declared by the agent. It produces ChangeClassification 1.0 with the resulting class, triggering rule, and determining paths. Class A covers non-normative documentation, tests, and new fixtures; Class B covers implementation under frozen contracts without schema changes; Class C requires a human gate for schemas, normative semantics, new dependencies, CI/runner/policy changes, or modifications/deletions of existing goldens. The policy itself is Class C. The classification is an auditable recommendation and must not bypass the repository's existing human integration controls or AGENTS.md.",
+  "repository": "/srv/projects/progresstrace",
+  "base_branch": "main",
+  "allowed_paths": [
+    "policy/change-class-policy.json",
+    "contracts/change-classification.schema.json",
+    "docs/contracts/change-classification.md",
+    "docs/architecture/**",
+    "src/ProgressTrace.Core/Policy/**",
+    "src/ProgressTrace.Cli/**",
+    "tests/ProgressTrace.ConformanceTests/**",
+    "fixtures/policy/**",
+    "tasks/phase-4-0-b-change-class-policy.json",
+    "README.md",
+    ".github/workflows/ci.yml"
+  ],
+  "protected_paths": [
+    "contracts/trace-envelope.schema.json",
+    "contracts/obligation-ledger.schema.json",
+    "contracts/evaluation-result.schema.json",
+    "contracts/termination-declaration.schema.json",
+    "contracts/stop-assessment-result.schema.json",
+    "contracts/baseline-definition.schema.json",
+    "contracts/baseline-comparison-result.schema.json",
+    "src/ProgressTrace.Benchmarks/**",
+    "fixtures/benchmarks/**",
+    "annotations/**",
+    "AGENTS.md",
+    "global.json"
+  ],
+  "required_contract_decisions": [
+    "ChangeClassification 1.0 records class A, B, or C, the first and all triggering rules, determining paths, base commit, candidate commit, policy version, and policy digest.",
+    "A path matching no explicit rule is Class C.",
+    "The policy file, CI definition, runner, verification policy, any JSON Schema, normative semantic change, new PackageReference, and any modification or deletion of an existing golden are Class C.",
+    "New tests, new fixtures, and non-normative documentation are Class A unless an invariant violation or another Class C rule applies.",
+    "Implementation under frozen integrated contracts without schema changes is Class B unless another Class C rule applies.",
+    "Any invariant violation from Task 4.0.C forces Class C regardless of path classification.",
+    "Class A/B output cannot override AGENTS.md or the human integration gate; auto-merge effects are not implemented by the evaluated agent."
+  ],
+  "deliverables": [
+    "Versioned policy/change-class-policy.json with its own schema and validation",
+    "ChangeClassification 1.0 contract and deterministic classifier",
+    "Fixture matrix covering A, B, C, unmatched paths, invariant-forced C, policy self-change, golden deletion, schema change, CI change, and new dependency",
+    "Tests for order-independent path handling, policy digest, base/candidate identity, and fail-closed behavior",
+    "Documentation of classification effects and human-gate boundary",
+    "Self-check evidence with exact triggering rules and paths"
+  ],
+  "non_goals": [
+    "No automatic merge or publication by the agent",
+    "No policy relaxation without human gate",
+    "No semantic inference from commit messages or free-form descriptions",
+    "No network, model, database, or third-party runtime dependency",
+    "No modification of existing Phase 0–3 contracts or benchmark corpus",
+    "No replacement of deterministic verification with a model verdict"
+  ],
+  "acceptance_commands": [
+    ["python3", "-m", "json.tool", "policy/change-class-policy.json"],
+    ["python3", "-m", "json.tool", "contracts/change-classification.schema.json"],
+    ["dotnet", "build", "ProgressTrace.slnx", "--configuration", "Release", "--nologo", "--warnaserror"],
+    ["dotnet", "run", "--project", "tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj", "--configuration", "Release", "--no-build"],
+    ["dotnet", "format", "ProgressTrace.slnx", "--verify-no-changes", "--no-restore", "--verbosity", "minimal"],
+    ["git", "diff", "--check"]
+  ],
+  "stop_conditions": [
+    "A path can bypass Class C through ordering, aliasing, symlink ambiguity, or malformed policy input",
+    "The agent can declare or alter its own classification",
+    "Policy, runner, CI, schema, normative semantic, dependency, or golden changes are not forced to Class C",
+    "The classifier requires network, model, database, or hidden state",
+    "Existing deterministic checks regress",
+    "The allowed path set is exceeded",
+    "Two bounded repair attempts are exhausted"
+  ],
+  "human_gates": [
+    "architecture_scope_change",
+    "policy_change",
+    "final_integration"
+  ],
+  "max_repair_attempts": 2,
+  "timeouts_seconds": {
+    "architect": 300,
+    "builder": 600,
+    "verifier": 600,
+    "acceptance_command": 300
+  }
+}

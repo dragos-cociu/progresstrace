@@ -1,0 +1,90 @@
+{
+  "id": "phase-4-0-c-verifiable-invariants",
+  "title": "Implement deterministic property checks for verification invariants",
+  "objective": "Implement a deterministic invariant runner and perturbation generator that can execute verification properties on the existing 60-case regression corpus and on every captured Phase 4 session. The runner must use fixed seeds and reproducible minimal counterexamples, must not depend on a third-party property-testing framework, and must fail closed on any violated invariant. The checks provide assurance without ground-truth labels and integrate into Task 4.0.A's VerificationReport.",
+  "repository": "/srv/projects/progresstrace",
+  "base_branch": "main",
+  "allowed_paths": [
+    "contracts/invariant-result.schema.json",
+    "docs/contracts/invariant-result.md",
+    "docs/architecture/**",
+    "src/ProgressTrace.Core/Invariants/**",
+    "src/ProgressTrace.Core/Testing/**",
+    "tests/ProgressTrace.ConformanceTests/**",
+    "fixtures/invariants/**",
+    "verification/**",
+    "tasks/phase-4-0-c-verifiable-invariants.json",
+    "README.md",
+    ".github/workflows/ci.yml"
+  ],
+  "protected_paths": [
+    "contracts/trace-envelope.schema.json",
+    "contracts/obligation-ledger.schema.json",
+    "contracts/evaluation-result.schema.json",
+    "contracts/termination-declaration.schema.json",
+    "contracts/stop-assessment-result.schema.json",
+    "contracts/baseline-definition.schema.json",
+    "contracts/baseline-comparison-result.schema.json",
+    "src/ProgressTrace.Benchmarks/**",
+    "fixtures/benchmarks/**",
+    "annotations/**",
+    "AGENTS.md",
+    "global.json"
+  ],
+  "required_invariants": [
+    "Determinism: identical input and seed produce byte-identical output.",
+    "Normalization idempotence: normalizing an already normalized artifact produces identical bytes.",
+    "Monotonicity under evidence addition: adding events or signals cannot move a satisfied obligation to open unless an explicit regression signal is present; the invariant must document the precise comparison scope and allowed transitions.",
+    "Fail-closed under evidence removal: removing supporting signals cannot produce a stronger claim; it must preserve or move the result toward insufficient-evidence unless the remaining explicit evidence independently supports the result.",
+    "Command coherence: evaluate output and the internally recomputed evaluation in assess and compare agree for identical trace and ledger inputs.",
+    "Metamorphic invariance: identifier renaming and permitted evidence-text variation do not change the semantic verdict.",
+    "Every violation emits a typed invariant result with invariant id, seed, command/input identity, minimal reproducer, and safe diagnostic message."
+  ],
+  "deliverables": [
+    "InvariantResult 1.0 schema and documentation",
+    "Deterministic perturbation generator with fixed seed and reproducible ordering",
+    "Invariant runner integrated with VerificationReport",
+    "Fixtures and minimal counterexamples for passing and failing properties",
+    "Tests covering all required invariants across the 60-case regression corpus and representative real-session artifacts",
+    "No third-party property-testing dependency",
+    "Self-check evidence including seeds, perturbation counts, invariant results, and unresolved boundary cases"
+  ],
+  "non_goals": [
+    "No human or model ground truth",
+    "No random non-reproducible generation",
+    "No modification of thresholds to fit existing labels",
+    "No changes to existing normative semantics without a separate Class C gate",
+    "No persistence, network, database, UI, or automatic interruption",
+    "No cryptographic attestation implementation"
+  ],
+  "acceptance_commands": [
+    ["dotnet", "build", "ProgressTrace.slnx", "--configuration", "Release", "--nologo", "--warnaserror"],
+    ["dotnet", "run", "--project", "tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj", "--configuration", "Release", "--no-build"],
+    ["dotnet", "run", "--project", "src/ProgressTrace.Benchmarks/ProgressTrace.Benchmarks.csproj", "--configuration", "Release", "--no-build", "--", "run", "--input", "fixtures/benchmarks", "--output", "/tmp/progresstrace-4-0-c-1.json"],
+    ["dotnet", "run", "--project", "src/ProgressTrace.Benchmarks/ProgressTrace.Benchmarks.csproj", "--configuration", "Release", "--no-build", "--", "run", "--input", "fixtures/benchmarks", "--output", "/tmp/progresstrace-4-0-c-2.json"],
+    ["cmp", "/tmp/progresstrace-4-0-c-1.json", "/tmp/progresstrace-4-0-c-2.json"],
+    ["dotnet", "format", "ProgressTrace.slnx", "--verify-no-changes", "--no-restore", "--verbosity", "minimal"],
+    ["git", "diff", "--check"]
+  ],
+  "stop_conditions": [
+    "An invariant is underspecified enough that its implementation would change normative semantics by guesswork",
+    "The perturbation generator is not reproducible from recorded seed and input",
+    "A violation has no minimal reproducer or safe diagnostic",
+    "Evidence removal produces a stronger claim without an explicit remaining basis",
+    "Existing deterministic checks regress",
+    "The allowed path set is exceeded",
+    "Two bounded repair attempts are exhausted"
+  ],
+  "human_gates": [
+    "architecture_scope_change",
+    "normative_semantics_change",
+    "final_integration"
+  ],
+  "max_repair_attempts": 2,
+  "timeouts_seconds": {
+    "architect": 300,
+    "builder": 900,
+    "verifier": 900,
+    "acceptance_command": 300
+  }
+}

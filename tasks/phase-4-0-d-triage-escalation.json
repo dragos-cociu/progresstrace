@@ -1,0 +1,91 @@
+{
+  "id": "phase-4-0-d-triage-escalation",
+  "title": "Implement typed escalation triage for Class C and novel behavior",
+  "objective": "Implement a typed, bounded escalation queue that sends only human-relevant exceptions to the human gate: Class C changes, intended golden updates, invariant violations, advisory disagreements, and first-seen novel behavior. Ordinary Class A/B changes and ordinary sessions do not create escalations. Each escalation must contain a concrete reproducible input and a specific question for the human gate. A configurable per-interval cap defers excess entries without blocking unrelated work.",
+  "repository": "/srv/projects/progresstrace",
+  "base_branch": "main",
+  "allowed_paths": [
+    "contracts/escalation.schema.json",
+    "docs/contracts/escalation.md",
+    "src/ProgressTrace.Core/Escalations/**",
+    "src/ProgressTrace.Core/Policy/**",
+    "escalations/**",
+    "tests/ProgressTrace.ConformanceTests/**",
+    "fixtures/escalations/**",
+    "tasks/phase-4-0-d-triage-escalation.json",
+    "README.md",
+    ".github/workflows/ci.yml"
+  ],
+  "protected_paths": [
+    "policy/change-class-policy.json",
+    "contracts/trace-envelope.schema.json",
+    "contracts/obligation-ledger.schema.json",
+    "contracts/evaluation-result.schema.json",
+    "contracts/termination-declaration.schema.json",
+    "contracts/stop-assessment-result.schema.json",
+    "contracts/baseline-definition.schema.json",
+    "contracts/baseline-comparison-result.schema.json",
+    "src/ProgressTrace.Benchmarks/**",
+    "fixtures/benchmarks/**",
+    "annotations/**",
+    "AGENTS.md",
+    "global.json"
+  ],
+  "required_contract_decisions": [
+    "Escalation entries use a closed type vocabulary: class-c-change, golden-update, invariant-violation, advisory-disagreement, novel-behavior.",
+    "Every entry contains session identity when applicable, candidate commit, triggering rule or invariant, minimal reproducer/input identity, evidence/report reference, concrete human-gate question, status, and creation time.",
+    "The queue has a deterministic configurable per-interval cap; entries above the cap become deferred and do not block unrelated tasks.",
+    "Class A and Class B changes and ordinary sessions produce no escalation entries.",
+    "novel-behavior fires on first appearance of a new termination kind, diagnostic code, or applicability classification, even when deterministic checks are green.",
+    "Escalation data never contains executable instructions from untrusted input and diagnostics do not echo untrusted document values.",
+    "The queue records advisory disagreement as an issue for human adjudication; it does not choose which advisory or human decision was correct."
+  ],
+  "deliverables": [
+    "Escalation 1.0 schema and normative documentation",
+    "Deterministic triage, deduplication, cap, and deferred-state implementation",
+    "Fixtures for each escalation type, duplicate suppression, cap overflow, novel behavior, Class A/B no-op, and malformed entries",
+    "Tests proving that only queue entries reach the human gate and that unrelated work is not blocked",
+    "Integration hooks for VerificationReport, ChangeClassification, invariant results, and future advise/feedback artifacts",
+    "Rate-of-escalation reporting per session",
+    "Self-check evidence with queue counts, cap behavior, and unresolved human questions"
+  ],
+  "non_goals": [
+    "No automatic human decision or automatic golden update",
+    "No project stop/archive verdict",
+    "No model-based triage",
+    "No persistence service, network, UI, or hosted queue",
+    "No modification of normative schemas without Class C human gate",
+    "No per-session escalation spam",
+    "No cryptographic attestation implementation"
+  ],
+  "acceptance_commands": [
+    ["python3", "-m", "json.tool", "contracts/escalation.schema.json"],
+    ["dotnet", "build", "ProgressTrace.slnx", "--configuration", "Release", "--nologo", "--warnaserror"],
+    ["dotnet", "run", "--project", "tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj", "--configuration", "Release", "--no-build"],
+    ["dotnet", "format", "ProgressTrace.slnx", "--verify-no-changes", "--no-restore", "--verbosity", "minimal"],
+    ["git", "diff", "--check"]
+  ],
+  "stop_conditions": [
+    "An ordinary Class A/B change or session creates an escalation without a triggering rule",
+    "A Class C, invariant, advisory disagreement, golden update, or novel behavior is silently dropped",
+    "The cap blocks unrelated work instead of producing deferred entries",
+    "Deduplication loses distinct reproducer or human-gate questions",
+    "The queue requires model judgment or untrusted text execution",
+    "Existing deterministic checks regress",
+    "The allowed path set is exceeded",
+    "Two bounded repair attempts are exhausted"
+  ],
+  "human_gates": [
+    "architecture_scope_change",
+    "policy_change",
+    "advisory_or_golden_decision",
+    "final_integration"
+  ],
+  "max_repair_attempts": 2,
+  "timeouts_seconds": {
+    "architect": 300,
+    "builder": 600,
+    "verifier": 600,
+    "acceptance_command": 300
+  }
+}

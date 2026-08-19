@@ -22,7 +22,9 @@ Phase 0, Phase 1, Phase 2a Task A, Phase 2b Task B, benchmarkul MVP, validarea a
 
 Vertical slice-ul experimental Hermes a trecut pe 5 proiecții reale/redactate și 15 etape CLI. Phase 4 restrânge ingestia la gate log-ul Hermes: obligațiile vor proveni din task contracts, semnalele din verdicte deterministe, iar bugetele operaționale din consum observat. Nu se promite compatibilitate universală, OpenTelemetry, adaptor generic sau interpretare conversațională în core.
 
-Următorul increment este perechea de taskuri `4.1 AgentSession` și `4.2 GateOutcome`, proiectate împreună și implementate numai după integrarea branch-ului curent prin human gate.
+Următorul increment este Task 4.0 — runner independent, change-class policy,
+invarianți verificabili și triaj de escaladare. Abia după integrarea lui prin
+human gate urmează perechea de taskuri `4.1 AgentSession` și `4.2 GateOutcome`.
 
 ## Architectural direction
 

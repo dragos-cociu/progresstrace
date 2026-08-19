@@ -1,0 +1,94 @@
+{
+  "id": "phase-4-0-a-independent-verification-runner",
+  "title": "Implement the independent verification runner and VerificationReport contract",
+  "objective": "Implement an independent verification runner that evaluates a clean checkout of a candidate commit from outside the agent worktree and emits a complete VerificationReport 1.0. The runner is the sole accepted authority for deterministic verification results; agent self-reports are unverified-claim data and cannot satisfy a gate. The runner must fail closed when any required check, artifact, checkout, or invariant result is missing. Preserve the existing Phase 0–3 contracts and semantics and do not let the evaluated agent write the runner, CI definition, verification policy, or report after execution.",
+  "repository": "/srv/projects/progresstrace",
+  "base_branch": "main",
+  "external_artifacts": [
+    "/srv/projects/.tooling/progresstrace-verification/runner/ — runner source and immutable execution wrapper, managed outside the agent worktree",
+    "/srv/projects/.tooling/progresstrace-verification/reports/ — VerificationReport outputs and manifests"
+  ],
+  "allowed_paths": [
+    "contracts/verification-report.schema.json",
+    "docs/contracts/verification-report.md",
+    "docs/architecture/**",
+    "verification/**",
+    "tests/ProgressTrace.ConformanceTests/**",
+    "fixtures/verification/**",
+    "tasks/phase-4-0-a-independent-verification-runner.json",
+    "README.md",
+    ".github/workflows/ci.yml"
+  ],
+  "protected_paths": [
+    "policy/change-class-policy.json",
+    "contracts/trace-envelope.schema.json",
+    "contracts/obligation-ledger.schema.json",
+    "contracts/evaluation-result.schema.json",
+    "contracts/termination-declaration.schema.json",
+    "contracts/stop-assessment-result.schema.json",
+    "contracts/baseline-definition.schema.json",
+    "contracts/baseline-comparison-result.schema.json",
+    "src/ProgressTrace.Benchmarks/**",
+    "fixtures/benchmarks/**",
+    "annotations/**",
+    "AGENTS.md",
+    "global.json"
+  ],
+  "required_contract_decisions": [
+    "VerificationReport 1.0 records the evaluated commit, clean-checkout identity, complete ordered check list, each check exit code and duration, overall status, command-set digest, evaluated-tree digest, and runner identity/version.",
+    "The required check set includes Release build with --warnaserror, all existing conformance phases, JSON Schema validity, benchmark 60/60 with byte-identical repeated output, dotnet format --verify-no-changes, git diff --check, and every invariant registered by Task 4.0.C.",
+    "A missing, partial, malformed, stale, or unverifiable report is failure; unknown is not success and cannot satisfy a gate.",
+    "The evaluated checkout is created independently from the agent worktree and is clean before execution; the runner and its policy are read-only to the evaluated agent.",
+    "Core verification commands have no network, database, model, or third-party runtime dependency behavior.",
+    "The report contains no untrusted payload echo beyond bounded safe identifiers and digests."
+  ],
+  "deliverables": [
+    "VerificationReport 1.0 JSON Schema and normative documentation",
+    "Independent runner and clean-checkout execution wrapper outside the agent worktree",
+    "Immutable command-set and evaluated-tree digest calculation",
+    "Complete-report and failure fixtures",
+    "Tests for missing checks, non-zero exits, stale commit, dirty checkout, malformed report, and byte-deterministic report serialization",
+    "Integration with the invariant runner from Task 4.0.C",
+    "README/CI documentation without granting the evaluated agent write access to runner or policy",
+    "Self-check evidence and external report manifest"
+  ],
+  "non_goals": [
+    "No automatic merge implementation in this task",
+    "No network in core verification",
+    "No model or LLM verdict",
+    "No replacement of the existing CI definition by an agent-controlled file",
+    "No partial-success reports",
+    "No persistence or hosted verification service",
+    "No changes to existing Phase 0–3 contracts or benchmark semantics"
+  ],
+  "acceptance_commands": [
+    ["dotnet", "build", "ProgressTrace.slnx", "--configuration", "Release", "--nologo", "--warnaserror"],
+    ["dotnet", "run", "--project", "tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj", "--configuration", "Release", "--no-build"],
+    ["python3", "-m", "json.tool", "contracts/verification-report.schema.json"],
+    ["dotnet", "run", "--project", "src/ProgressTrace.Benchmarks/ProgressTrace.Benchmarks.csproj", "--configuration", "Release", "--no-build", "--", "run", "--input", "fixtures/benchmarks", "--output", "/tmp/progresstrace-4-0-a-1.json"],
+    ["dotnet", "run", "--project", "src/ProgressTrace.Benchmarks/ProgressTrace.Benchmarks.csproj", "--configuration", "Release", "--no-build", "--", "run", "--input", "fixtures/benchmarks", "--output", "/tmp/progresstrace-4-0-a-2.json"],
+    ["cmp", "/tmp/progresstrace-4-0-a-1.json", "/tmp/progresstrace-4-0-a-2.json"],
+    ["dotnet", "format", "ProgressTrace.slnx", "--verify-no-changes", "--no-restore", "--verbosity", "minimal"],
+    ["git", "diff", "--check"]
+  ],
+  "stop_conditions": [
+    "The evaluated agent can modify runner, policy, CI definition, or report inputs after verification begins",
+    "Any required check is absent, partial, unverifiable, or reported only by the evaluated agent",
+    "The runner requires network, model, database, or runtime dependency behavior in core verification",
+    "Existing deterministic checks regress",
+    "The external runner path is unavailable or not writable by the orchestrator where required",
+    "The allowed path set is exceeded",
+    "Two bounded repair attempts are exhausted"
+  ],
+  "human_gates": [
+    "architecture_scope_change",
+    "final_integration"
+  ],
+  "max_repair_attempts": 2,
+  "timeouts_seconds": {
+    "architect": 300,
+    "builder": 900,
+    "verifier": 900,
+    "acceptance_command": 300
+  }
+}

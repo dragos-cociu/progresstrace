@@ -1,11 +1,11 @@
 # ProgressTrace — roadmap, status, evidence și backlog
 
-**Document de referință:** 2026-08-19  
-**Repository:** `/srv/projects/progresstrace`  
-**Branch analizat:** `task/benchmark-analysis`  
-**HEAD la momentul analizei:** `d65e2e2` — `docs: consolidate project roadmap and status`
+**Document de referință:** 2026-08-19
+**Repository:** `/srv/projects/progresstrace`
+**Branch analizat:** `main`
+**HEAD la momentul analizei:** `edb47ad` — `docs: define Phase 4 session and gate contracts`
 **Stare working tree la verificare:** curat
-**Relația cu `main`:** branch-ul conține 11 commituri peste `main`; `main`/`origin/main` sunt la `8474fba`.
+**Relația cu `origin/main`:** `main` este ahead cu 13 commituri locale; nu sunt împinse la remote.
 
 Acest document separă:
 
@@ -596,6 +596,12 @@ successfulStageCount: 15
 - `tasks/phase-2b-baseline-comparison.json`
 - `tasks/phase-3-benchmark-mvp.json`
 - `tasks/phase-3-ground-truth.json`
+- `tasks/phase-4-0-a-independent-verification-runner.json`
+- `tasks/phase-4-0-b-change-class-policy.json`
+- `tasks/phase-4-0-c-verifiable-invariants.json`
+- `tasks/phase-4-0-d-triage-escalation.json`
+- `tasks/phase-4-1-agent-session.json`
+- `tasks/phase-4-2-gate-outcome.json`
 
 ### Benchmark
 
@@ -654,7 +660,31 @@ Obligațiile se citesc din plan, iar semnalele din verificări deterministe. Cor
 nu primește interpretare de text liber și rămâne offline, fail-closed și fără
 dependențe runtime terțe.
 
-### Taskuri Phase 4
+### Task 4.0 — verificare independentă, invariants și escaladare
+
+Amendamentul 1 introduce un control-plane de verificare înaintea oricărei
+extinderi de sesiune sau ingestie. Un raport emis de agentul care a produs
+schimbarea este doar `unverified-claim`; singura autoritate acceptată este
+artefactul runner-ului independent.
+
+Task 4.0 este împărțit în patru contracte care trebuie integrate împreună:
+
+- **4.0.A — independent verification runner:** checkout curat din afara
+  worktree-ului agentului și `VerificationReport` 1.0 complet, cu commit,
+  exit codes, durate, digest al comenzilor și digest al arborelui evaluat;
+- **4.0.B — change-class policy:** `policy/change-class-policy.json` și
+  `ChangeClassification` 1.0, calculate determinist din diff-ul față de
+  `main`; path-urile necunoscute și toate schimbările normative sunt Clasa C;
+- **4.0.C — verifiable invariants:** determinism, idempotență, monotonie la
+  adăugare de evidență, fail-closed la eliminarea evidenței, coerență între
+  comenzi și invarianță metamorfică, cu seed-uri fixe și reproducer minimal;
+- **4.0.D — triage/escalation:** coadă tipizată pentru `class-c-change`,
+  `golden-update`, `invariant-violation`, `advisory-disagreement` și
+  `novel-behavior`, cu plafon per interval și stare `deferred`.
+
+Auto-merge-ul este efectul de clasificare propus de directivă, dar runner-ul nu
+poate ocoli controalele repository-ului sau human integration gate-ul existent.
+Task 4.0 se auto-aplică: propria integrare este Clasa C.
 
 #### Task 4.1 — Contract de sesiune și tentative
 
@@ -703,7 +733,11 @@ De implementat:
 - output cu `continue`, `stop-recommended` sau `insufficient-evidence`;
 - motiv corelat cu obligații și semnale;
 - fail-closed: lipsa evidenței produce `insufficient-evidence`;
-- recomandarea nu întrerupe automat nimic.
+- recomandarea nu întrerupe automat nimic;
+- la închiderea sesiunii, compară recomandările `advise` emise in-flight cu
+  `StopAssessmentResult` final;
+- divergențele devin issue-uri de produs cu sesiune și pas de reproducere;
+- verificarea este automată și nu necesită etichetare umană.
 
 #### Task 4.5 — Observed budget
 
@@ -727,9 +761,10 @@ De implementat:
 ### Ordine obligatorie
 
 ```text
-4.1 + 4.2
+4.0.A + 4.0.B + 4.0.C + 4.0.D
+→ 4.1 + 4.2
 → 4.3
-→ 4.4
+→ 4.4 (cu coerență advisory vs. terminal)
 → 4.5
 → 4.6
 ```
@@ -769,7 +804,8 @@ Sunt ținte de îmbunătățire, nu porți de arhivare:
 - efortul manual per sesiune;
 - sesiuni cu verdict `advise` acționabil;
 - diferențe între verdictul ProgressTrace și decizia umană;
-- issue-uri de contract deschise și închise.
+- issue-uri de contract deschise și închise;
+- rata de escaladare per sesiune.
 
 ---
 
@@ -806,5 +842,6 @@ folosește proiectul în propriul pipeline pentru a descoperi cerințe de produs
 > contract și gate log, fără authoring retrospectiv și fără inferență semantică
 > în core?**
 
-Răspunsul trebuie obținut prin implementarea în ordine a taskurilor 4.1–4.6,
-cu shadow mode obligatoriu și cu `feedback.json` pentru fiecare sesiune.
+Răspunsul trebuie obținut prin implementarea în ordine a taskurilor 4.0–4.6,
+cu raport independent complet, shadow mode obligatoriu și cu `feedback.json`
+pentru fiecare sesiune.
