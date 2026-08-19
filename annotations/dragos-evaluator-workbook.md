@@ -33,6 +33,16 @@ Pentru fiecare caz completează câmpurile de la finalul secțiunii:
 
 Nu confunda oprirea unui baseline cu stagnarea semantică. Un repeat poate apărea într-un caz care încă progresează.
 
+### Convenția pentru `rank`
+
+În acest workbook, `rank` înseamnă **poziția 0-based a evenimentului în ordinea trace-ului**, nu numărul turei 1-based:
+
+- primul eveniment: `rank = 0`;
+- al doilea eveniment: `rank = 1`;
+- al treilea eveniment: `rank = 2`.
+
+Pentru corpusul actual, aceasta coincide cu câmpul `sequence`. La `max-turns`, dacă limita este `3`, oprirea la al treilea eveniment se notează `rank = 2`. Dacă vrei să explici și în limbaj uman, poți scrie opțional „tura 3” în `ambiguityNote`, dar câmpul `rank` rămâne 0-based.
+
 ---
 
 ## 1. 01-progress
