@@ -163,6 +163,11 @@ canonical trace envelope and obligation ledger under `fixtures/benchmarks`.
 The benchmark runner validates both with Core, runs the existing evaluator,
 and reports benchmark-only max-turns, exact-repeat, and fuzzy-repeat/cycle
 observations as stable JSON. The detectors are not normative Core semantics.
+Each fixture also contains explicit operator-authored `groundTruth` metadata
+for the expected evaluator classification and baseline outcomes. These labels
+are benchmark expectations for validation, not semantic truth and not a human
+oracle. Output keeps those authored expectations separate from the derived
+observations and reports per-case and aggregate match status.
 
 Build and run it with:
 
@@ -176,5 +181,7 @@ dotnet run --project src/ProgressTrace.Benchmarks/ProgressTrace.Benchmarks.cspro
 
 The runner sorts case files using ordinal ordering and writes compact UTF-8
 JSON with a trailing newline, so repeated runs over the same local corpus are
-byte-identical. The benchmark test executable checks case coverage, detector
-branches, evaluator classifications, ordering, and in-process determinism.
+byte-identical. A malformed expectation or mismatch exits non-zero. The
+benchmark test executable checks complete case coverage, all expectation and
+detector branches, mismatch handling, evaluator classifications, ordering, and
+in-process determinism.

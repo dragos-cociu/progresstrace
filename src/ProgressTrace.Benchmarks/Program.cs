@@ -22,6 +22,11 @@ static async Task<int> RunAsync(string[] args)
         };
         var bytes = JsonSerializer.SerializeToUtf8Bytes(result, options);
         await File.WriteAllBytesAsync(args[4], [.. bytes, (byte)'\n']);
+        if (result.Summary.MismatchedCaseCount > 0)
+        {
+            Console.Error.WriteLine($"Benchmark run failed: {result.Summary.MismatchedCaseCount} case(s) mismatched authored ground truth.");
+            return 1;
+        }
         return 0;
     }
     catch (Exception exception) when (exception is IOException or JsonException or InvalidDataException)

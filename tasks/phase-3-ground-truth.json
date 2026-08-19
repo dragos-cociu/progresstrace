@@ -1,0 +1,60 @@
+{
+  "id": "phase-3-ground-truth",
+  "title": "Add explicit benchmark ground truth and actual-versus-expected analysis",
+  "objective": "Complete the benchmark MVP's validation layer without changing Phase 0–2b semantics: add explicit, operator-authored ground-truth metadata to all 20 benchmark fixtures; validate expected ProgressTrace classifications and baseline outcomes; have the runner produce deterministic actual-versus-expected results and an aggregate summary; add focused tests.",
+  "repository": "/srv/projects/progresstrace",
+  "base_branch": "main",
+  "allowed_paths": [
+    "fixtures/benchmarks/**",
+    "src/ProgressTrace.Benchmarks/**",
+    "tests/ProgressTrace.BenchmarksTests/**",
+    "tasks/phase-3-ground-truth.json",
+    "README.md"
+  ],
+  "protected_paths": [
+    "contracts/**",
+    "docs/**",
+    "src/ProgressTrace.Core/**",
+    "src/ProgressTrace.Cli/**",
+    "tests/ProgressTrace.ConformanceTests/**",
+    "experiments/**",
+    ".github/**",
+    "ProgressTrace.slnx",
+    "global.json",
+    "AGENTS.md"
+  ],
+  "acceptance_commands": [
+    ["dotnet", "build", "ProgressTrace.slnx", "--configuration", "Release", "--nologo", "--warnaserror"],
+    ["dotnet", "run", "--project", "tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj", "--configuration", "Release", "--no-build"],
+    ["dotnet", "test", "tests/ProgressTrace.BenchmarksTests/ProgressTrace.BenchmarksTests.csproj", "--configuration", "Release", "--no-build"],
+    ["dotnet", "run", "--project", "src/ProgressTrace.Benchmarks/ProgressTrace.Benchmarks.csproj", "--configuration", "Release", "--no-build", "--", "run", "--input", "fixtures/benchmarks", "--output", "/tmp/progresstrace-ground-truth-run-1.json"],
+    ["dotnet", "run", "--project", "src/ProgressTrace.Benchmarks/ProgressTrace.Benchmarks.csproj", "--configuration", "Release", "--no-build", "--", "run", "--input", "fixtures/benchmarks", "--output", "/tmp/progresstrace-ground-truth-run-2.json"],
+    ["cmp", "/tmp/progresstrace-ground-truth-run-1.json", "/tmp/progresstrace-ground-truth-run-2.json"],
+    ["dotnet", "format", "ProgressTrace.slnx", "--verify-no-changes", "--no-restore", "--verbosity", "minimal"]
+  ],
+  "deliverables": [
+    "All 20 fixtures contain explicit operator-authored ground truth",
+    "Ground truth validates expected ProgressTrace classification and baseline behavior",
+    "Runner emits actual-versus-expected status per case and aggregate counts",
+    "Non-zero failure for malformed metadata or mismatched expected outcome",
+    "Focused tests cover all categories, mismatch paths, and determinism",
+    "README documents that labels are authored expectations, not semantic truth"
+  ],
+  "non_goals": [
+    "No changes to Core, existing contracts, CLI, or solution structure",
+    "No corpus expansion beyond the existing 20 cases",
+    "No human oracle or inter-rater agreement",
+    "No production adapter or report UI",
+    "No automatic inference of labels from trace text",
+    "No LLM judge or external data"
+  ],
+  "stop_conditions": [
+    "Ground-truth metadata requires a new normative contract outside the benchmark component",
+    "Expected outcomes cannot be defined without semantic claims not supported by authored fixture metadata",
+    "Any protected path must change",
+    "Results are not deterministic",
+    "Two bounded repair attempts are exhausted"
+  ],
+  "max_repair_attempts": 2,
+  "human_gates": ["final_integration"]
+}

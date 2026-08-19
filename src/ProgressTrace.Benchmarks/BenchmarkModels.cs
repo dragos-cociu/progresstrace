@@ -5,6 +5,7 @@ namespace ProgressTrace.Benchmarks;
 public sealed record BenchmarkRun(
     string Format,
     int CaseCount,
+    BenchmarkSummary Summary,
     IReadOnlyList<BenchmarkCaseResult> Cases);
 
 public sealed record BenchmarkCaseResult(
@@ -12,7 +13,32 @@ public sealed record BenchmarkCaseResult(
     EvaluationSummary Evaluation,
     MaxTurnsResult MaxTurns,
     RepeatResult ExactRepeat,
-    RepeatResult FuzzyRepeatCycle);
+    RepeatResult FuzzyRepeatCycle,
+    BenchmarkGroundTruth GroundTruth,
+    BenchmarkCaseStatus Status);
+
+public sealed record BenchmarkSummary(
+    int CaseCount,
+    int MatchedCaseCount,
+    int MismatchedCaseCount,
+    string Status);
+
+public sealed record BenchmarkGroundTruth(
+    string TraceClassification,
+    ExpectedMaxTurns MaxTurns,
+    ExpectedRepeat ExactRepeat,
+    ExpectedRepeat FuzzyRepeatCycle);
+
+public sealed record ExpectedMaxTurns(bool Triggered);
+
+public sealed record ExpectedRepeat(bool Detected, string? Kind);
+
+public sealed record BenchmarkCaseStatus(
+    string Overall,
+    string TraceClassification,
+    string MaxTurns,
+    string ExactRepeat,
+    string FuzzyRepeatCycle);
 
 public sealed record EvaluationSummary(
     string TraceClassification,
@@ -39,4 +65,5 @@ internal sealed record LoadedBenchmarkCase(
     string CaseId,
     int MaxTurns,
     TraceEnvelope Trace,
-    ObligationLedger Ledger);
+    ObligationLedger Ledger,
+    BenchmarkGroundTruth GroundTruth);
