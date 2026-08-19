@@ -104,24 +104,30 @@ comparative accuracy results.
   production baseline; it only shows that the current implementation matches
   its authored fixture expectations.
 
-## Decision
+## Decision after the MVP
 
-**Continue, narrowly and conditionally.** The benchmark is strong enough to
-justify a validation phase, but not enough to justify an OpenTelemetry/Hermes
+**Continue, narrowly and conditionally.** The initial benchmark was strong enough
+to justify a validation phase, but not enough to justify an OpenTelemetry/Hermes
 adapter, product alpha, or claims of general utility.
 
-The next implementation/research step is therefore:
+## Validation expansion completed
 
-1. expand to an approximately 60-case corpus with deliberately difficult and
-   adversarial cases;
-2. define an annotation rubric that separates progress, stagnation,
-   regression, and insufficient evidence;
-3. have two independent evaluators label the cases without seeing the derived
-   output;
-4. adjudicate disagreements and report agreement;
-5. compare ProgressTrace and baselines against that oracle using explicit
+The corpus now contains 60 cases: the original 20 plus 40 controlled
+metamorphic variants. The variants test identity and evidence-text robustness,
+but are not independent production samples. The runner and tests report
+`60/60` authored-expectation matches with deterministic repeated output.
+
+This remains an engineering-validation result, not an independent oracle. The
+annotation protocol is defined in `docs/benchmark-annotation-rubric.md` and
+requires two blind evaluators plus adjudication before accuracy or cost claims.
+
+## Next gate
+
+1. independently annotate all 60 cases using the rubric;
+2. adjudicate disagreements and report agreement;
+3. compare ProgressTrace and baselines against that oracle using explicit
    confusion matrices and halt-timing/cost metrics;
-6. make a second `continue / narrow / stop` decision.
+4. make a second `continue / narrow / stop` decision.
 
 The real adapter and richer reporting remain deferred until that validation
 produces evidence of distinct value.
