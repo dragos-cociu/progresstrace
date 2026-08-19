@@ -587,6 +587,13 @@ successfulStageCount: 15
 - `docs/benchmark-analysis.md`
 - `docs/benchmark-corpus-expansion.md`
 - `docs/benchmark-annotation-rubric.md`
+- `docs/contracts/phase-4-verification-control-plane.md`
+- `contracts/verification-report.schema.json`
+- `contracts/change-classification.schema.json`
+- `contracts/invariant-result.schema.json`
+- `contracts/escalation.schema.json`
+- `policy/change-class-policy.json`
+- `verification/ptverify.py`
 
 ### Task contracts
 
@@ -662,30 +669,32 @@ dependențe runtime terțe.
 
 ### Task 4.0 — verificare independentă, invariants și escaladare
 
-Amendamentul 1 introduce un control-plane de verificare înaintea oricărei
-extinderi de sesiune sau ingestie. Un raport emis de agentul care a produs
-schimbarea este doar `unverified-claim`; singura autoritate acceptată este
-artefactul runner-ului independent.
+Amendamentul 1 a introdus control-plane-ul de verificare. Implementarea actuală
+este în `verification/ptverify.py`, cu contracte versionate pentru raport,
+clasificare, invariants și escaladare.
 
-Task 4.0 este împărțit în patru contracte care trebuie integrate împreună:
+Componente implementate:
 
-- **4.0.A — independent verification runner:** checkout curat din afara
-  worktree-ului agentului și `VerificationReport` 1.0 complet, cu commit,
-  exit codes, durate, digest al comenzilor și digest al arborelui evaluat;
-- **4.0.B — change-class policy:** `policy/change-class-policy.json` și
-  `ChangeClassification` 1.0, calculate determinist din diff-ul față de
-  `main`; path-urile necunoscute și toate schimbările normative sunt Clasa C;
-- **4.0.C — verifiable invariants:** determinism, idempotență, monotonie la
-  adăugare de evidență, fail-closed la eliminarea evidenței, coerență între
-  comenzi și invarianță metamorfică, cu seed-uri fixe și reproducer minimal;
-- **4.0.D — triage/escalation:** coadă tipizată pentru `class-c-change`,
-  `golden-update`, `invariant-violation`, `advisory-disagreement` și
-  `novel-behavior`, cu plafon per interval și stare `deferred`.
+- **4.0.A:** runner independent cu clean checkout, verificări fixe și
+  `VerificationReport` 1.0; runner-ul extern este în
+  `/srv/projects/.tooling/progresstrace-verification/runner/`;
+- **4.0.B:** `policy/change-class-policy.json` și clasificare deterministă A/B/C
+  din diff-ul față de `main`, fail-closed pentru path-uri necunoscute;
+- **4.0.C:** verificări pentru determinism, idempotența normalizării, corpusul
+  metamorfic și coerența conformance, cu rezultate `InvariantResult` 1.0;
+- **4.0.D:** CLI de escaladare tipizată cu cap per interval și stare `deferred`.
 
-Auto-merge-ul este efectul de clasificare propus de directivă, dar runner-ul nu
-poate ocoli controalele repository-ului sau human integration gate-ul existent.
-Task 4.0 se auto-aplică: propria integrare este Clasa C.
+Raportul independent pentru commitul `712940071b3a0ce9ba9f28e065b1883be4c659ed`
+este `PASS`, cu `7/7` verificări trecute. Raportul este păstrat în afara
+repository-ului:
 
+```text
+/srv/projects/.tooling/progresstrace-verification/reports/verification-7129400.json
+```
+
+Clasificarea commitului este **Clasa C**, conform regulii pentru policy, runner,
+contracte de verificare și semantică de control. Task 4.0 este implementat local,
+dar integrarea finală rămâne supusă human gate-ului.
 #### Task 4.1 — Contract de sesiune și tentative
 
 De implementat:
