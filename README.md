@@ -12,13 +12,17 @@ ProgressTrace analyzes the outputs and evidence that agents and their environmen
 
 No agent is required to emit ProgressTrace-native JSON. A source may already emit a compatible artifact, but that is optional. Without explicit obligations and correlated signals there is no universal semantic-progress inference: `insufficient-evidence` is the honest, deterministic outcome. Labeling adapter or model inference as inference, rather than observed fact or a direct agent assertion, is a normative rule for new provenance-aware boundaries; Phase 2a applies it to the termination declaration's `declarationSource`. ProgressTrace does not yet claim a general ingestion-adapter feature or universal field-level provenance across all existing artifacts; a future ADR must first choose a non-breaking manifest/envelope or a compatible new contract version.
 
-The primary initial users are builders of early agent workflows that do not yet have a mature harness; mature systems may integrate through adapters, independent audit, or conformance rather than replacing their harnesses. ProgressTrace's own agent workflow is a planned future reference adapter/corpus, not yet implemented and not an industry standard. Hosted history, UI, and persistent storage remain optional and out of current scope.
+The primary initial users are builders of early agent workflows that do not yet have a mature harness; mature systems may integrate through adapters, independent audit, or conformance rather than replacing their harnesses. The later `reference-adapter-v0` dogfooding experiment is intentionally experimental/internal and is not a stable adapter contract or industry standard. Hosted history, UI, and persistent storage remain optional and out of current scope.
 
 ## Current phase
 
-**Phase 2a Task A: Stop assessment implemented. Phase 2b Task B: baseline comparison implemented.**
+**Phase 3 benchmark MVP: implemented and ground-truth validation integrated.**
 
-Phase 0, Phase 1, Phase 2a Task A, and Phase 2b Task B are implemented. The local .NET 10 CLI validates and normalizes trace envelopes, evaluates obligation ledgers, assesses termination, and compares an externally authored counterfactual event budget through the deterministic `compare` verb.
+Phase 0, Phase 1, Phase 2a Task A, Phase 2b Task B, the initial benchmark MVP, and its authored ground-truth validation are implemented. The local .NET 10 CLI validates and normalizes trace envelopes, evaluates obligation ledgers, assesses termination, and compares an externally authored counterfactual event budget through the deterministic `compare` verb. The benchmark runner processes 20 synthetic/local cases with `max-turns`, `exact-repeat`, and `fuzzy-repeat/cycle` baselines, preserves authored expectations separately from derived observations, and reports actual-versus-expected status.
+
+Post-push verification for the current `main` passed: Release build with 0 warnings/errors, Phase 0–2b conformance, benchmark tests, `dotnet format`, 20/20 ground-truth matches, and byte-identical repeated benchmark output. This validates deterministic implementation and fixture expectations; it does not yet establish generalization, real-world false-halt rates, human-oracle agreement, or external user value.
+
+The next decision is therefore analysis of the 20-case benchmark results. Expansion to a 60-case corpus/oracle, a production OpenTelemetry/Hermes adapter, and richer reporting remains conditional on evidence from that analysis.
 
 ## Architectural direction
 
