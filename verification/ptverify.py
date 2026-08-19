@@ -147,6 +147,34 @@ def run_invariants(repo: Path) -> dict[str, Any]:
     idem = first_code == 0 and second_code == 0 and first_out.encode() == second_out.encode()
     results.append({"id": "normalization-idempotence", "status": "pass" if idem else "fail", "seed": 0, "reproducer": [str(fixture.relative_to(repo))], "details": {"firstExit": first_code, "secondExit": second_code}})
 
+    # Evidence monotonicity and fail-closed removal are exercised against the
+    # existing normative fixtures. Adding the second progress signal must not
+    # weaken the result; removing all supporting signals must not preserve a
+    # stronger progress claim.
+    def evaluate_ledger(name: str) -> tuple[int, dict[str, Any] | None]:
+        code, _, output = run(
+            ["dotnet", "run", "--project", "src/ProgressTrace.Cli/ProgressTrace.Cli.csproj", "--configuration", "Release", "--no-build", "--", "evaluate", "fixtures/valid/multi-event-trace.json", f"fixtures/obligations/valid/{name}"],
+            repo,
+            180,
+        )
+        try:
+            return code, json.loads(output)
+        except json.JSONDecodeError:
+            return code, None
+
+    single_code, single = evaluate_ledger("single-signal-progress-ledger.json")
+    added_code, added = evaluate_ledger("partial-progress-ledger.json")
+    order = {"insufficient-evidence": 0, "stagnation": 1, "progress": 2}
+    single_class = (single or {}).get("traceClassification")
+    added_class = (added or {}).get("traceClassification")
+    monotonic = single_code == 0 and added_code == 0 and single_class in order and added_class in order and order[added_class] >= order[single_class]
+    results.append({"id": "monotonicity-under-evidence-addition", "status": "pass" if monotonic else "fail", "seed": 0, "reproducer": ["fixtures/obligations/valid/single-signal-progress-ledger.json", "fixtures/obligations/valid/partial-progress-ledger.json"], "details": {"before": single_class, "after": added_class}})
+
+    removed_code, removed = evaluate_ledger("insufficient-evidence-ledger.json")
+    removed_class = (removed or {}).get("traceClassification")
+    fail_closed = added_code == 0 and removed_code == 0 and added_class == "progress" and removed_class == "insufficient-evidence"
+    results.append({"id": "fail-closed-under-evidence-removal", "status": "pass" if fail_closed else "fail", "seed": 0, "reproducer": ["fixtures/obligations/valid/partial-progress-ledger.json", "fixtures/obligations/valid/insufficient-evidence-ledger.json"], "details": {"withEvidence": added_class, "withoutEvidence": removed_class}})
+
     # The benchmark's 40 metamorphic variants are the repository's fixed,
     # reviewable metamorphic corpus. This check verifies the invariant without
     # treating authored labels as a production oracle.
