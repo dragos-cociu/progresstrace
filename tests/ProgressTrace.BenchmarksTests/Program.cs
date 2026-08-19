@@ -6,7 +6,7 @@ var failures = new List<string>();
 var input = Path.Combine(root, "fixtures", "benchmarks");
 var files = Directory.EnumerateFiles(input, "*.json").Order(StringComparer.Ordinal).ToList();
 
-Assert(files.Count == 20, $"expected 20 benchmark cases, found {files.Count}", failures);
+Assert(files.Count == 60, $"expected 60 benchmark cases, found {files.Count}", failures);
 
 var first = BenchmarkRunner.Run(input);
 var second = BenchmarkRunner.Run(input);
@@ -14,8 +14,8 @@ var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolic
 var firstBytes = JsonSerializer.SerializeToUtf8Bytes(first, options);
 var secondBytes = JsonSerializer.SerializeToUtf8Bytes(second, options);
 Assert(firstBytes.AsSpan().SequenceEqual(secondBytes), "runner results were not deterministic", failures);
-Assert(first.CaseCount == 20 && first.Cases.Count == 20, "runner case count was incorrect", failures);
-Assert(first.Summary is { CaseCount: 20, MatchedCaseCount: 20, MismatchedCaseCount: 0, Status: "pass" }, "aggregate summary was incorrect", failures);
+Assert(first.CaseCount == 60 && first.Cases.Count == 60, "runner case count was incorrect", failures);
+Assert(first.Summary is { CaseCount: 60, MatchedCaseCount: 60, MismatchedCaseCount: 0, Status: "pass" }, "aggregate summary was incorrect", failures);
 Assert(first.Cases.Select(item => item.CaseId).SequenceEqual(first.Cases.Select(item => item.CaseId).Order(StringComparer.Ordinal)), "runner case order was not ordinal", failures);
 Assert(first.Cases.All(item => item.Status.Overall == "match"), "a complete corpus case did not match its authored expectation", failures);
 Assert(first.Cases.All(item => item.GroundTruth is not null), "a benchmark case had no ground truth", failures);

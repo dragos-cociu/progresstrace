@@ -18,11 +18,11 @@ The primary initial users are builders of early agent workflows that do not yet 
 
 **Phase 3 benchmark MVP: implemented and ground-truth validation integrated.**
 
-Phase 0, Phase 1, Phase 2a Task A, Phase 2b Task B, the initial benchmark MVP, and its authored ground-truth validation are implemented. The local .NET 10 CLI validates and normalizes trace envelopes, evaluates obligation ledgers, assesses termination, and compares an externally authored counterfactual event budget through the deterministic `compare` verb. The benchmark runner processes 20 synthetic/local cases with `max-turns`, `exact-repeat`, and `fuzzy-repeat/cycle` baselines, preserves authored expectations separately from derived observations, and reports actual-versus-expected status.
+Phase 0, Phase 1, Phase 2a Task A, Phase 2b Task B, the initial benchmark MVP, its authored ground-truth validation, and the 60-case validation expansion are implemented. The local .NET 10 CLI validates and normalizes trace envelopes, evaluates obligation ledgers, assesses termination, and compares an externally authored counterfactual event budget through the deterministic `compare` verb. The benchmark runner processes 60 synthetic/local cases with `max-turns`, `exact-repeat`, and `fuzzy-repeat/cycle` baselines, preserves authored expectations separately from derived observations, and reports actual-versus-expected status. The expanded cases are metamorphic variants for identity and evidence-text robustness; they are not an independent production sample or human oracle.
 
-Post-push verification for the current `main` passed: Release build with 0 warnings/errors, Phase 0–2b conformance, benchmark tests, `dotnet format`, 20/20 ground-truth matches, and byte-identical repeated benchmark output. This validates deterministic implementation and fixture expectations; it does not yet establish generalization, real-world false-halt rates, human-oracle agreement, or external user value.
+Post-push verification for the current `main` passed: Release build with 0 warnings/errors, Phase 0–2b conformance, benchmark tests, `dotnet format`, 60/60 ground-truth matches, and byte-identical repeated benchmark output. This validates deterministic implementation and fixture expectations; it does not yet establish generalization, real-world false-halt rates, human-oracle agreement, or external user value.
 
-The next decision is therefore analysis of the 20-case benchmark results. Expansion to a 60-case corpus/oracle, a production OpenTelemetry/Hermes adapter, and richer reporting remains conditional on evidence from that analysis.
+The next decision is therefore independent annotation of the 60-case corpus using `docs/benchmark-annotation-rubric.md`. A production OpenTelemetry/Hermes adapter and richer reporting remain conditional on an adjudicated oracle and evidence from that analysis.
 
 ## Architectural direction
 
