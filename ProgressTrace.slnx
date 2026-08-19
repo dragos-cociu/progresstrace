@@ -1,5 +1,11 @@
 <Solution>
   <Project Path="src/ProgressTrace.Core/ProgressTrace.Core.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/ProgressTrace.Benchmarks/ProgressTrace.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ProgressTrace.BenchmarksTests/ProgressTrace.BenchmarksTests.csproj" />
+  </Folder>
   <Project Path="src/ProgressTrace.Cli/ProgressTrace.Cli.csproj" />
   <Project Path="tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj" />
 </Solution>

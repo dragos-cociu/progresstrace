@@ -155,3 +155,26 @@ Run the conformance executable:
 dotnet run --project tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj \
   --configuration Release
 ```
+
+## Phase 3 benchmark MVP
+
+The local benchmark corpus contains 20 synthetic cases. Each case keeps a
+canonical trace envelope and obligation ledger under `fixtures/benchmarks`.
+The benchmark runner validates both with Core, runs the existing evaluator,
+and reports benchmark-only max-turns, exact-repeat, and fuzzy-repeat/cycle
+observations as stable JSON. The detectors are not normative Core semantics.
+
+Build and run it with:
+
+```sh
+dotnet build src/ProgressTrace.Benchmarks/ProgressTrace.Benchmarks.csproj \
+  --configuration Release --nologo --warnaserror
+dotnet run --project src/ProgressTrace.Benchmarks/ProgressTrace.Benchmarks.csproj \
+  --configuration Release --no-build -- run --input fixtures/benchmarks \
+  --output /tmp/progresstrace-benchmark.json
+```
+
+The runner sorts case files using ordinal ordering and writes compact UTF-8
+JSON with a trailing newline, so repeated runs over the same local corpus are
+byte-identical. The benchmark test executable checks case coverage, detector
+branches, evaluator classifications, ordering, and in-process determinism.

@@ -1,0 +1,69 @@
+{
+  "id": "phase-3-benchmark-mvp",
+  "title": "Implement the initial ProgressTrace benchmark runner and baseline detectors",
+  "objective": "Implement the smallest benchmark component required by the original ProgressTrace MVP plan: approximately 20 explicit, synthetic or locally controlled trace cases; deterministic max-turns, exact-repeat, and fuzzy-repeat/cycle baselines; and a reproducible runner that executes the existing ProgressTrace evaluator and those baselines over the same cases and emits stable machine-readable results. Preserve the existing Phase 0–2b contracts and normative Core semantics. Do not build a production adapter, report UI, or expand the product scope.",
+  "repository": "/srv/projects/progresstrace",
+  "base_branch": "main",
+  "allowed_paths": [
+    "src/ProgressTrace.Benchmarks/**",
+    "tests/ProgressTrace.BenchmarksTests/**",
+    "fixtures/benchmarks/**",
+    "tasks/phase-3-benchmark-mvp.json",
+    "README.md",
+    "ProgressTrace.slnx"
+  ],
+  "protected_paths": [
+    "contracts/**",
+    "docs/**",
+    "src/ProgressTrace.Core/**",
+    "src/ProgressTrace.Cli/**",
+    "tests/ProgressTrace.ConformanceTests/**",
+    "experiments/reference-adapter-v0/**",
+    ".github/**",
+    "AGENTS.md",
+    "global.json"
+  ],
+  "acceptance_commands": [
+    ["dotnet", "build", "ProgressTrace.slnx", "--configuration", "Release", "--nologo", "--warnaserror"],
+    ["dotnet", "run", "--project", "tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj", "--configuration", "Release", "--no-build"],
+    ["dotnet", "test", "tests/ProgressTrace.BenchmarksTests/ProgressTrace.BenchmarksTests.csproj", "--configuration", "Release", "--no-build"],
+    ["dotnet", "run", "--project", "src/ProgressTrace.Benchmarks/ProgressTrace.Benchmarks.csproj", "--configuration", "Release", "--no-build", "--", "run", "--input", "fixtures/benchmarks", "--output", "/tmp/progresstrace-benchmark-run-1.json"],
+    ["dotnet", "run", "--project", "src/ProgressTrace.Benchmarks/ProgressTrace.Benchmarks.csproj", "--configuration", "Release", "--no-build", "--", "run", "--input", "fixtures/benchmarks", "--output", "/tmp/progresstrace-benchmark-run-2.json"],
+    ["cmp", "/tmp/progresstrace-benchmark-run-1.json", "/tmp/progresstrace-benchmark-run-2.json"],
+    ["dotnet", "format", "ProgressTrace.slnx", "--verify-no-changes", "--no-restore", "--verbosity", "minimal"]
+  ],
+  "deliverables": [
+    "Benchmark project referencing the existing Core only",
+    "Approximately 20 explicitly labeled benchmark cases, with no sensitive data",
+    "Deterministic max-turns, exact-repeat, and fuzzy-repeat/cycle baseline implementations",
+    "Reproducible machine-readable benchmark output",
+    "Focused unit/conformance tests",
+    "Short README usage documentation"
+  ],
+  "non_goals": [
+    "No OpenTelemetry or Hermes production adapter",
+    "No stable adapter schema or plugin framework",
+    "No Markdown/HTML report component",
+    "No 60-trace corpus, dual-human oracle, or Cohen kappa",
+    "No UI, web API, database, hosted service, GitHub Action, or online interruption",
+    "No LLM judge or model calls",
+    "No changes to existing contracts or Core semantics",
+    "No extension of reference-adapter-v0"
+  ],
+  "stop_conditions": [
+    "A baseline definition is semantically ambiguous and requires a new normative contract",
+    "The benchmark requires changes to protected Core/contracts paths",
+    "Results are not deterministic on immediate rerun",
+    "Sensitive or external production data would be required",
+    "The implementation exceeds the allowed paths or attempts scope expansion",
+    "Two bounded repair attempts are exhausted"
+  ],
+  "human_gates": [
+    "final_integration"
+  ],
+  "max_repair_attempts": 2,
+  "timeouts_seconds": {
+    "builder": 1200,
+    "acceptance_command": 300
+  }
+}
