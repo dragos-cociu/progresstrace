@@ -29,3 +29,19 @@ separate channels. Do not give either evaluator the original files under
 
 The blank templates are not an oracle and contain no labels. This repository
 still contains no human annotations.
+
+## Agreement analysis
+
+After both evaluators have completed their copies outside the repository, run:
+
+```sh
+python3 annotations/analyze_agreement.py \
+  --evaluator-1 /secure/path/evaluator-1.csv \
+  --evaluator-2 /secure/path/evaluator-2.csv \
+  --output /secure/path/agreement.json
+```
+
+The tool validates the schema and labels, requires matching case sets, reports
+per-field agreement and Cohen's kappa, lists disagreements, and marks the
+result `oracleStatus: not-adjudicated`. It rejects blank templates and does
+not produce an oracle or accuracy metrics by itself.
