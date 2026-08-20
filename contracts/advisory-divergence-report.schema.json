@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://progresstrace.local/contracts/advisory-divergence-report.schema.json",
+  "title": "AdvisoryDivergenceReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "reportId", "sessionId", "ledgerTraceId", "advisorySourceDigest", "generatedAt", "divergences"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "reportId": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sessionId": {"type": "string", "minLength": 1},
+    "ledgerTraceId": {"type": "string", "minLength": 1},
+    "advisorySourceDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "generatedAt": {"const": "1970-01-01T00:00:00.0000000Z"},
+    "divergences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["obligationId", "ledgerStatus", "advisoryStatus", "diverged"],
+        "properties": {
+          "obligationId": {"type": "string", "minLength": 1},
+          "ledgerStatus": {"enum": ["open", "in-progress", "satisfied", "regressed", "abandoned"]},
+          "advisoryStatus": {"enum": ["open", "in-progress", "satisfied", "regressed", "abandoned"]},
+          "diverged": {"type": "boolean"}
+        }
+      }
+    },
+    "rollup": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "totalObligations": {"type": "integer", "minimum": 0},
+        "divergentCount": {"type": "integer", "minimum": 0},
+        "allConverged": {"type": "boolean"}
+      }
+    }
+  }
+}

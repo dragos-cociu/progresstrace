@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0",
+  "taskContractId": "phase-4-4-in-flight-advisory",
+  "title": "Phase 4.4: In-Flight Advisory Assessment",
+  "adr": "docs/architecture/ADR-0008-in-flight-advisory-assessment.md",
+  "scope": [
+    "Define the AdvisoryResult contract (schema + normative doc) for the advise operation, taking exactly session-path, ledger-path, and gate-outcomes-array-path as inputs.",
+    "Define the AdvisoryDivergenceReport contract (schema + normative doc) as an independent sidecar, schema version 1.0.",
+    "Record the approved human gate decisions in ADR-0008."
+  ],
+  "nonGoals": [
+    "Implementation code for the advise CLI operation.",
+    "Fixtures or tests for AdvisoryResult or AdvisoryDivergenceReport.",
+    "Any change to Evaluator.Evaluate, SessionEvaluator, StopAssessor, GateOutcomeProjector, or SessionTraceBuilder.",
+    "External-ledger support inside SessionTraceBuilder (additive, later).",
+    "EscalationQueue semantics for AdvisoryDivergenceReport.",
+    "Persistence of AdvisoryResult or AdvisoryDivergenceReport beyond a single invocation.",
+    "Shadow mode (continuous background advisory evaluation). Deferred to Hermes / Phase 4.6."
+  ],
+  "obligations": [
+    {
+      "id": "OBL-ADR-0008",
+      "description": "Author ADR-0008 recording the approved in-flight advisory assessment decision, including the thirteen approved human-gate points, PT700+ diagnostic allocation, and allowed/protected paths."
+    },
+    {
+      "id": "OBL-ADVISORY-RESULT-SCHEMA",
+      "description": "Author contracts/advisory-result.schema.json: schemaVersion 1.0, required sessionId/taskContractId/ledgerTraceId/generatedAt/sourceDigest/classification/recommendation/obligations. classification reuses Evaluator.Evaluate's existing closed vocabulary (progress, recovery-after-failed-attempt, repeated-attempt-without-obligation-advancement, insufficient-evidence). recommendation is a required closed-vocabulary field (continue, stop-recommended, insufficient-evidence). generatedAt is a fixed const sentinel (1970-01-01T00:00:00.0000000Z), not wall-clock. obligations is non-empty (minItems 1); each entry requires obligationId, status, classification, stable, evidenceEventIds, with no field derived from free text."
+    },
+    {
+      "id": "OBL-ADVISORY-RESULT-DOC",
+      "description": "Author docs/contracts/advisory-result.md covering scope, required fields, recommendation derivation rule, per-obligation structured reason (obligationId/status/classification/stable/evidenceEventIds), evaluator reuse, insufficient-evidence priority, stable-attainment reuse, SessionTraceBuilder boundary, determinism (fixed generatedAt sentinel), fail-closed behavior, CLI, non-goals, security, ownership, and compatibility."
+    },
+    {
+      "id": "OBL-ADVISORY-DIVERGENCE-SCHEMA",
+      "description": "Author contracts/advisory-divergence-report.schema.json: schemaVersion 1.0, normative required divergences array (per obligation ledgerStatus/advisoryStatus/diverged), optional non-normative rollup object. reportId is constrained to a deterministic digest shape (^[0-9a-f]{64}$), not a free-form/random string. generatedAt is a fixed const sentinel (1970-01-01T00:00:00.0000000Z), not wall-clock."
+    },
+    {
+      "id": "OBL-ADVISORY-DIVERGENCE-DOC",
+      "description": "Author docs/contracts/advisory-divergence-report.md covering scope, required fields, normative per-obligation divergence, session-only diagnostic rollup, determinism (fixed generatedAt sentinel and digest-derived reportId, never a random UUID), fail-closed behavior, CLI, non-goals, security, ownership, and compatibility."
+    }
+  ],
+  "constraints": [
+    "advise takes exactly three inputs: session-path, ledger-path, gate-outcomes-array-path.",
+    "Evaluator.Evaluate remains the single, unmodified classification authority.",
+    "insufficient-evidence has priority over all other classifications.",
+    "The stable-attainment helper is shared with StopAssessor; no rank or overhead field is added to it.",
+    "AdvisoryDivergenceReport is an independent sidecar, not an EscalationQueue.",
+    "Divergence is normative per obligation; the rollup is session-only diagnostic.",
+    "PT700+ is explicitly allocated to this phase's diagnostics.",
+    "Persistence and shadow mode are non-goals, deferred to Hermes / Phase 4.6.",
+    "AdvisoryResult.recommendation is a required closed-vocabulary field (continue, stop-recommended, insufficient-evidence) derived deterministically: classification insufficient-evidence => insufficient-evidence; else all targeted obligations stable=true => stop-recommended; else continue.",
+    "Each AdvisoryResult.obligations[] entry carries a structured reason (obligationId, status, classification, stable, evidenceEventIds); no field is generated from obligation description free text.",
+    "generatedAt on both AdvisoryResult and AdvisoryDivergenceReport is the fixed sentinel 1970-01-01T00:00:00.0000000Z, not a wall-clock timestamp, so identical inputs produce byte-identical output.",
+    "AdvisoryDivergenceReport.reportId is derived deterministically as the SHA-256 digest of the source AdvisoryResult's and paired ObligationLedger's canonical bytes, never a randomly generated UUID."
+  ],
+  "acceptanceCommands": [
+    "progresstrace validate contracts/advisory-result.schema.json",
+    "progresstrace validate contracts/advisory-divergence-report.schema.json"
+  ],
+  "allowedPaths": [
+    "docs/architecture/ADR-0008-in-flight-advisory-assessment.md",
+    "tasks/phase-4-4-in-flight-advisory.json",
+    "contracts/advisory-result.schema.json",
+    "contracts/advisory-divergence-report.schema.json",
+    "docs/contracts/advisory-result.md",
+    "docs/contracts/advisory-divergence-report.md"
+  ],
+  "protectedPaths": [
+    "contracts/agent-session.schema.json",
+    "contracts/gate-outcome.schema.json",
+    "contracts/obligation-ledger.schema.json",
+    "docs/contracts/agent-session.md",
+    "docs/contracts/gate-outcome.md"
+  ],
+  "humanGates": [
+    "advise inputs fixed to session-path, ledger-path, gate-outcomes-array-path.",
+    "Evaluator.Evaluate stays unique and unchanged.",
+    "insufficient-evidence has priority.",
+    "stable-attainment helper shared with StopAssessor, no rank/overhead.",
+    "SessionTraceBuilder external-ledger support deferred, additive.",
+    "AdvisoryDivergenceReport is an independent sidecar, not an EscalationQueue.",
+    "divergence normative per obligation, rollup session-only diagnostic.",
+    "PT700+ explicitly allocated.",
+    "persistence/shadow mode is a non-goal, deferred to Hermes/4.6.",
+    "recommendation is a required closed-vocabulary field derived deterministically from classification and per-obligation stable.",
+    "each obligations[] entry carries a structured reason (obligationId, status, classification, stable, evidenceEventIds), no free text generated from description.",
+    "generatedAt on both artifacts is the fixed sentinel 1970-01-01T00:00:00.0000000Z, not a wall-clock timestamp.",
+    "AdvisoryDivergenceReport.reportId is deterministically derived from source digest/inputs, never a random UUID."
+  ],
+  "diagnostics": {
+    "allocatedRange": "PT700-PT799",
+    "reference": "docs/architecture/ADR-0008-in-flight-advisory-assessment.md"
+  },
+  "ownership": "ProgressTrace core contract maintainers",
+  "compatibility": "AdvisoryResult and AdvisoryDivergenceReport both start at schemaVersion 1.0; changes to required or normative fields require a superseding ADR and a new human gate."
+}

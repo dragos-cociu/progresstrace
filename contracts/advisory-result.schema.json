@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://progresstrace.local/contracts/advisory-result.schema.json",
+  "title": "AdvisoryResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sessionId", "taskContractId", "ledgerTraceId", "generatedAt", "sourceDigest", "classification", "recommendation", "obligations"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "sessionId": {"type": "string", "minLength": 1},
+    "taskContractId": {"type": "string", "minLength": 1},
+    "ledgerTraceId": {"type": "string", "minLength": 1},
+    "generatedAt": {"const": "1970-01-01T00:00:00.0000000Z"},
+    "sourceDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "classification": {"$ref": "#/$defs/classification"},
+    "recommendation": {"enum": ["continue", "stop-recommended", "insufficient-evidence"]},
+    "obligations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["obligationId", "status", "classification", "stable", "evidenceEventIds"],
+        "properties": {
+          "obligationId": {"type": "string", "minLength": 1},
+          "status": {"enum": ["open", "in-progress", "satisfied", "regressed", "abandoned"]},
+          "classification": {"$ref": "#/$defs/classification"},
+          "stable": {"type": "boolean"},
+          "evidenceEventIds": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "classification": {
+      "enum": ["progress", "recovery-after-failed-attempt", "repeated-attempt-without-obligation-advancement", "insufficient-evidence"]
+    }
+  }
+}
