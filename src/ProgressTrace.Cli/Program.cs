@@ -9,11 +9,13 @@ using ProgressTrace.Core.Validation;
 using ProgressTrace.Core.Advisory;
 using ProgressTrace.Core.Models;
 using ProgressTrace.Core.Budget;
+using ProgressTrace.Core.Shadow;
 
 return await RunAsync(args);
 
 static async Task<int> RunAsync(string[] args)
 {
+    if (args.Length > 0 && args[0] == "shadow-summarize") return await ShadowSummarizeAsync(args);
     if (args.Length > 0 && args[0] == "budget") return await BudgetAsync(args);
     if (args.Length > 0 && args[0] == "advise") return await AdviseAsync(args);
     if (args.Length > 0 && args[0] == "generate-ledger")
@@ -74,6 +76,50 @@ static async Task<int> RunAsync(string[] args)
     }
     return 0;
 }
+
+static void WriteShadowUsage() => WriteJson(Console.Error, new { error = "usage", message = "Usage: progresstrace shadow-summarize --snapshot-manifest-path <path> [--real-decision-path <path>] [--out <path>]" });
+
+static async Task<int> ShadowSummarizeAsync(string[] args)
+{
+    var allowed = new HashSet<string>(["--snapshot-manifest-path", "--real-decision-path", "--out"], StringComparer.Ordinal); var values = new Dictionary<string, string>(StringComparer.Ordinal);
+    for (var i = 1; i < args.Length; i++) if (!allowed.Contains(args[i]) || i + 1 >= args.Length || args[i + 1].StartsWith("--", StringComparison.Ordinal) || !values.TryAdd(args[i], args[++i])) { WriteShadowUsage(); return 2; }
+    if (!values.ContainsKey("--snapshot-manifest-path")) { WriteShadowUsage(); return 2; }
+    var manifestPath = values["--snapshot-manifest-path"]; var manifestInput = await ReadAsync(manifestPath, "snapshot-manifest"); if (manifestInput.ExitCode is { } me) return me;
+    if (!TryParseShadowManifest(manifestInput.Bytes!, out var entries)) { WriteJson(Console.Error, new { error = "input", document = "snapshot-manifest", message = "Snapshot manifest is malformed." }); return 2; }
+    if (entries!.Count == 0) { WriteShadowDiagnostics([new(DiagnosticCodes.ShadowAssemblyInvariant, "", "Shadow summary cannot be assembled deterministically.")]); return 1; }
+    for (var i = 1; i < entries.Count; i++) if (entries[i].Sequence <= entries[i - 1].Sequence) { WriteShadowDiagnostics([new(DiagnosticCodes.ShadowSequenceInvalid, "/" + i + "/shadowSequence", "Shadow sequence must be strictly increasing.")]); return 1; }
+    var inputs = new List<ShadowSnapshotInput>(); var manifestDirectory = Path.GetDirectoryName(Path.GetFullPath(manifestPath))!;
+    foreach (var entry in entries)
+    {
+        var advisoryPath = Path.IsPathRooted(entry.Path) ? entry.Path : Path.Combine(manifestDirectory, entry.Path); var advisoryInput = await ReadAsync(advisoryPath, "advisory-result"); if (advisoryInput.ExitCode is not null) return 2;
+        var advisory = AdvisoryResultValidator.ParseAndValidate(advisoryInput.Bytes!); if (!advisory.IsValid) { WriteShadowDiagnostics([new(DiagnosticCodes.ShadowAdvisoryInvalid, "", "Referenced AdvisoryResult is invalid.")]); return 1; }
+        inputs.Add(new(entry.Sequence, entry.GateOutcomeId, advisory.AdvisoryResult!));
+    }
+    RealDecisionRecord? decision = null;
+    if (values.TryGetValue("--real-decision-path", out var decisionPath))
+    {
+        var decisionInput = await ReadAsync(decisionPath, "real-decision"); if (decisionInput.ExitCode is not null) return 2;
+        var validation = RealDecisionRecordValidator.ParseAndValidate(decisionInput.Bytes!); if (!validation.IsValid) { WriteShadowDiagnostics([new(DiagnosticCodes.ShadowRealDecisionInvalid, "", "RealDecisionRecord is invalid.")]); return 1; }
+        decision = validation.RealDecisionRecord;
+    }
+    var assembled = ShadowAssembler.Assemble(inputs, decision); if (!assembled.IsValid) { WriteShadowDiagnostics(assembled.Diagnostics); return 1; }
+    if (!await WriteAdvisoryOutput(values.GetValueOrDefault("--out"), ShadowSessionSummaryNormalizer.Normalize(assembled.Summary!))) return 2;
+    if (assembled.Diagnostics.Count != 0) WriteShadowDiagnostics(assembled.Diagnostics); return 0;
+}
+
+static bool TryParseShadowManifest(byte[] bytes, out IReadOnlyList<(long Sequence, string GateOutcomeId, string Path)>? entries)
+{
+    entries = null;
+    try
+    {
+        using var document = JsonDocument.Parse(bytes); if (document.RootElement.ValueKind != JsonValueKind.Array) return false; var result = new List<(long, string, string)>();
+        foreach (var item in document.RootElement.EnumerateArray()) { if (item.ValueKind != JsonValueKind.Object || item.EnumerateObject().Select(p => p.Name).Distinct(StringComparer.Ordinal).Count() != 3 || item.GetPropertyCount() != 3 || !item.TryGetProperty("shadowSequence", out var sequence) || !sequence.TryGetInt64(out var number) || number < 0 || !item.TryGetProperty("triggeringGateOutcomeId", out var gate) || gate.ValueKind != JsonValueKind.String || string.IsNullOrEmpty(gate.GetString()) || !item.TryGetProperty("advisoryResultPath", out var path) || path.ValueKind != JsonValueKind.String || string.IsNullOrEmpty(path.GetString())) return false; result.Add((number, gate.GetString()!, path.GetString()!)); }
+        entries = result; return true;
+    }
+    catch (JsonException) { return false; }
+}
+
+static void WriteShadowDiagnostics(IReadOnlyList<Diagnostic> diagnostics) => WriteJson(Console.Error, new { diagnostics });
 
 static async Task<int> GenerateLedgerAsync(string taskContractPath, string traceId, string ledgerOutputPath, string reportOutputPath)
 {

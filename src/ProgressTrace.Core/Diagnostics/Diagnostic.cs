@@ -59,4 +59,10 @@ public static class DiagnosticCodes
     public const string BudgetOverflow = "PT804";
     public const string BudgetNormalizationFailure = "PT805";
     public const string BudgetMissingTokenUsage = "PT806";
+    public const string ShadowReferenceMismatch = "PT900";
+    public const string ShadowAdvisoryInvalid = "PT901";
+    public const string ShadowRealDecisionInvalid = "PT902";
+    public const string ShadowSequenceInvalid = "PT903";
+    public const string ShadowAssemblyInvariant = "PT904";
+    public const string ShadowMissingRealDecision = "PT905";
 }

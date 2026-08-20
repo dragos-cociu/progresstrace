@@ -1,0 +1,4 @@
+[
+  {"shadowSequence": 2, "triggeringGateOutcomeId": "gate-out-1", "advisoryResultPath": "../../advisory/golden/advisory-continue.json"},
+  {"shadowSequence": 2, "triggeringGateOutcomeId": "gate-out-2", "advisoryResultPath": "../../advisory/golden/advisory-stop.json"}
+]

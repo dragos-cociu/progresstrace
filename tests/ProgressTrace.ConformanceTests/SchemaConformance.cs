@@ -6,7 +6,7 @@ static class SchemaConformance
     private static readonly HashSet<string> Supported = new(StringComparer.Ordinal)
     {
         "$schema", "$id", "title", "$defs", "$ref", "type", "required", "properties",
-        "additionalProperties", "items", "minItems", "minLength", "minimum", "maximum", "pattern", "const", "enum",
+        "additionalProperties", "items", "minItems", "minLength", "minimum", "maximum", "pattern", "format", "const", "enum",
         "allOf", "anyOf", "if", "then", "else", "not", "uniqueItems"
     };
 
@@ -63,9 +63,16 @@ static class SchemaConformance
         if (schema.TryGetProperty("allOf", out var allOf))
             foreach (var child in allOf.EnumerateArray())
                 if (!ValidateNode(value, child, root, pointer, out error)) return false;
-        if (schema.TryGetProperty("anyOf", out var anyOf) &&
-            !anyOf.EnumerateArray().Any(child => ValidateNode(value, child, root, pointer, out _)))
-            return Fail(pointer, "anyOf", out error);
+        if (schema.TryGetProperty("anyOf", out var anyOf))
+        {
+            var matched = false;
+            foreach (var child in anyOf.EnumerateArray())
+            {
+                try { if (ValidateNode(value, child, root, pointer, out _)) { matched = true; break; } }
+                catch (InvalidOperationException) { }
+            }
+            if (!matched) return Fail(pointer, "anyOf", out error);
+        }
         if (schema.TryGetProperty("not", out var not) && ValidateNode(value, not, root, pointer, out _))
             return Fail(pointer, "not", out error);
         if (schema.TryGetProperty("if", out var condition))
@@ -86,6 +93,9 @@ static class SchemaConformance
                 return Fail(pointer, "minLength", out error);
             if (schema.TryGetProperty("pattern", out var pattern) && !Regex.IsMatch(text, pattern.GetString()!, RegexOptions.CultureInvariant))
                 return Fail(pointer, "pattern", out error);
+            if (schema.TryGetProperty("format", out var format) && format.GetString() == "date-time" &&
+                (!DateTimeOffset.TryParse(text, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _) || !text.Contains('T', StringComparison.Ordinal)))
+                return Fail(pointer, "format", out error);
         }
         if (value.ValueKind == JsonValueKind.Number && value.TryGetDecimal(out var number))
         {
