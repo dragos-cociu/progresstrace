@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://progresstrace.local/contracts/token-usage.schema.json",
+  "title": "TokenUsage",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sessionId", "taskContractId", "records"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "sessionId": {"type": "string", "minLength": 1},
+    "taskContractId": {"type": "string", "minLength": 1},
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sessionId", "invocationId", "sequence", "tokensTotal", "producerType", "producerName", "producerVersion", "evidenceBasis"],
+        "properties": {
+          "sessionId": {"type": "string", "minLength": 1},
+          "invocationId": {"type": "string", "minLength": 1},
+          "sequence": {"type": "integer", "minimum": 0},
+          "tokensTotal": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+          "producerType": {"type": "string", "enum": ["agent", "harness", "operator", "adapter"]},
+          "producerName": {"type": "string", "minLength": 1, "pattern": "\\S"},
+          "producerVersion": {"type": ["string", "null"], "minLength": 1, "pattern": "\\S"},
+          "evidenceBasis": {"type": "string", "enum": ["provider-usage-field", "harness-metered", "agent-self-reported", "adapter-inference"]}
+        }
+      }
+    }
+  }
+}

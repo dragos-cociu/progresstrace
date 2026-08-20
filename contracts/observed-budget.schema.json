@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://progresstrace.local/contracts/observed-budget.schema.json",
+  "title": "ObservedBudget",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sessionId", "taskContractId", "ledgerTraceId", "generatedAt", "sourceDigest", "obligations"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "sessionId": {"type": "string", "minLength": 1},
+    "taskContractId": {"type": "string", "minLength": 1},
+    "ledgerTraceId": {"type": "string", "minLength": 1},
+    "generatedAt": {"const": "1970-01-01T00:00:00.0000000Z"},
+    "sourceDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "obligations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["obligationId", "ledgerStatus", "observedInvocationCount", "observedElapsedMillis", "observedTokensTotal"],
+        "properties": {
+          "obligationId": {"type": "string", "minLength": 1},
+          "ledgerStatus": {"enum": ["open", "in-progress", "satisfied", "regressed", "abandoned"]},
+          "observedInvocationCount": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+          "observedElapsedMillis": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+          "observedTokensTotal": {"type": ["integer", "null"], "minimum": 0, "maximum": 9223372036854775807}
+        }
+      }
+    }
+  }
+}

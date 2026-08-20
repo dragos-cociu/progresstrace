@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "1.0",
+  "taskContractId": "phase-4-5-observed-budget",
+  "title": "Phase 4.5: Observed Budget Architecture",
+  "adr": "docs/architecture/ADR-0009-observed-budget.md",
+  "scope": [
+    "Define the TokenUsage contract (schema + normative doc) as a new, additive 1.0 sidecar keyed against an existing AgentSession, never modifying AgentSession itself.",
+    "Define the ObservedBudget contract (schema + normative doc) as a generated report combining AgentSession, TokenUsage, and ObligationLedger into a per-obligation juxtaposition of observed invocation count, elapsed time, and tokens against the ledger's existing status.",
+    "Record the approved human gate decisions in ADR-0009."
+  ],
+  "nonGoals": [
+    "Implementation code for the budget CLI operation.",
+    "Fixtures or tests for TokenUsage or ObservedBudget.",
+    "Any change to AgentSession, GateOutcome, AdvisoryResult, AdvisoryDivergenceReport, ObligationLedger, eventBudget, benchmark, Evaluator, SessionEvaluator, existing CLI behavior, or diagnostics PT000-PT706.",
+    "Network access, model calls, persistence beyond a single invocation, shadow mode, automatic stopping or escalation, pricing or cost-in-dollars fields, and cross-session aggregation.",
+    "Any efficiency, waste, over-budget, or under-budget verdict.",
+    "The separate implementation task contract for TokenUsage/ObservedBudget, to be created later, not by this task."
+  ],
+  "obligations": [
+    {
+      "id": "OBL-ADR-0009",
+      "description": "Author ADR-0009 recording the approved observed-budget architecture decision, including the fifteen approved human-gate points, PT800-PT899 diagnostic allocation, and allowed/protected paths."
+    },
+    {
+      "id": "OBL-TOKEN-USAGE-SCHEMA",
+      "description": "Author contracts/token-usage.schema.json: schemaVersion 1.0, required sessionId/taskContractId/records at the document level. Each records[] entry requires sessionId, invocationId, sequence, tokensTotal (nonnegative bounded integer, 0..2147483647), producerType (closed four-value enum agent/harness/operator/adapter), producerName, producerVersion (string or null), evidenceBasis (closed four-value enum provider-usage-field/harness-metered/agent-self-reported/adapter-inference). records may be empty."
+    },
+    {
+      "id": "OBL-TOKEN-USAGE-DOC",
+      "description": "Author docs/contracts/token-usage.md covering scope, required fields, record admissibility (sessionId/invocationId/sequence cross-validated against the paired AgentSession, mirroring GateOutcome's existing admissibility rule), provenance fields, zero-distinct-from-missing semantics for tokensTotal, missing-record handling, fail-closed behavior, CLI boundary, non-goals, security (including the provenance/truth-verification caveat), ownership, and compatibility."
+    },
+    {
+      "id": "OBL-OBSERVED-BUDGET-SCHEMA",
+      "description": "Author contracts/observed-budget.schema.json: schemaVersion 1.0, required sessionId/taskContractId/ledgerTraceId/generatedAt/sourceDigest/obligations. generatedAt is a fixed const sentinel (1970-01-01T00:00:00.0000000Z), not wall-clock. obligations is non-empty (minItems 1), ordered exactly as the paired ObligationLedger's obligations array; each entry requires obligationId, ledgerStatus (existing five-value ledger status enum), observedInvocationCount (nonnegative bounded integer), observedElapsedMillis (64-bit nonnegative integer, never null), observedTokensTotal (64-bit nonnegative integer or null). No efficiency/waste/applicability field of any kind."
+    },
+    {
+      "id": "OBL-OBSERVED-BUDGET-DOC",
+      "description": "Author docs/contracts/observed-budget.md covering scope (three mandatory inputs: session-path, token-usage-path, ledger-path), cross-reference rules between the three inputs, per-obligation observation derivation (invocation count and elapsed time from AgentSession only, tokens from TokenUsage), invocation window validation, missing-token-record handling and the PT806 non-blocking precedent, overflow behavior, the explicit absence of any efficiency/waste verdict, fail-closed behavior, determinism (fixed generatedAt sentinel and fixed-order sourceDigest), CLI, non-goals, security (including the provenance/truth-verification caveat), ownership, and compatibility."
+    }
+  ],
+  "constraints": [
+    "TokenUsage is a new, additive 1.0 sidecar; contracts/agent-session.schema.json and docs/contracts/agent-session.md are never modified.",
+    "observedInvocationCount is derived from validated AgentSession invocations only, never from TokenUsage or ObligationLedger.",
+    "observedElapsedMillis is the sum of validated per-invocation endedAt-startedAt durations; it is a 64-bit nonnegative integer and is never null.",
+    "TokenUsage.records[] entries are keyed and cross-validated by sessionId, invocationId, sequence against the paired AgentSession, reusing GateOutcome's existing admissibility rule.",
+    "Each TokenUsage.records[] entry carries producerType, producerName, producerVersion, evidenceBasis provenance.",
+    "tokensTotal is a nonnegative bounded integer (0..2147483647); zero is a distinct, valid, present value from a missing record.",
+    "A missing token record yields an informational PT806 diagnostic per invocation and forces null for any observedTokensTotal that would sum a missing constituent; a missing constituent is never silently dropped from the sum.",
+    "Arithmetic overflow, in either aggregate sum (observedElapsedMillis or observedTokensTotal), fails closed (PT804) rather than wrapping, truncating, or saturating.",
+    "ObservedBudget requires AgentSession, TokenUsage, and ObligationLedger; the ledger is mandatory, never optional.",
+    "ObservedBudget.obligations[] juxtaposes observed invocation count, tokens, and elapsed time next to the existing ledger-declared status; it renders no efficiency or waste verdict.",
+    "The CLI verb is budget, taking exactly session-path, token-usage-path, ledger-path, and an optional --out.",
+    "PT800-PT899 is explicitly allocated to this phase's diagnostics; PT806 is reserved for the missing-token-record informational condition.",
+    "generatedAt on ObservedBudget is the fixed sentinel 1970-01-01T00:00:00.0000000Z, not a wall-clock timestamp.",
+    "sourceDigest is the SHA-256 digest over the normalized AgentSession, TokenUsage, and ObligationLedger, concatenated in that fixed order.",
+    "obligations[] is ordered exactly as the paired ObligationLedger.obligations[] array.",
+    "ObservedBudget is local and read-only: no network access, no model call, no persistence, no shadow mode, no auto-stop, no pricing or cost-in-dollars field, no cross-session aggregation.",
+    "No change to AgentSession, GateOutcome, AdvisoryResult, AdvisoryDivergenceReport, ObligationLedger, eventBudget, benchmark, Evaluator, SessionEvaluator, existing CLI behavior, or diagnostics PT000-PT706."
+  ],
+  "acceptanceCommands": [
+    "progresstrace validate contracts/token-usage.schema.json",
+    "progresstrace validate contracts/observed-budget.schema.json"
+  ],
+  "allowedPaths": [
+    "docs/architecture/ADR-0009-observed-budget.md",
+    "tasks/phase-4-5-observed-budget.json",
+    "contracts/token-usage.schema.json",
+    "contracts/observed-budget.schema.json",
+    "docs/contracts/token-usage.md",
+    "docs/contracts/observed-budget.md"
+  ],
+  "protectedPaths": [
+    "contracts/agent-session.schema.json",
+    "contracts/gate-outcome.schema.json",
+    "contracts/obligation-ledger.schema.json",
+    "contracts/advisory-result.schema.json",
+    "contracts/advisory-divergence-report.schema.json",
+    "contracts/baseline-definition.schema.json",
+    "contracts/baseline-comparison-result.schema.json",
+    "docs/contracts/agent-session.md",
+    "docs/contracts/gate-outcome.md",
+    "docs/contracts/obligation-ledger.md",
+    "docs/contracts/advisory-result.md",
+    "docs/contracts/advisory-divergence-report.md"
+  ],
+  "humanGates": [
+    "TokenUsage is a new, additive 1.0 sidecar; AgentSession is never modified.",
+    "observedInvocationCount is derived from validated AgentSession invocations, never from TokenUsage or ObligationLedger.",
+    "observedElapsedMillis is the sum of validated per-invocation endedAt-startedAt durations; it is a 64-bit nonnegative integer.",
+    "TokenUsage.records[] entries are keyed and cross-validated by sessionId, invocationId, sequence against the paired AgentSession.",
+    "Each TokenUsage.records[] entry carries producerType, producerName, producerVersion, evidenceBasis provenance.",
+    "tokensTotal is a nonnegative bounded integer; zero is a distinct, valid, present value from a missing record.",
+    "A missing token record yields an informational PT806 diagnostic per invocation and forces null for any observedTokensTotal that would sum a missing constituent.",
+    "Arithmetic overflow, in either aggregate sum, fails closed (PT804) rather than wrapping, truncating, or saturating.",
+    "ObservedBudget requires AgentSession, TokenUsage, and ObligationLedger; the ledger is mandatory, never optional.",
+    "ObservedBudget.obligations[] juxtaposes observed invocation count, tokens, and elapsed time next to the existing ledger-declared status; it renders no efficiency or waste verdict.",
+    "The CLI verb is budget.",
+    "PT800-PT899 is explicitly allocated to this phase.",
+    "generatedAt is the fixed sentinel 1970-01-01T00:00:00.0000000Z; sourceDigest is the SHA-256 digest over the normalized AgentSession, TokenUsage, and ObligationLedger, concatenated in that fixed order; obligations[] is ordered exactly as ObligationLedger.obligations[].",
+    "ObservedBudget is local and read-only: no network access, no model call, no persistence, no shadow mode, no auto-stop, no pricing or cost-in-dollars field, no cross-session aggregation.",
+    "No change to AgentSession, GateOutcome, AdvisoryResult, AdvisoryDivergenceReport, ObligationLedger, eventBudget, benchmark, Evaluator, SessionEvaluator, existing CLI behavior, or diagnostics PT000-PT706."
+  ],
+  "diagnostics": {
+    "allocatedRange": "PT800-PT899",
+    "reference": "docs/architecture/ADR-0009-observed-budget.md"
+  },
+  "ownership": "ProgressTrace core contract maintainers",
+  "compatibility": "TokenUsage and ObservedBudget both start at schemaVersion 1.0 and version independently of each other and of AgentSession/ObligationLedger; changes to required or normative fields require a superseding ADR and a new human gate."
+}
