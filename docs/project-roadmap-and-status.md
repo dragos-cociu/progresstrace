@@ -1,11 +1,12 @@
 # ProgressTrace — roadmap, status, evidence și backlog
 
-**Document de referință:** 2026-08-19
+**Document de referință:** 2026-08-20
 **Repository:** `/srv/projects/progresstrace`
 **Branch analizat:** `main`
-**Commit implementare Task 4.0:** `0e354b2` — `test: cover evidence monotonicity invariants`
+**Commit implementare Task 4.5:** `5a65cdc` — `docs: document Phase 4.5 observed budget`
+**Commit automatizare review:** `b830a3e` — `fix: resolve review hook root independently of cwd`
 **Stare working tree la verificare:** curat
-**Relația cu `origin/main`:** există commituri locale nepushed; nu s-a făcut push la remote.
+**Relația cu `origin/main`:** sincronizat la `b830a3e`.
 
 Acest document separă:
 
@@ -37,6 +38,10 @@ Nucleul implementat poate:
 - compara terminarea cu un buget de evenimente authored, cu delimitarea strictă
   că acesta este un proxy contrafactual, nu un fapt observat;
 - rula benchmark-uri deterministe și baseline-uri simple;
+- genera și valida ledger-uri deterministe din task contracts;
+- produce advisory-uri in-flight și rapoarte de divergență;
+- agrega consum observat per obligație în `ObservedBudget 1.0`, separat de
+  estimările authored `eventBudget`;
 - analiza proiecții redactate de workflow-uri reale printr-un adaptor experimental
   intern.
 
@@ -739,39 +744,46 @@ Excluderi: fără parsing conversațional și fără OpenTelemetry.
 
 #### Task 4.3 — Generator de ledger din task contract
 
-De implementat:
+**Finalizat și integrat în `main`.**
+
+Implementat:
 
 - `tasks/phase-*.json` → `ObligationLedger` 1.0;
 - trasabilitate pentru fiecare obligație către clauza task contract-ului;
 - raport de coverage: derivat automat, manual, fără suport în sursă;
-- validare referențială cu core-ul existent.
+- validare referențială cu core-ul existent;
+- CLI `generate-ledger`, fixtures, conformance și verificare independentă.
 
 #### Task 4.4 — Assessment in-flight advisory
 
-De implementat:
+**Finalizat și integrat în `main`.**
 
-- CLI `advise <session> <ledger>` fără declarație de terminare;
+Implementat:
+
+- CLI `advise` fără declarație de terminare;
 - output cu `continue`, `stop-recommended` sau `insufficient-evidence`;
 - motiv corelat cu obligații și semnale;
 - fail-closed: lipsa evidenței produce `insufficient-evidence`;
 - recomandarea nu întrerupe automat nimic;
-- la închiderea sesiunii, compară recomandările `advise` emise in-flight cu
-  `StopAssessmentResult` final;
-- divergențele devin issue-uri de produs cu sesiune și pas de reproducere;
-- verificarea este automată și nu necesită etichetare umană.
+- raport independent de divergență față de rezultatul terminal;
+- verificare Gemini, runner extern și CI.
 
 #### Task 4.5 — Observed budget
 
-De implementat:
+**Finalizat și integrat în `main`.**
 
-- contract `ObservedBudget` 1.0 pentru invocări, tokeni și timp;
-- comparație între costul observat și avansul obligațiilor;
-- folosirea lui în contextul operațional în locul dependenței de `eventBudget`;
-- păstrarea `eventBudget` pentru benchmark, cu limitarea semantică actuală.
+Implementat:
+
+- contracte `TokenUsage 1.0` și `ObservedBudget 1.0` pentru invocări, tokeni și timp;
+- CLI `budget` cu output atomic și determinism verificat;
+- PT800–PT806, cu PT806 informational/non-blocking și fail-closed pentru celelalte erori;
+- compararea consumului observat cu progresul obligațiilor, fără verdict de eficiență;
+- păstrarea `eventBudget` pentru benchmark și estimări authored;
+- Gemini `PASS`, runner extern `7/7`, CI `success` pe `5a65cdc`.
 
 #### Task 4.6 — Integrare în shadow mode
 
-De implementat:
+**Următorul task; arhitectura nu este încă materializată.**
 
 - hook Hermes după fiecare gate;
 - apel `advise` și persistarea rezultatului;
@@ -851,8 +863,9 @@ Rămân în afara scope-ului:
 ## 8. Concluzia de proiect
 
 ProgressTrace are acum un core deterministic implementat și verificat, un benchmark
-regression suite de 60 de cazuri și un adaptor experimental care a trecut prin
-5 proiecții reale și 15 etape CLI.
+regression suite de 60 de cazuri, contracte Hermes-native până la `ObservedBudget
+1.0`, un adaptor experimental și review extern automatizat post-merge/post-push
+prin hook-uri Git locale.
 
 Phase 4 nu mai încearcă să demonstreze dacă proiectul trebuie continuat. El
 folosește proiectul în propriul pipeline pentru a descoperi cerințe de produs.
