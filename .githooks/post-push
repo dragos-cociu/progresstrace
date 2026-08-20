@@ -1,0 +1,16 @@
+#!/bin/sh
+set -u
+repo=$(git rev-parse --show-toplevel) || exit 0
+status=0
+while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
+    case "$local_ref" in
+        refs/heads/*)
+            if [ -n "$local_sha" ] && [ -n "$remote_sha" ] && [ "$local_sha" != "0000000000000000000000000000000000000000" ]; then
+                if ! python3 "$repo/.githooks/progresstrace-review.py" --event push --base "$remote_sha" --head "$local_sha"; then
+                    status=1
+                fi
+            fi
+            ;;
+    esac
+done
+exit "$status"
