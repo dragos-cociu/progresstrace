@@ -16,13 +16,13 @@ The primary initial users are builders of early agent workflows that do not yet 
 
 ## Current phase
 
-**Phase 4: Hermes-native operational dogfooding — Task 4.4 is implemented on this branch; integration into `main` is pending.**
+**Phase 4: Hermes-native operational dogfooding — Task 4.5 is implemented on this branch; integration into `main` is pending.**
 
 Phase 0, Phase 1, Phase 2a Task A, Phase 2b Task B, the benchmark MVP, authored validation, and the expansion to 60 cases are implemented. The .NET 10 core validates and normalizes traces, evaluates obligations, performs stop assessment, compares authored baselines, generates deterministic obligation ledgers from structured task contracts, and produces read-only in-flight advisory assessments. The 60 cases remain a regression suite in CI; `fuzzyRepeatCycle` is exploratory, while default operational reporting relies on `maxTurns` and `exactRepeat`.
 
 The experimental Hermes vertical slice passed five real/redacted projections and 15 CLI stages. Phase 4 narrows ingestion to the Hermes gate log: obligations come from task contracts, signals come from deterministic verdicts, and operational budgets will come from observed consumption. Universal compatibility, OpenTelemetry, a generic adapter, and conversational interpretation in Core are explicitly out of scope.
 
-Task 4.3 is complete and published: structured `tasks/phase-*.json` sources produce `ObligationLedger 1.0` plus a versioned provenance and coverage sidecar. Task 4.4 is implemented on the isolated branch: the `advise` CLI produces deterministic in-flight recommendations and the independent divergence sidecar defined by ADR-0008. After integration, Task 4.5 — observed budget — is next.
+Task 4.3 is complete and published: structured `tasks/phase-*.json` sources produce `ObligationLedger 1.0` plus a versioned provenance and coverage sidecar. Task 4.4 is implemented on the isolated branch: the `advise` CLI produces deterministic in-flight recommendations and the independent divergence sidecar defined by ADR-0008. Task 4.5 is implemented on this branch: the `budget` CLI combines an `AgentSession`, observed `TokenUsage`, and an `ObligationLedger` into deterministic per-obligation `ObservedBudget 1.0` rows. Observed invocation counts, elapsed milliseconds, and token totals remain distinct from authored `eventBudget` estimates; missing token evidence is reported non-blockingly as PT806, while malformed, inadmissible, divergent, or overflowing inputs fail closed. After integration, Task 4.6 is next.
 
 ## Architectural direction
 
@@ -110,6 +110,33 @@ Compare a validated trace, ledger, termination declaration, and baseline definit
 ```sh
 dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj --configuration Release -- compare fixtures/valid/multi-event-trace.json fixtures/termination/ledgers/valid/mixed-rollup-ledger.json fixtures/termination/valid/mixed-rollup-declaration.json fixtures/baseline/definitions/valid/unused-budget-baseline.json
 ```
+
+## Phase 4.5 observed budget
+
+The read-only `budget` operation combines one validated `AgentSession`, one
+observed `TokenUsage` sidecar, and one `ObligationLedger` into deterministic
+`ObservedBudget 1.0` output. It reports per-obligation invocation counts,
+elapsed milliseconds, ledger status, and observed token totals. It does not
+reinterpret authored `eventBudget` estimates, infer costs, persist state, call
+models, or stop sessions.
+
+```sh
+dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj \
+  --configuration Release -- budget \
+  --session-path fixtures/budget/valid/session.json \
+  --token-usage-path fixtures/budget/valid/token-usage-complete.json \
+  --ledger-path fixtures/budget/valid/ledger.json
+```
+
+The verb accepts exactly the three required input flags and optional `--out`.
+Complete observed token evidence produces normal output; missing token records
+produce PT806 diagnostics on stderr without blocking output or changing the
+zero exit code. PT800–PT805 fail closed. Elapsed durations are summed at native
+`TimeSpan` precision and truncated only after the final sum; aggregate token
+overflow is checked. See `docs/architecture/ADR-0009-observed-budget.md`,
+`docs/contracts/token-usage.md`, `docs/contracts/observed-budget.md`,
+`tasks/phase-4-5-observed-budget.json`, and
+`tasks/phase-4-5-observed-budget-implementation.json`.
 
 ## Core CLI usage
 
