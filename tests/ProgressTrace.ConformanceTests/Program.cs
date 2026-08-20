@@ -51,6 +51,7 @@ BaselineComparisonConformance.Assert(repositoryRoot, failures);
 CliConformance.Assert(repositoryRoot, failures);
 SessionConformance.Assert(repositoryRoot, failures);
 LedgerGenerationConformance.Assert(repositoryRoot, failures);
+AdvisoryConformance.Assert(repositoryRoot, failures);
 
 if (failures.Count == 0)
 {
@@ -62,7 +63,9 @@ if (failures.Count == 0)
     var phase2bInvalid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "baseline", "definitions", "invalid"), "*.json").Count();
     var generationValid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "ledger-generation", "valid"), "*.json").Count();
     var generationInvalid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "ledger-generation", "invalid"), "*.json").Count();
-    Console.WriteLine($"PASS: Phase 0 {Directory.EnumerateFiles(validDirectory, "*.json").Count()} valid/{Directory.EnumerateFiles(invalidDirectory, "*.json").Count()} invalid; Phase 1 {phase1Valid} valid/{phase1Invalid} invalid; Phase 2a {phase2Valid} valid/{phase2Invalid} invalid; Phase 2b {phase2bValid} valid/{phase2bInvalid} invalid; Phase 4.3 {generationValid} valid/{generationInvalid} invalid fixtures.");
+    var advisoryValid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "advisory", "valid"), "*.json").Count();
+    var advisoryInvalid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "advisory", "invalid"), "*.json").Count();
+    Console.WriteLine($"PASS: Phase 0 {Directory.EnumerateFiles(validDirectory, "*.json").Count()} valid/{Directory.EnumerateFiles(invalidDirectory, "*.json").Count()} invalid; Phase 1 {phase1Valid} valid/{phase1Invalid} invalid; Phase 2a {phase2Valid} valid/{phase2Invalid} invalid; Phase 2b {phase2bValid} valid/{phase2bInvalid} invalid; Phase 4.3 {generationValid} valid/{generationInvalid} invalid fixtures; Phase 4.4 {advisoryValid} valid/{advisoryInvalid} invalid fixtures.");
     return 0;
 }
 

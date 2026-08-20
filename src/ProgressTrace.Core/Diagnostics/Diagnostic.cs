@@ -45,4 +45,11 @@ public static class DiagnosticCodes
     public const string InvalidSourceEntry = "PT604";
     public const string MissingTraceId = "PT605";
     public const string DuplicateGeneratedObligationId = "PT606";
+    public const string AdvisoryReferenceMismatch = "PT700";
+    public const string AdvisoryLedgerInvalid = "PT701";
+    public const string AdvisoryOutcomeInvalid = "PT702";
+    public const string AdvisoryInsufficientEvidence = "PT703";
+    public const string AdvisoryNormalizationFailure = "PT704";
+    public const string AdvisoryResultInvalid = "PT705";
+    public const string AdvisoryObligationMismatch = "PT706";
 }

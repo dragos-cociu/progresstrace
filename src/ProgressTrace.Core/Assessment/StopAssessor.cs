@@ -15,15 +15,7 @@ public static class StopAssessor
         for (var i = 0; i < ledger.Obligations!.Count; i++)
         {
             var obligation = ledger.Obligations[i];
-            var signals = ledger.Signals!.Where(s => s.ObligationId == obligation.Id)
-                .OrderBy(s => ranks[s.EventId!]).ThenBy(s => s.Index).ToList();
-            int? stableRank = null;
-            if (signals.Count > 0 && signals[^1].Status == "satisfied")
-            {
-                var start = signals.Count - 1;
-                while (start > 0 && signals[start - 1].Status == "satisfied") start--;
-                stableRank = ranks[signals[start].EventId!];
-            }
+            var stableRank = StableAttainment.GetRank(obligation.Id!, ledger, ranks);
             var evaluated = evaluation.ObligationResults[i];
             obligationResults.Add(new(obligation.Id!, evaluated.Classification, evaluated.EvidenceEventIds,
                 stableRank is null ? "unmet-target-at-termination" : "stable-attainment",

@@ -1,0 +1,1 @@
+[{"schemaVersion":"1.0","outcomeId":"out-1","sessionId":"advisory-session","invocationId":"invoke-1","sequence":1,"command":"test","exitCode":0,"timestamp":"2026-01-01T00:00:30Z","obligationId":"not-in-ledger","verdict":"pass","sourceDigest":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]

@@ -6,11 +6,14 @@ using ProgressTrace.Core.Evaluation;
 using ProgressTrace.Core.Generation;
 using ProgressTrace.Core.Normalization;
 using ProgressTrace.Core.Validation;
+using ProgressTrace.Core.Advisory;
+using ProgressTrace.Core.Models;
 
 return await RunAsync(args);
 
 static async Task<int> RunAsync(string[] args)
 {
+    if (args.Length > 0 && args[0] == "advise") return await AdviseAsync(args);
     if (args.Length > 0 && args[0] == "generate-ledger")
     {
         if (args.Length < 3)
@@ -171,6 +174,70 @@ static void WriteUsage() => WriteJson(Console.Error, new
     error = "usage",
     message = "Usage: progresstrace <validate|normalize> <path> | progresstrace evaluate <trace-path> <ledger-path> | progresstrace assess <trace-path> <ledger-path> <termination-declaration-path> | progresstrace compare <trace-path> <ledger-path> <termination-declaration-path> <baseline-definition-path> | progresstrace generate-ledger <task-contract-path> <trace-id> <ledger-output-path> <report-output-path>"
 });
+
+static async Task<int> AdviseAsync(string[] args)
+{
+    var divergence = args.Skip(1).Contains("--divergence-report", StringComparer.Ordinal);
+    var allowed = divergence ? new HashSet<string>(["--advisory-result-path", "--ledger-path", "--out"], StringComparer.Ordinal) : new HashSet<string>(["--session-path", "--ledger-path", "--gate-outcomes-array-path", "--out"], StringComparer.Ordinal);
+    var values = new Dictionary<string, string>(StringComparer.Ordinal);
+    for (var i = 1; i < args.Length; i++)
+    {
+        if (args[i] == "--divergence-report") { if (!divergence) return 2; continue; }
+        if (!allowed.Contains(args[i]) || i + 1 >= args.Length || args[i + 1].StartsWith("--", StringComparison.Ordinal) || !values.TryAdd(args[i], args[++i])) { WriteUsage(); return 2; }
+    }
+    var required = divergence ? new[] { "--advisory-result-path", "--ledger-path" } : ["--session-path", "--ledger-path", "--gate-outcomes-array-path"];
+    if (required.Any(key => !values.ContainsKey(key)) || (!divergence && args.Contains("--divergence-report", StringComparer.Ordinal))) { WriteUsage(); return 2; }
+    if (divergence) return await DivergenceAsync(values);
+    var sessionInput = await ReadAsync(values["--session-path"], "session"); if (sessionInput.ExitCode is { } se) return se;
+    var session = AgentSessionValidator.ParseAndValidate(sessionInput.Bytes!); if (!session.IsValid) { WriteValidationFailure("session", session.Diagnostics); return FailureExit(session.Diagnostics); }
+    var ledgerInput = await ReadAsync(values["--ledger-path"], "ledger"); if (ledgerInput.ExitCode is { } le) return le;
+    var ledger = ObligationLedgerValidator.ParseAndValidatePhaseA(ledgerInput.Bytes!); if (!ledger.IsValid) return ledger.Diagnostics.Any(d => d.Code is DiagnosticCodes.InvalidJson or DiagnosticCodes.InputTooLarge) ? AdvisoryRawFailure(ledger.Diagnostics[0].Code, ledger.Diagnostics[0].Message, 2) : AdvisoryFailure(DiagnosticCodes.AdvisoryLedgerInvalid, "Ledger input failed structural validation.");
+    var outcomesInput = await ReadAsync(values["--gate-outcomes-array-path"], "gate-outcomes"); if (outcomesInput.ExitCode is { } oe) return oe;
+    if (!TryParseOutcomes(outcomesInput.Bytes!, out var outcomes, out var malformed)) return malformed ? AdvisoryRawFailure(DiagnosticCodes.InvalidJson, "Input is not valid JSON.", 2) : AdvisoryFailure(DiagnosticCodes.AdvisoryOutcomeInvalid, "Gate outcome input failed structural validation.");
+    var assembled = AdvisoryAssembler.Assemble(session.Session!, ledger.Ledger!, outcomes!);
+    if (!assembled.IsValid) { WriteAdvisoryDiagnostics(assembled.Diagnostics); return 1; }
+    var bytes = AdvisoryResultNormalizer.Normalize(assembled.Result!);
+    if (!await WriteAdvisoryOutput(values.GetValueOrDefault("--out"), bytes)) return 2;
+    if (assembled.Diagnostics.Count != 0) WriteAdvisoryDiagnostics(assembled.Diagnostics);
+    return 0;
+}
+
+static async Task<int> DivergenceAsync(Dictionary<string, string> values)
+{
+    var advisoryInput = await ReadAsync(values["--advisory-result-path"], "advisory-result"); if (advisoryInput.ExitCode is { } ae) return ae;
+    var advisory = AdvisoryResultValidator.ParseAndValidate(advisoryInput.Bytes!); if (!advisory.IsValid) return advisory.Diagnostics.Any(d => d.Code is DiagnosticCodes.InvalidJson or DiagnosticCodes.InputTooLarge) ? AdvisoryRawFailure(advisory.Diagnostics[0].Code, advisory.Diagnostics[0].Message, 2) : AdvisoryFailure(DiagnosticCodes.AdvisoryResultInvalid, "Advisory result input failed structural validation.");
+    var ledgerInput = await ReadAsync(values["--ledger-path"], "ledger"); if (ledgerInput.ExitCode is { } le) return le;
+    var ledger = ObligationLedgerValidator.ParseAndValidatePhaseA(ledgerInput.Bytes!); if (!ledger.IsValid) return ledger.Diagnostics.Any(d => d.Code is DiagnosticCodes.InvalidJson or DiagnosticCodes.InputTooLarge) ? AdvisoryRawFailure(ledger.Diagnostics[0].Code, ledger.Diagnostics[0].Message, 2) : AdvisoryFailure(DiagnosticCodes.AdvisoryLedgerInvalid, "Ledger input failed structural validation.");
+    var assembled = AdvisoryAssembler.AssembleDivergence(advisory.AdvisoryResult!, ledger.Ledger!); if (!assembled.IsValid) { WriteAdvisoryDiagnostics(assembled.Diagnostics); return 1; }
+    return await WriteAdvisoryOutput(values.GetValueOrDefault("--out"), AdvisoryDivergenceReportNormalizer.Normalize(assembled.Report!)) ? 0 : 2;
+}
+
+static bool TryParseOutcomes(byte[] bytes, out IReadOnlyList<GateOutcome>? outcomes, out bool malformed)
+{
+    outcomes = null; malformed = false;
+    try
+    {
+        using var document = JsonDocument.Parse(bytes); if (document.RootElement.ValueKind != JsonValueKind.Array) return false;
+        var result = new List<GateOutcome>(); foreach (var item in document.RootElement.EnumerateArray()) { var validation = GateOutcomeValidator.ParseAndValidate(System.Text.Encoding.UTF8.GetBytes(item.GetRawText())); if (!validation.IsValid) { malformed = validation.Diagnostics.Any(d => d.Code == DiagnosticCodes.InvalidJson); return false; } result.Add(validation.Outcome!); }
+        outcomes = result; return true;
+    }
+    catch (JsonException) { malformed = true; return false; }
+}
+
+static int AdvisoryFailure(string code, string message) => AdvisoryRawFailure(code, message, 1);
+static int AdvisoryRawFailure(string code, string message, int exit) { WriteAdvisoryDiagnostics([new(code, "", message)]); return exit; }
+static void WriteAdvisoryDiagnostics(IReadOnlyList<Diagnostic> diagnostics) => WriteJson(Console.Error, new { diagnostics });
+static async Task<bool> WriteAdvisoryOutput(string? path, byte[] bytes)
+{
+    if (path is null) { await Console.OpenStandardOutput().WriteAsync(bytes); return true; }
+    try { WriteSingleAtomically(path, bytes); return true; } catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException) { WriteJson(Console.Error, new { error = "output", message = "Output file could not be written." }); return false; }
+}
+
+static void WriteSingleAtomically(string path, byte[] bytes)
+{
+    var full = Path.GetFullPath(path); var directory = Path.GetDirectoryName(full)!; Directory.CreateDirectory(directory); var temp = Path.Combine(directory, $".{Path.GetFileName(full)}.{Guid.NewGuid():N}.tmp");
+    try { File.WriteAllBytes(temp, bytes); File.Move(temp, full, true); } finally { File.Delete(temp); }
+}
 
 static async Task<int> RunContractAsync(string operation, string kind, string path)
 {
