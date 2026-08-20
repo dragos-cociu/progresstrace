@@ -783,13 +783,21 @@ Implementat:
 
 #### Task 4.6 — Integrare în shadow mode
 
-**Următorul task; arhitectura nu este încă materializată.**
+**Architecture accepted; implementation pending.**
 
-- hook Hermes după fiecare gate;
-- apel `advise` și persistarea rezultatului;
-- verdict ProgressTrace comparat cu decizia reală;
-- shadow mode obligatoriu: rezultatele se înregistrează, nu acționează;
-- trecerea la mod activ rămâne o decizie separată, ulterioară.
+Materialized:
+
+- ADR-0010 `docs/architecture/ADR-0010-shadow-mode-integration.md`;
+- additive contracts `RealDecisionRecord 1.0` and `ShadowSessionSummary 1.0`;
+- implementation task contract `tasks/phase-4-6-shadow-mode-implementation.json`.
+
+Next implementation slice:
+
+- deterministic `shadow-summarize` CLI;
+- snapshot manifest validation and correlation;
+- session-level alignment summary;
+- external Hermes hook remains a separate tooling task;
+- no action, stopping, interruption or escalation.
 
 ### Ordine obligatorie
 
