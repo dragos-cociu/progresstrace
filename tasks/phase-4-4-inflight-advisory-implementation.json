@@ -1,0 +1,180 @@
+{
+  "schemaVersion": "1.0",
+  "taskContractId": "phase-4-4-inflight-advisory-implementation",
+  "title": "Phase 4.4: In-Flight Advisory Assessment — Implementation",
+  "adr": "docs/architecture/ADR-0008-in-flight-advisory-assessment.md",
+  "dependsOn": [
+    "docs/architecture/ADR-0008-in-flight-advisory-assessment.md is Accepted and unmodified: its thirteen human-gate points bind this task and are not reopened here.",
+    "tasks/phase-4-4-in-flight-advisory.json (contract-definition task) is complete: contracts/advisory-result.schema.json and contracts/advisory-divergence-report.schema.json are approved and frozen in shape.",
+    "docs/contracts/advisory-result.md and docs/contracts/advisory-divergence-report.md are approved and fix the exact CLI usage this task implements verbatim."
+  ],
+  "objective": "Implement the advise CLI operation and its --divergence-report sub-operation exactly as fixed by ADR-0008 and the approved AdvisoryResult / AdvisoryDivergenceReport contracts: deterministic, read-only, local-file-to-file transformations that reuse Evaluator.Evaluate, SessionEvaluator, and GateOutcomeProjector unmodified, share a stable-attainment helper with StopAssessor without changing StopAssessor's semantics or output, fail closed on PT700-PT706, and write output atomically. No persistence, network, LLM, or auto-stop behavior of any kind.",
+  "scope": [
+    "AdvisoryResult core model (src/ProgressTrace.Core/Models), Phase-A structural validator, and canonical byte normalizer, matching contracts/advisory-result.schema.json exactly with no shape drift.",
+    "AdvisoryDivergenceReport core model, Phase-A structural validator, and canonical byte normalizer, matching contracts/advisory-divergence-report.schema.json exactly with no shape drift.",
+    "A new src/ProgressTrace.Core/Advisory namespace assembling AdvisoryResult from session-path + ledger-path + gate-outcomes-array-path, and assembling AdvisoryDivergenceReport from advisory-result-path + ledger-path, per the requiredContractDecisions below.",
+    "Extraction of the stable-attainment computation currently inlined in StopAssessor.Assess (src/ProgressTrace.Core/Assessment/StopAssessor.cs) into a shared static helper in src/ProgressTrace.Core/Assessment, called by both StopAssessor and the new Advisory assembly code, with StopAssessor's existing signature, output, and behavior byte-identical on every existing fixture and test.",
+    "A new progresstrace advise CLI verb (src/ProgressTrace.Cli/Program.cs) supporting exactly the two documented invocations: advise --session-path --ledger-path --gate-outcomes-array-path [--out] and advise --divergence-report --advisory-result-path --ledger-path [--out], with no additional flags and no alternate verb name.",
+    "Atomic single-file output for each invocation (write-to-temp-then-move, no partial file ever visible on failure), reusing the existing atomic-write discipline already established for generate-ledger's paired output in src/ProgressTrace.Cli/Program.cs.",
+    "PT700-PT706 diagnostic codes registered in src/ProgressTrace.Core/Diagnostics/Diagnostic.cs and emitted exactly per the table in ADR-0008, fail-closed with no partial artifact for every code except PT703 (see requiredContractDecisions).",
+    "Valid, invalid, and golden fixtures under fixtures/advisory covering both sub-operations and every PT700-PT706 condition, plus byte-reproducibility across two runs of the same input.",
+    "Conformance tests (tests/ProgressTrace.ConformanceTests) asserting: schema conformance of generated output against contracts/advisory-result.schema.json and contracts/advisory-divergence-report.schema.json, exact diagnostic code for every PT700-PT706 fixture, byte-identical regeneration, and that StopAssessor's existing fixtures still produce byte-identical StopAssessmentResult output after the stable-attainment extraction."
+  ],
+  "nonGoals": [
+    "Any change to Evaluator.Evaluate, SessionEvaluator.Evaluate, GateOutcomeProjector.TryProject/Project, or their public signatures and output.",
+    "Any change to SessionTraceBuilder.Build or any other member of SessionTraceBuilder; the file is not modified.",
+    "Any change to EscalationQueue semantics, contracts/escalation.schema.json, or any escalation-related code path; AdvisoryDivergenceReport remains an independent sidecar, never wired into escalation.",
+    "Any change to contracts/advisory-result.schema.json or contracts/advisory-divergence-report.schema.json shape, or to docs/contracts/advisory-result.md / docs/contracts/advisory-divergence-report.md / ADR-0008 content.",
+    "Persistence of AdvisoryResult or AdvisoryDivergenceReport beyond a single invocation; no database, cache, or state file.",
+    "Network access, model calls, or LLM-as-judge of any kind.",
+    "Automatic session stopping, interruption, or escalation triggered by recommendation or divergence output.",
+    "Shadow mode (continuous background advisory evaluation); deferred to Hermes / Phase 4.6.",
+    "External-ledger support inside SessionTraceBuilder itself.",
+    "Any change to generate-ledger, evaluate, assess, compare, validate, or normalize verb behavior, or to their existing fixtures."
+  ],
+  "obligations": [
+    {
+      "id": "OBL-ADVISORY-MODEL",
+      "description": "Implement the AdvisoryResult and AdvisoryDivergenceReport C# record models under src/ProgressTrace.Core/Models, field-for-field matching the two frozen schemas, including nested obligation-entry and divergence-entry record types."
+    },
+    {
+      "id": "OBL-ADVISORY-VALIDATOR",
+      "description": "Implement AdvisoryResultValidator and AdvisoryDivergenceReportValidator under src/ProgressTrace.Core/Validation performing Phase-A structural validation only (parse + shape + enum + pattern + const checks), reusing JsonValidationHelpers exactly as ObligationLedgerValidator's Phase A does; no cross-document referential checks live in the validator, those live in the Advisory assembly layer per requiredContractDecisions."
+    },
+    {
+      "id": "OBL-ADVISORY-NORMALIZER",
+      "description": "Implement AdvisoryResultNormalizer and AdvisoryDivergenceReportNormalizer under src/ProgressTrace.Core/Normalization producing canonical, stably-ordered, trailing-newline-terminated UTF-8 bytes, byte-idempotent on reparse/renormalize, following the existing writer pattern in GateOutcomeNormalizer."
+    },
+    {
+      "id": "OBL-STABLE-ATTAINMENT-HELPER",
+      "description": "Extract the stable-attainment computation from StopAssessor.Assess into a shared static helper under src/ProgressTrace.Core/Assessment, used by both StopAssessor and the new Advisory assembly code. No rank, priority, or overhead field is added to the helper or to StopAssessor's output; StopAssessor's public signature and every existing StopAssessmentResult fixture output remain byte-identical."
+    },
+    {
+      "id": "OBL-ADVISORY-ASSEMBLY",
+      "description": "Implement the AdvisoryResult and AdvisoryDivergenceReport assembly logic under a new src/ProgressTrace.Core/Advisory namespace, per requiredContractDecisions: trace reconstruction from session-path + gate-outcomes-array-path using SessionContractValidator and GateOutcomeProjector, evaluation via unmodified Evaluator.Evaluate against the externally supplied ledger, per-obligation status/classification/stable/evidenceEventIds derivation, recommendation derivation, sourceDigest computation, and divergence reconciliation."
+    },
+    {
+      "id": "OBL-ADVISORY-CLI",
+      "description": "Add the advise CLI verb and its --divergence-report sub-operation to src/ProgressTrace.Cli/Program.cs with exactly the flags documented in docs/contracts/advisory-result.md and docs/contracts/advisory-divergence-report.md, writing output atomically to --out or stdout, and returning the exit codes fixed in requiredContractDecisions."
+    },
+    {
+      "id": "OBL-ADVISORY-DIAGNOSTICS",
+      "description": "Register PT700 through PT706 in src/ProgressTrace.Core/Diagnostics/Diagnostic.cs and emit each exactly per ADR-0008's table and the requiredContractDecisions clarifications below, with no source-value echoing in diagnostic messages."
+    },
+    {
+      "id": "OBL-ADVISORY-FIXTURES",
+      "description": "Author valid, invalid, and golden fixtures under fixtures/advisory covering: a nominal advise run producing continue, a nominal advise run producing stop-recommended (all obligations stable), a nominal advise run producing insufficient-evidence with PT703 alongside a successfully written AdvisoryResult, every PT700/PT701/PT702/PT704 fail-closed condition for advise, every PT705/PT706 fail-closed condition for advise --divergence-report, a converged divergence report (allConverged true), a divergent divergence report, and byte-reproducibility of both operations across two runs of the same input."
+    },
+    {
+      "id": "OBL-ADVISORY-CONFORMANCE",
+      "description": "Author tests/ProgressTrace.ConformanceTests/AdvisoryConformance.cs asserting schema conformance via the existing SchemaConformance helper, exact diagnostic code (and PT703's non-blocking behavior) per fixture, byte-identical regeneration, and StopAssessor fixture output unchanged after the stable-attainment extraction; wire it into tests/ProgressTrace.ConformanceTests/Program.cs alongside the existing *Conformance classes."
+    }
+  ],
+  "requiredContractDecisions": [
+    "advise does not route through SessionTraceBuilder and SessionTraceBuilder.cs is not modified. The Advisory assembly layer reconstructs a TraceEnvelope from session-path + gate-outcomes-array-path using the same public building blocks SessionTraceBuilder.Build already uses internally — SessionContractValidator.Validate for session/outcome coherence, GateOutcomeProjector.TryProject for per-outcome event and signal projection, outcomes ordered by Sequence then OutcomeId (StringComparer.Ordinal), consistent with SessionTraceBuilder's own ordering — but pairs the resulting TraceEnvelope with the externally supplied ledger-path ObligationLedger instead of building a new ledger from session obligation ids, then calls Evaluator.Evaluate(trace, suppliedLedger) unmodified.",
+    "PT700 (session-path reference does not match ledger-path or gate-outcomes-array-path) is raised when either: the traceId derived from session-path's earliest invocation (by Sequence) does not equal ledger-path's traceId, or any gate-outcomes-array-path element's sessionId does not equal session-path's sessionId.",
+    "PT701 is raised when ledger-path fails ObligationLedgerValidator Phase A structural validation (parse + shape); PT702 is raised when any element of gate-outcomes-array-path fails GateOutcomeValidator schema validation. Both are cross-document input validity failures on well-formed JSON and exit 1 with structured diagnostics; malformed/oversized/unreadable JSON at either path exits 2, matching the existing evaluate/assess/compare convention (DiagnosticCodes.InvalidJson/InputTooLarge => 2).",
+    "PT703 (insufficient-evidence) is informational, not fail-closed: classification/recommendation = insufficient-evidence is a valid, complete AdvisoryResult per the schema's own closed vocabulary and the recommendation derivation rule in ADR-0008. advise still writes the normalized AdvisoryResult and exits 0 when PT703 applies; PT703 is emitted only through the CLI diagnostic channel and is never added to the strict AdvisoryResult JSON, never blocks output, and never forces a non-zero exit by itself. This is the only PT700-range code that does not suppress output.",
+    "PT704 (AdvisoryResult cannot be normalized deterministically) covers internal assembly invariant violations only (for example a targeted obligation id present in gate-outcomes-array-path signals but absent from ledger-path's obligations); it is fail-closed, exits 1, and writes no partial AdvisoryResult.",
+    "obligations targeted by advise are exactly ledger-path's ObligationLedger.obligations[].id set, in ledger array order. Per-obligation status is the Status of the last signal for that obligation among the signals projected from gate-outcomes-array-path (ordered by projected TraceEvent Sequence then EventId, StringComparer.Ordinal, matching Evaluator's own signal ordering), or open if no such signal exists. Per-obligation classification and evidenceEventIds are read directly from Evaluator.Evaluate's ObligationEvaluation for that obligation id, with no re-derivation. Per-obligation stable is the shared stable-attainment helper's existing boolean output for that obligation, computed against the same reconstructed trace and the supplied ledger.",
+    "sourceDigest is the lowercase hex SHA-256 digest of the concatenation, in fixed order, of AgentSessionNormalizer.Normalize(session) || ObligationLedgerNormalizer.Normalize(ledger) || the concatenation of GateOutcomeNormalizer.Normalize(outcome) for each gate-outcomes-array-path element in array order — each operand already the existing canonical normalized bytes for that document type, with no additional wrapping or separator.",
+    "AdvisoryDivergenceReport's --divergence-report sub-operation does not take gate-outcomes-array-path or session-path; it reads only advisory-result-path and ledger-path. PT705 is raised when advisory-result-path fails AdvisoryResultValidator schema validation, or when the parsed AdvisoryResult's ledgerTraceId does not equal the supplied ledger-path ObligationLedger's traceId (the cross-reference check between divergence-report's two inputs, structurally analogous to PT700 for advise's three inputs).",
+    "ledgerStatus per obligation in AdvisoryDivergenceReport is computed from ledger-path's own ObligationLedger.signals, ordered by signal Index ascending for that obligationId (no TraceEnvelope is available to the divergence sub-operation, so event-sequence ordering is not used here); the last signal's Status is ledgerStatus, or open if the obligation has no signals. advisoryStatus per obligation is copied verbatim from the corresponding entry in the supplied AdvisoryResult's obligations[].status; it is never recomputed.",
+    "Every obligation id present in ledger-path's obligations or in the supplied AdvisoryResult's obligations appears exactly once in divergences. PT706 is raised, fail-closed, when the two obligation id sets are not identical (an id present in one but absent from the other) — the ordinary case where --ledger-path is the same ledger originally paired with the AdvisoryResult always reconciles one-to-one by construction of the preceding decision.",
+    "reportId is the lowercase hex SHA-256 digest of AdvisoryResultNormalizer.Normalize(advisoryResult) || ObligationLedgerNormalizer.Normalize(ledger), in that fixed order, exactly as ADR-0008 specifies.",
+    "generatedAt on every generated AdvisoryResult and AdvisoryDivergenceReport is the literal sentinel 1970-01-01T00:00:00.0000000Z, written by the normalizer, never read from wall-clock time (DateTime.UtcNow / DateTimeOffset.UtcNow is never referenced by the Advisory namespace).",
+    "Output is written atomically: on any success, the single output file (--out, or stdout if omitted) is fully written or, for --out, never partially visible — reuse the existing write-to-temp-then-atomic-move discipline from generate-ledger's WritePairAtomically in src/ProgressTrace.Cli/Program.cs, adapted for a single file. On any fail-closed condition, no output file is created or modified at --out.",
+    "Exit codes for both sub-operations follow the existing convention: 0 on success (including the PT703 case), 1 on a fail-closed condition detected from well-formed, schema-parseable input (PT700, PT701, PT702, PT704, PT705, PT706), 2 on unreadable files, malformed/oversized JSON, or CLI usage errors (missing/unknown flags, wrong flag combination)."
+  ],
+  "acceptanceCommands": [
+    ["dotnet", "build", "ProgressTrace.slnx", "--configuration", "Release", "--nologo", "--warnaserror"],
+    ["dotnet", "run", "--project", "tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj", "--configuration", "Release", "--no-build"],
+    ["python3", "-m", "json.tool", "contracts/advisory-result.schema.json"],
+    ["python3", "-m", "json.tool", "contracts/advisory-divergence-report.schema.json"],
+    ["dotnet", "format", "ProgressTrace.slnx", "--verify-no-changes", "--no-restore", "--verbosity", "minimal"],
+    ["git", "diff", "--check"]
+  ],
+  "allowedPaths": [
+    "src/ProgressTrace.Core/Models/**",
+    "src/ProgressTrace.Core/Validation/**",
+    "src/ProgressTrace.Core/Normalization/**",
+    "src/ProgressTrace.Core/Advisory/**",
+    "src/ProgressTrace.Core/Assessment/**",
+    "src/ProgressTrace.Core/Diagnostics/**",
+    "src/ProgressTrace.Cli/**",
+    "tests/ProgressTrace.ConformanceTests/**",
+    "fixtures/advisory/**",
+    "tasks/phase-4-4-inflight-advisory-implementation.json"
+  ],
+  "protectedPaths": [
+    "contracts/advisory-result.schema.json",
+    "contracts/advisory-divergence-report.schema.json",
+    "docs/contracts/advisory-result.md",
+    "docs/contracts/advisory-divergence-report.md",
+    "docs/architecture/ADR-0008-in-flight-advisory-assessment.md",
+    "tasks/phase-4-4-in-flight-advisory.json",
+    "contracts/agent-session.schema.json",
+    "contracts/gate-outcome.schema.json",
+    "contracts/obligation-ledger.schema.json",
+    "contracts/evaluation-result.schema.json",
+    "contracts/escalation.schema.json",
+    "contracts/stop-assessment-result.schema.json",
+    "contracts/termination-declaration.schema.json",
+    "contracts/baseline-definition.schema.json",
+    "contracts/baseline-comparison-result.schema.json",
+    "contracts/ledger-generation-report.schema.json",
+    "contracts/trace-envelope.schema.json",
+    "docs/contracts/agent-session.md",
+    "docs/contracts/gate-outcome.md",
+    "docs/contracts/obligation-ledger.md",
+    "docs/contracts/evaluation-result.md",
+    "docs/contracts/stop-assessment-result.md",
+    "docs/contracts/ledger-generation-report.md",
+    "src/ProgressTrace.Core/Evaluation/**",
+    "src/ProgressTrace.Core/Sessions/**",
+    "src/ProgressTrace.Core/Adapters/**",
+    "src/ProgressTrace.Core/Generation/**",
+    "src/ProgressTrace.Core/Comparison/**",
+    "src/ProgressTrace.Benchmarks/**",
+    "fixtures/session/**",
+    "fixtures/gate-outcome/**",
+    "fixtures/obligations/**",
+    "fixtures/ledger-generation/**",
+    "fixtures/termination/**",
+    "fixtures/baseline/**",
+    "fixtures/benchmarks/**",
+    "fixtures/valid/**",
+    "fixtures/invalid/**",
+    "annotations/**",
+    "experiments/reference-adapter-v0/**",
+    "policy/**",
+    "verification/**",
+    "AGENTS.md",
+    "global.json",
+    "README.md",
+    ".github/workflows/ci.yml"
+  ],
+  "stopConditions": [
+    "Implementation would require any diff to contracts/advisory-result.schema.json, contracts/advisory-divergence-report.schema.json, or any other protected contract.",
+    "Implementation would require modifying Evaluator.Evaluate, SessionEvaluator.Evaluate, GateOutcomeProjector, or SessionTraceBuilder.Build.",
+    "Implementation would require StopAssessor's existing fixture output to change in order to share the stable-attainment helper.",
+    "Implementation would require wiring AdvisoryDivergenceReport into EscalationQueue, contracts/escalation.schema.json, or any escalation code path.",
+    "A required field can only be populated via network access, a model call, or free-text interpretation of session/ledger/gate-outcome content.",
+    "generatedAt would need to read wall-clock time, or reportId/sourceDigest would need a random or time-based component, to make the CLI usable.",
+    "advise or advise --divergence-report would need a fourth input, a different flag name, or a different verb name than the two invocations fixed in docs/contracts/advisory-result.md and docs/contracts/advisory-divergence-report.md.",
+    "Existing Phase 0-4.3 fixtures, schemas, CLI behavior, or deterministic semantics regress.",
+    "The allowed path set is exceeded.",
+    "Two bounded repair attempts are exhausted."
+  ],
+  "humanGates": [
+    "architecture_scope_change",
+    "final_integration"
+  ],
+  "diagnostics": {
+    "allocatedRange": "PT700-PT706",
+    "reference": "docs/architecture/ADR-0008-in-flight-advisory-assessment.md"
+  },
+  "ownership": "ProgressTrace core contract maintainers",
+  "maxRepairAttempts": 2,
+  "compatibility": "This task implements AdvisoryResult and AdvisoryDivergenceReport at schemaVersion 1.0 with no shape change; any future required-field or vocabulary change requires a superseding ADR and a new human gate, per ADR-0008's compatibility posture."
+}
