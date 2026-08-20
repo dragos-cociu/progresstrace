@@ -62,11 +62,13 @@ existing status, with no field expressing a verdict about that activity:
   `invocations[]` whose `obligationIds` contains this obligation's id.
   Derived entirely from `session-path`; `TokenUsage` and `ledger-path` play
   no part in this count.
-- `observedElapsedMillis` — the sum, over that same set of invocations, of
-  each invocation's validated `endedAt - startedAt` duration in
-  milliseconds. A 64-bit nonnegative integer (`0..9223372036854775807`,
-  `Int64.MaxValue`); never `null`, since it depends only on the
-  already-required `AgentSession` fields.
+- `observedElapsedMillis` is computed by summing individual
+  `endedAt - startedAt` durations at native `TimeSpan` tick precision with
+  checked arithmetic, then converting the final per-obligation sum to integer
+  milliseconds by truncation toward zero. Individual durations are never
+  truncated or rounded before summation; rounding is never used. A 64-bit
+  nonnegative integer (`0..9223372036854775807`, `Int64.MaxValue`); never
+  `null`, since it depends only on the already-required `AgentSession` fields.
 - `observedTokensTotal` — the sum, over that same set of invocations, of
   each invocation's `TokenUsage.records[].tokensTotal`, or `null` if that
   set includes any invocation with a missing token record (see "Missing

@@ -132,9 +132,11 @@ fixed for `advise`'s `session-path`/`ledger-path` pair
 entirely from the validated `AgentSession`, never read from `TokenUsage`.
 For a given obligation, `observedInvocationCount` is the count of
 `AgentSession.invocations[]` whose `obligationIds` contains that
-obligation's id. `observedElapsedMillis` is the sum, over that same set of
-invocations, of each invocation's validated `endedAt - startedAt` duration
-in milliseconds. `AgentSession`'s existing schema does not itself assert
+obligation's id. `observedElapsedMillis` is computed by summing individual
+`endedAt - startedAt` durations at native `TimeSpan` tick precision with
+checked arithmetic, then converting the final per-obligation sum to integer
+milliseconds by truncation toward zero. Individual durations are never
+truncated or rounded before summation; rounding is never used. `AgentSession`'s existing schema does not itself assert
 `endedAt >= startedAt`; `ObservedBudget` assembly performs that check as
 part of "validating" each duration before summing it, and an invocation
 whose window cannot be parsed as ISO-8601 or whose `endedAt` precedes its
