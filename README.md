@@ -16,14 +16,13 @@ The primary initial users are builders of early agent workflows that do not yet 
 
 ## Current phase
 
-**Phase 4: Hermes-native operational dogfooding — directive accepted, Task 4.1/4.2 not yet implemented.**
+**Phase 4: Hermes-native operational dogfooding — Task 4.3 is integrated; Task 4.4 architecture is accepted and implementation is next.**
 
-Phase 0, Phase 1, Phase 2a Task A, Phase 2b Task B, benchmarkul MVP, validarea authored și extinderea la 60 de cazuri sunt implementate. Nucleul .NET 10 validează și normalizează trace-uri, evaluează obligații, face stop assessment și compară baseline-uri authored. Cele 60 de cazuri rămân exclusiv regression suite în CI; `fuzzyRepeatCycle` este explorator, iar raportarea operațională implicită se bazează pe `maxTurns` și `exactRepeat`.
+Phase 0, Phase 1, Phase 2a Task A, Phase 2b Task B, the benchmark MVP, authored validation, and the expansion to 60 cases are implemented. The .NET 10 core validates and normalizes traces, evaluates obligations, performs stop assessment, compares authored baselines, and generates a deterministic obligation ledger from structured task contracts. The 60 cases remain a regression suite in CI; `fuzzyRepeatCycle` is exploratory, while default operational reporting relies on `maxTurns` and `exactRepeat`.
 
-Vertical slice-ul experimental Hermes a trecut pe 5 proiecții reale/redactate și 15 etape CLI. Phase 4 restrânge ingestia la gate log-ul Hermes: obligațiile vor proveni din task contracts, semnalele din verdicte deterministe, iar bugetele operaționale din consum observat. Nu se promite compatibilitate universală, OpenTelemetry, adaptor generic sau interpretare conversațională în core.
+The experimental Hermes vertical slice passed five real/redacted projections and 15 CLI stages. Phase 4 narrows ingestion to the Hermes gate log: obligations come from task contracts, signals come from deterministic verdicts, and operational budgets will come from observed consumption. Universal compatibility, OpenTelemetry, a generic adapter, and conversational interpretation in Core are explicitly out of scope.
 
-Următorul increment este Task `4.3` — generatorul de ledger din task contract,
-cu trasabilitate către clauzele sursă și raport de coverage.
+Task 4.3 is complete and published: `tasks/phase-*.json` structured sources produce `ObligationLedger 1.0` plus a versioned provenance and coverage sidecar. Task 4.4 is the next implementation increment: the read-only in-flight advisory assessment and per-obligation divergence report defined by ADR-0008.
 
 ## Architectural direction
 
@@ -112,7 +111,7 @@ Compare a validated trace, ledger, termination declaration, and baseline definit
 dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj --configuration Release -- compare fixtures/valid/multi-event-trace.json fixtures/termination/ledgers/valid/mixed-rollup-ledger.json fixtures/termination/valid/mixed-rollup-declaration.json fixtures/baseline/definitions/valid/unused-budget-baseline.json
 ```
 
-## Phase 0 usage
+## Core CLI usage
 
 ## Phase 4.3 ledger generation
 
@@ -133,6 +132,27 @@ returns `0` on success, `1` for semantic rejection, and `2` for usage or input
 failures. It derives obligations only from `deliverables`,
 `required_contract_decisions`, and `required_invariants`; it never derives from
 `objective`, `acceptance_commands`, or other task-contract properties.
+
+## Phase 4.4 in-flight advisory
+
+The architecture and versioned contracts for the read-only in-flight advisory
+are accepted in ADR-0008. The implementation is the next increment and is not
+yet available in the CLI.
+
+The approved design defines:
+
+- `AdvisoryResult 1.0` with the existing evaluator classification plus the
+  closed recommendation vocabulary `continue`, `stop-recommended`, and
+  `insufficient-evidence`;
+- structured per-obligation evidence and stable-attainment status;
+- `AdvisoryDivergenceReport 1.0` as an independent, per-obligation sidecar;
+- deterministic, fail-closed local processing with no persistence, network,
+  model calls, or automatic interruption.
+
+See `docs/architecture/ADR-0008-in-flight-advisory-assessment.md`,
+`docs/contracts/advisory-result.md`,
+`docs/contracts/advisory-divergence-report.md`, and
+`tasks/phase-4-4-in-flight-advisory.json`.
 
 The SDK is pinned by `global.json`. Build all three zero-package projects:
 
