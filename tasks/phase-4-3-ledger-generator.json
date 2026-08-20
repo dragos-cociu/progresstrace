@@ -1,0 +1,119 @@
+{
+  "id": "phase-4-3-ledger-generator",
+  "title": "Generate ObligationLedger 1.0 documents deterministically from task contract structured fields",
+  "objective": "Implement a deterministic generator, exposed as a new CLI verb generate-ledger, that reads exactly one task contract JSON document and produces two output files: an unmodified-schema ObligationLedger 1.0 document, and a new LedgerGenerationReport 1.0 sidecar document carrying provenance and coverage. The generator's only obligation sources are the task contract's deliverables array and, whichever is present, its required_contract_decisions or required_invariants array; objective, acceptance_commands, and every other task-contract field are permanently excluded and never parsed for obligations. traceId is never inferred from the task contract; it is a required explicit CLI argument bound into the generated ledger. Stable obligation ids are a deterministic function of taskContractId, source field name, and source array index, so regenerating from byte-identical input is byte-reproducible. A task contract with zero usable structured entries across both source categories produces no output and a fail-closed diagnostic, never a fallback to free text. The generator emits signals: [] unconditionally and validates only ObligationLedgerValidator Phase A (ledger-only structural) rules before writing output; it never runs Phase B cross-document referential validation, since no trace envelope is paired at generation time, and it never attaches signals, integrates with AgentSession/GateOutcome, or invokes evaluate. Implement exactly the normative decisions fixed in docs/architecture/ADR-0007-task-contract-ledger-generation.md and docs/contracts/ledger-generation-report.md; do not reopen or reinterpret them.",
+  "repository": "/srv/projects/progresstrace",
+  "base_branch": "main",
+  "depends_on": [
+    "docs/architecture/ADR-0007-task-contract-ledger-generation.md must be approved and unmodified before implementation begins",
+    "phase-4-1-agent-session and phase-4-2-gate-outcome are complete; this task does not modify their contracts or integrate with them"
+  ],
+  "allowed_paths": [
+    "contracts/ledger-generation-report.schema.json",
+    "docs/contracts/ledger-generation-report.md",
+    "docs/architecture/**",
+    "src/ProgressTrace.Core/Models/**",
+    "src/ProgressTrace.Core/Validation/**",
+    "src/ProgressTrace.Core/Normalization/**",
+    "src/ProgressTrace.Core/Generation/**",
+    "src/ProgressTrace.Cli/**",
+    "tests/ProgressTrace.ConformanceTests/**",
+    "fixtures/ledger-generation/**",
+    "tasks/phase-4-3-ledger-generator.json",
+    "README.md",
+    ".github/workflows/ci.yml"
+  ],
+  "protected_paths": [
+    "contracts/trace-envelope.schema.json",
+    "contracts/obligation-ledger.schema.json",
+    "contracts/evaluation-result.schema.json",
+    "contracts/termination-declaration.schema.json",
+    "contracts/stop-assessment-result.schema.json",
+    "contracts/baseline-definition.schema.json",
+    "contracts/baseline-comparison-result.schema.json",
+    "contracts/agent-session.schema.json",
+    "contracts/gate-outcome.schema.json",
+    "docs/contracts/trace-envelope.md",
+    "docs/contracts/obligation-ledger.md",
+    "docs/contracts/evaluation-result.md",
+    "docs/contracts/termination-declaration.md",
+    "docs/contracts/stop-assessment-result.md",
+    "docs/contracts/baseline-definition.md",
+    "docs/contracts/baseline-comparison-result.md",
+    "docs/contracts/agent-session.md",
+    "docs/contracts/gate-outcome.md",
+    "src/ProgressTrace.Core/Evaluation/**",
+    "src/ProgressTrace.Core/Sessions/**",
+    "src/ProgressTrace.Core/Adapters/**",
+    "src/ProgressTrace.Benchmarks/**",
+    "fixtures/benchmarks/**",
+    "fixtures/obligations/**",
+    "fixtures/session/**",
+    "fixtures/gate-outcome/**",
+    "annotations/**",
+    "experiments/reference-adapter-v0/**",
+    "AGENTS.md",
+    "global.json"
+  ],
+  "required_contract_decisions": [
+    "Scope is Narrow: the generator accepts only the existing tasks/*.json task contract document shape and makes no general document-to-obligation conversion claim.",
+    "The only obligation sources read from a task contract are deliverables and, whichever key is present, required_contract_decisions or required_invariants; if both are present and non-empty, both are read.",
+    "objective, acceptance_commands, and every other task-contract property are permanently excluded from obligation derivation; no free-text or semantic parsing of any kind is performed.",
+    "A task contract with zero usable candidate entries across both source categories produces no ledger and no report and fails closed with diagnostic PT603; it is never treated as vacuously valid and never falls back to objective.",
+    "Each obligation's stable id is exactly \"<taskContractId>:<sourceField>:<index>\", a pure function of the source document's own id, the source field name, and the zero-based array index of the contributing entry; the generator introduces no random or time-based identity.",
+    "traceId is supplied only as an explicit CLI argument, never inferred from the task contract or invented; a missing or empty traceId argument fails closed with diagnostic PT605.",
+    "Provenance and coverage are recorded only in a new, independently versioned LedgerGenerationReport 1.0 sidecar document; contracts/obligation-ledger.schema.json and docs/contracts/obligation-ledger.md receive zero diffs.",
+    "Coverage uses exactly the three closed statuses derived-automatic, manual, and unsupported-no-source-field, exactly as defined in docs/contracts/ledger-generation-report.md; the generator itself only ever emits derived-automatic on obligations and unsupported-no-source-field on the source-field list.",
+    "The generator emits signals: [] unconditionally, runs ObligationLedgerValidator Phase A before writing any output, and never runs Phase B; it does not attach signals, does not integrate with AgentSession or GateOutcome, and does not call evaluate.",
+    "The new generate-ledger CLI verb takes exactly four positional arguments (task-contract-path, trace-id, ledger-output-path, report-output-path), writes both output files only on full success, and reuses the existing 0/1/2 exit-code convention exactly as mapped in docs/contracts/ledger-generation-report.md.",
+    "Every fail-closed condition emits the exact diagnostic code and pointer fixed in docs/contracts/ledger-generation-report.md's diagnostic registry (PT600-PT606); no new code, pointer rule, or exit behavior is invented."
+  ],
+  "deliverables": [
+    "LedgerGenerationReport 1.0 JSON Schema (contracts/ledger-generation-report.schema.json) matching this repository already-approved version, unmodified in shape",
+    "Deterministic ProgressTrace.Core.Generation namespace implementing task-contract structural reading, candidate extraction, stable-id computation, ledger assembly, Phase A validation reuse, and report assembly",
+    "New generate-ledger CLI verb with the exact four-positional-argument usage and exit-code mapping fixed in docs/contracts/ledger-generation-report.md",
+    "Valid, invalid, and golden fixtures under fixtures/ledger-generation/** covering: deliverables-only source, required_contract_decisions-only source, required_invariants-only source, both categories present, both categories empty (fail-closed), a non-string/empty entry in a source array, a missing/empty traceId argument, an unreadable task-contract path, malformed task-contract JSON, and byte-reproducibility across two generations of the same input",
+    "Conformance tests asserting exact diagnostic code and pointer for every PT600-PT606 condition and byte-identical regeneration output",
+    "README and CI usage updates limited to this verb and contract",
+    "Self-check evidence listing exact commands, fixture counts, changed paths, frozen-path verification (byte-identical protected_paths against main), and unresolved items"
+  ],
+  "non_goals": [
+    "No change of any kind to contracts/obligation-ledger.schema.json, docs/contracts/obligation-ledger.md, or any other existing Phase 0-4.2 contract, schema, diagnostic code, or CLI verb behavior",
+    "No parsing or semantic interpretation of objective, acceptance_commands, or any task-contract field other than deliverables, required_contract_decisions, and required_invariants",
+    "No signal, event, AgentSession, or GateOutcome attachment; no invocation of evaluate",
+    "No Phase B cross-document referential validation at generation time",
+    "No general document-to-obligation converter, ingestion adapter, or OpenTelemetry/framework-generic compatibility claim",
+    "No persistence, hosted service, UI, network calls, or automatic agent interruption",
+    "No cryptographic attestation implementation from ADR-0006",
+    "No model calls or LLM-as-judge",
+    "No synthetic benchmark expansion, threshold tuning, or changes to fixtures/benchmarks or annotations"
+  ],
+  "acceptance_commands": [
+    ["dotnet", "build", "ProgressTrace.slnx", "--configuration", "Release", "--nologo", "--warnaserror"],
+    ["dotnet", "run", "--project", "tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj", "--configuration", "Release", "--no-build"],
+    ["python3", "-m", "json.tool", "contracts/ledger-generation-report.schema.json"],
+    ["dotnet", "format", "ProgressTrace.slnx", "--verify-no-changes", "--no-restore", "--verbosity", "minimal"],
+    ["git", "diff", "--check"]
+  ],
+  "stop_conditions": [
+    "Implementation would require any diff to contracts/obligation-ledger.schema.json, docs/contracts/obligation-ledger.md, or any other protected contract",
+    "A required field can only be populated by free-text interpretation of objective, acceptance_commands, or an invented default",
+    "The generator would need to infer or synthesize traceId rather than receive it as an explicit argument",
+    "The generator would need to run Phase B referential validation or attach signals to satisfy a requirement",
+    "Two different candidate obligations in the same generation run cannot be given distinct stable ids without departing from the fixed id algorithm",
+    "Existing Phase 0-4.2 fixtures, schemas, CLI behavior, or deterministic semantics regress",
+    "The allowed path set is exceeded",
+    "Two bounded repair attempts are exhausted"
+  ],
+  "human_gates": [
+    "architecture_scope_change",
+    "final_integration"
+  ],
+  "max_repair_attempts": 2,
+  "timeouts_seconds": {
+    "architect": 300,
+    "builder": 900,
+    "verifier": 600,
+    "acceptance_command": 300
+  }
+}
