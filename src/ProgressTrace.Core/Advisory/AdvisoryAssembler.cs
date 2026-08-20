@@ -39,6 +39,7 @@ public static class AdvisoryAssembler
         if (projectedSignals.Any(s => !ids.Contains(s.ObligationId!))) return Failure(DiagnosticCodes.AdvisoryNormalizationFailure, "Advisory result cannot be normalized deterministically.");
         var evaluationLedger = ledger with { Signals = projectedSignals };
         var evaluation = Evaluator.Evaluate(trace, evaluationLedger);
+        if (events.Select(e => e.Id).GroupBy(id => id, StringComparer.Ordinal).Any(group => group.Count() > 1)) return Failure(DiagnosticCodes.AdvisoryNormalizationFailure, "Advisory result cannot be normalized deterministically.");
         var ranks = events.OrderBy(e => e.Sequence).ThenBy(e => e.Timestamp).ThenBy(e => e.Id, StringComparer.Ordinal).Select((e, i) => (e.Id!, i)).ToDictionary(x => x.Item1, x => x.i, StringComparer.Ordinal);
         var entries = new List<AdvisoryObligation>();
         foreach (var obligation in obligations)
