@@ -1,6 +1,6 @@
 #!/bin/sh
 set -u
-repo=$(git rev-parse --show-toplevel) || exit 0
+repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd) || exit 0
 status=0
 while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
     case "$local_ref" in
