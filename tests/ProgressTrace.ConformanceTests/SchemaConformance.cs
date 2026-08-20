@@ -6,7 +6,8 @@ static class SchemaConformance
     private static readonly HashSet<string> Supported = new(StringComparer.Ordinal)
     {
         "$schema", "$id", "title", "$defs", "$ref", "type", "required", "properties",
-        "additionalProperties", "items", "minItems", "minLength", "minimum", "maximum", "pattern", "const", "enum"
+        "additionalProperties", "items", "minItems", "minLength", "minimum", "maximum", "pattern", "const", "enum",
+        "allOf", "anyOf", "if", "then", "else", "not", "uniqueItems"
     };
 
     public static bool Validate(byte[] instanceBytes, byte[] schemaBytes, out string error)
@@ -35,7 +36,9 @@ static class SchemaConformance
                     throw new InvalidOperationException($"Unsupported schema keyword: {property.Name}");
                 if (property.Name is "properties" or "$defs")
                     foreach (var child in property.Value.EnumerateObject()) AssertSupported(child.Value);
-                else if (property.Name == "items") AssertSupported(property.Value);
+                else if (property.Name is "items" or "if" or "then" or "else" or "not") AssertSupported(property.Value);
+                else if (property.Name is "allOf" or "anyOf")
+                    foreach (var child in property.Value.EnumerateArray()) AssertSupported(child);
             }
         }
     }
@@ -56,6 +59,20 @@ static class SchemaConformance
                 ? type.EnumerateArray().Any(candidate => MatchesType(value, candidate.GetString()!))
                 : MatchesType(value, type.GetString()!);
             if (!matches) return Fail(pointer, "type", out error);
+        }
+        if (schema.TryGetProperty("allOf", out var allOf))
+            foreach (var child in allOf.EnumerateArray())
+                if (!ValidateNode(value, child, root, pointer, out error)) return false;
+        if (schema.TryGetProperty("anyOf", out var anyOf) &&
+            !anyOf.EnumerateArray().Any(child => ValidateNode(value, child, root, pointer, out _)))
+            return Fail(pointer, "anyOf", out error);
+        if (schema.TryGetProperty("not", out var not) && ValidateNode(value, not, root, pointer, out _))
+            return Fail(pointer, "not", out error);
+        if (schema.TryGetProperty("if", out var condition))
+        {
+            var branchName = ValidateNode(value, condition, root, pointer, out _) ? "then" : "else";
+            if (schema.TryGetProperty(branchName, out var branch) && !ValidateNode(value, branch, root, pointer, out error))
+                return false;
         }
         if (schema.TryGetProperty("const", out var constant) && !JsonElement.DeepEquals(value, constant))
             return Fail(pointer, "const", out error);
@@ -81,6 +98,13 @@ static class SchemaConformance
         {
             if (schema.TryGetProperty("minItems", out var minimum) && value.GetArrayLength() < minimum.GetInt32())
                 return Fail(pointer, "minItems", out error);
+            if (schema.TryGetProperty("uniqueItems", out var unique) && unique.GetBoolean())
+            {
+                var arrayValues = value.EnumerateArray().ToList();
+                for (var left = 0; left < arrayValues.Count; left++)
+                    for (var right = left + 1; right < arrayValues.Count; right++)
+                        if (JsonElement.DeepEquals(arrayValues[left], arrayValues[right])) return Fail(pointer, "uniqueItems", out error);
+            }
             if (schema.TryGetProperty("items", out var items))
             {
                 var index = 0;

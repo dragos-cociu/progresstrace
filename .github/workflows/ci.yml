@@ -77,3 +77,12 @@ jobs:
         run: |
           python3 -m json.tool contracts/baseline-definition.schema.json > /dev/null
           python3 -m json.tool contracts/baseline-comparison-result.schema.json > /dev/null
+
+      - name: Generate ledger and sidecar
+        run: |
+          dotnet run --no-build --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj --configuration Release -- generate-ledger fixtures/ledger-generation/valid/both-categories.json synthetic-ci-trace /tmp/generated-ledger.json /tmp/ledger-generation-report.json
+          test -s /tmp/generated-ledger.json
+          test -s /tmp/ledger-generation-report.json
+
+      - name: Validate ledger generation report schema JSON
+        run: python3 -m json.tool contracts/ledger-generation-report.schema.json > /dev/null

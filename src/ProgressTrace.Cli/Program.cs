@@ -3,6 +3,7 @@ using ProgressTrace.Core.Diagnostics;
 using ProgressTrace.Core.Assessment;
 using ProgressTrace.Core.Comparison;
 using ProgressTrace.Core.Evaluation;
+using ProgressTrace.Core.Generation;
 using ProgressTrace.Core.Normalization;
 using ProgressTrace.Core.Validation;
 
@@ -10,6 +11,20 @@ return await RunAsync(args);
 
 static async Task<int> RunAsync(string[] args)
 {
+    if (args.Length > 0 && args[0] == "generate-ledger")
+    {
+        if (args.Length < 3)
+        {
+            WriteGenerationFailure([new(DiagnosticCodes.MissingTraceId, "", "traceId argument is missing or empty.")]);
+            return 2;
+        }
+        if (args.Length != 5)
+        {
+            WriteUsage();
+            return 2;
+        }
+        return await GenerateLedgerAsync(args[1], args[2], args[3], args[4]);
+    }
     if (args.Length == 3 && (args[0] is "validate" or "normalize") && (args[1] is "session" or "gate-outcome"))
     {
         return await RunContractAsync(args[0], args[1], args[2]);
@@ -28,11 +43,7 @@ static async Task<int> RunAsync(string[] args)
     }
     if (args.Length != 2 || args[0] is not ("validate" or "normalize"))
     {
-        WriteJson(Console.Error, new
-        {
-            error = "usage",
-            message = "Usage: progresstrace <validate|normalize> <path> | progresstrace evaluate <trace-path> <ledger-path> | progresstrace assess <trace-path> <ledger-path> <termination-declaration-path> | progresstrace compare <trace-path> <ledger-path> <termination-declaration-path> <baseline-definition-path>"
-        });
+        WriteUsage();
         return 2;
     }
 
@@ -58,6 +69,108 @@ static async Task<int> RunAsync(string[] args)
     }
     return 0;
 }
+
+static async Task<int> GenerateLedgerAsync(string taskContractPath, string traceId, string ledgerOutputPath, string reportOutputPath)
+{
+    byte[] bytes;
+    try
+    {
+        bytes = await File.ReadAllBytesAsync(taskContractPath);
+    }
+    catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+    {
+        WriteGenerationFailure([new(DiagnosticCodes.TaskContractUnreadable, "", "Task contract file could not be read.")]);
+        return 2;
+    }
+
+    var result = TaskContractLedgerGenerator.Generate(bytes, taskContractPath, traceId);
+    if (!result.IsValid)
+    {
+        WriteGenerationFailure(result.Diagnostics);
+        return result.Diagnostics.Any(static diagnostic => diagnostic.Code is
+            DiagnosticCodes.NoObligationCandidates or
+            DiagnosticCodes.InvalidSourceEntry or
+            DiagnosticCodes.DuplicateGeneratedObligationId ||
+            diagnostic.Code.StartsWith("PT1", StringComparison.Ordinal) ||
+            diagnostic.Code.StartsWith("PT2", StringComparison.Ordinal)) ? 1 : 2;
+    }
+
+    try
+    {
+        WritePairAtomically(ledgerOutputPath, result.LedgerBytes!, reportOutputPath, result.ReportBytes!);
+    }
+    catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
+    {
+        WriteJson(Console.Error, new { error = "output", message = "Output files could not be written." });
+        return 2;
+    }
+
+    WriteJson(Console.Out, new { valid = true, diagnostics = Array.Empty<Diagnostic>() });
+    return 0;
+}
+
+static void WritePairAtomically(string firstPath, byte[] firstBytes, string secondPath, byte[] secondBytes)
+{
+    var firstFullPath = Path.GetFullPath(firstPath);
+    var secondFullPath = Path.GetFullPath(secondPath);
+    if (string.Equals(firstFullPath, secondFullPath, StringComparison.Ordinal))
+        throw new ArgumentException("Output paths must differ.");
+
+    var firstDirectory = Path.GetDirectoryName(firstFullPath)!;
+    var secondDirectory = Path.GetDirectoryName(secondFullPath)!;
+    Directory.CreateDirectory(firstDirectory);
+    Directory.CreateDirectory(secondDirectory);
+    var token = Guid.NewGuid().ToString("N");
+    var firstTemp = Path.Combine(firstDirectory, $".{Path.GetFileName(firstFullPath)}.{token}.tmp");
+    var secondTemp = Path.Combine(secondDirectory, $".{Path.GetFileName(secondFullPath)}.{token}.tmp");
+    var firstBackup = firstTemp + ".backup";
+    var secondBackup = secondTemp + ".backup";
+    var firstExisted = File.Exists(firstFullPath);
+    var secondExisted = File.Exists(secondFullPath);
+    try
+    {
+        File.WriteAllBytes(firstTemp, firstBytes);
+        File.WriteAllBytes(secondTemp, secondBytes);
+        if (firstExisted) File.Move(firstFullPath, firstBackup);
+        if (secondExisted) File.Move(secondFullPath, secondBackup);
+        File.Move(firstTemp, firstFullPath);
+        try
+        {
+            File.Move(secondTemp, secondFullPath);
+        }
+        catch
+        {
+            File.Delete(firstFullPath);
+            throw;
+        }
+        if (firstExisted) File.Delete(firstBackup);
+        if (secondExisted) File.Delete(secondBackup);
+    }
+    catch
+    {
+        if (File.Exists(firstFullPath) && !firstExisted) File.Delete(firstFullPath);
+        if (File.Exists(secondFullPath) && !secondExisted) File.Delete(secondFullPath);
+        if (File.Exists(firstBackup)) File.Move(firstBackup, firstFullPath, true);
+        if (File.Exists(secondBackup)) File.Move(secondBackup, secondFullPath, true);
+        throw;
+    }
+    finally
+    {
+        File.Delete(firstTemp);
+        File.Delete(secondTemp);
+        File.Delete(firstBackup);
+        File.Delete(secondBackup);
+    }
+}
+
+static void WriteGenerationFailure(IReadOnlyList<Diagnostic> diagnostics) =>
+    WriteJson(Console.Out, new { valid = false, diagnostics });
+
+static void WriteUsage() => WriteJson(Console.Error, new
+{
+    error = "usage",
+    message = "Usage: progresstrace <validate|normalize> <path> | progresstrace evaluate <trace-path> <ledger-path> | progresstrace assess <trace-path> <ledger-path> <termination-declaration-path> | progresstrace compare <trace-path> <ledger-path> <termination-declaration-path> <baseline-definition-path> | progresstrace generate-ledger <task-contract-path> <trace-id> <ledger-output-path> <report-output-path>"
+});
 
 static async Task<int> RunContractAsync(string operation, string kind, string path)
 {

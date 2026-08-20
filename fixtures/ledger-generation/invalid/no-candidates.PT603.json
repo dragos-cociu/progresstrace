@@ -1,0 +1,7 @@
+{
+  "id": "synthetic-empty",
+  "objective": "SYNTHETIC_EXCLUDED_OBJECTIVE",
+  "deliverables": [],
+  "required_contract_decisions": [],
+  "required_invariants": []
+}

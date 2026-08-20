@@ -38,4 +38,11 @@ public static class DiagnosticCodes
     public const string SessionReferenceMismatch = "PT508";
     public const string InvocationReferenceMismatch = "PT509";
     public const string ProjectionOverflow = "PT515";
+    public const string TaskContractUnreadable = "PT600";
+    public const string TaskContractInvalidJson = "PT601";
+    public const string TaskContractId = "PT602";
+    public const string NoObligationCandidates = "PT603";
+    public const string InvalidSourceEntry = "PT604";
+    public const string MissingTraceId = "PT605";
+    public const string DuplicateGeneratedObligationId = "PT606";
 }

@@ -1,0 +1,6 @@
+{
+  "id": "synthetic-both",
+  "deliverables": ["Produce the first synthetic artifact.", "Produce the second synthetic artifact."],
+  "required_contract_decisions": ["Use the synthetic decision."],
+  "required_invariants": ["Keep the synthetic invariant."]
+}

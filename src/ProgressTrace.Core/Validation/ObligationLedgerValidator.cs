@@ -11,6 +11,15 @@ public static class ObligationLedgerValidator
 
     public static ObligationValidationResult ParseAndValidate(ReadOnlyMemory<byte> json, TraceEnvelope trace)
     {
+        var phaseA = ParseAndValidatePhaseA(json);
+        if (phaseA.Ledger is null) return phaseA;
+        var diagnostics = phaseA.Diagnostics.ToList();
+        ValidatePhaseB(phaseA.Ledger, trace, diagnostics);
+        return new(phaseA.Ledger, diagnostics);
+    }
+
+    public static ObligationValidationResult ParseAndValidatePhaseA(ReadOnlyMemory<byte> json)
+    {
         if (json.Length > TraceValidator.MaximumInputSizeBytes)
         {
             return Invalid(DiagnosticCodes.InputTooLarge, "",
@@ -85,28 +94,33 @@ public static class ObligationLedgerValidator
                 }
             }
 
-            var ledger = new ObligationLedger(version, traceId, obligations, signals);
-            if (!string.IsNullOrWhiteSpace(traceId) && traceId != trace.TraceId)
-                diagnostics.Add(new(DiagnosticCodes.TraceIdMismatch, "/traceId", "Ledger traceId must equal the paired trace envelope's traceId."));
-            var eventSequence = (trace.Events ?? []).Where(e => e.Id is not null && e.Sequence is not null)
-                .ToDictionary(e => e.Id!, e => e.Sequence!.Value, StringComparer.Ordinal);
-            foreach (var signal in signals)
-            {
-                if (signal.ObligationId is not null && !ids.Contains(signal.ObligationId))
-                    diagnostics.Add(new(DiagnosticCodes.DanglingObligationId, $"/signals/{signal.Index}/obligationId", "Signal obligationId does not reference a declared obligation."));
-                if (signal.EventId is not null && !eventSequence.ContainsKey(signal.EventId))
-                    diagnostics.Add(new(DiagnosticCodes.DanglingEventId, $"/signals/{signal.Index}/eventId", "Signal eventId does not reference an event in the paired trace envelope."));
-            }
-            foreach (var obligation in obligations)
-            {
-                var ordered = signals.Where(s => s.ObligationId == obligation.Id && s.EventId is not null && eventSequence.ContainsKey(s.EventId))
-                    .OrderBy(s => eventSequence[s.EventId!]).ThenBy(s => s.EventId, StringComparer.Ordinal).ThenBy(s => s.Index).ToList();
-                var abandoned = ordered.FindIndex(s => s.Status == "abandoned");
-                if (abandoned >= 0)
-                    foreach (var later in ordered.Skip(abandoned + 1))
-                        diagnostics.Add(new(DiagnosticCodes.AbandonedTerminal, $"/signals/{later.Index}", "Signal violates the abandoned-terminal rule."));
-            }
-            return new(ledger, diagnostics);
+            return new(new ObligationLedger(version, traceId, obligations, signals), diagnostics);
+        }
+    }
+
+    private static void ValidatePhaseB(ObligationLedger ledger, TraceEnvelope trace, List<Diagnostic> diagnostics)
+    {
+        if (!string.IsNullOrWhiteSpace(ledger.TraceId) && ledger.TraceId != trace.TraceId)
+            diagnostics.Add(new(DiagnosticCodes.TraceIdMismatch, "/traceId", "Ledger traceId must equal the paired trace envelope's traceId."));
+        var ids = (ledger.Obligations ?? []).Where(o => o.Id is not null).Select(o => o.Id!).ToHashSet(StringComparer.Ordinal);
+        var signals = ledger.Signals ?? [];
+        var eventSequence = (trace.Events ?? []).Where(e => e.Id is not null && e.Sequence is not null)
+            .ToDictionary(e => e.Id!, e => e.Sequence!.Value, StringComparer.Ordinal);
+        foreach (var signal in signals)
+        {
+            if (signal.ObligationId is not null && !ids.Contains(signal.ObligationId))
+                diagnostics.Add(new(DiagnosticCodes.DanglingObligationId, $"/signals/{signal.Index}/obligationId", "Signal obligationId does not reference a declared obligation."));
+            if (signal.EventId is not null && !eventSequence.ContainsKey(signal.EventId))
+                diagnostics.Add(new(DiagnosticCodes.DanglingEventId, $"/signals/{signal.Index}/eventId", "Signal eventId does not reference an event in the paired trace envelope."));
+        }
+        foreach (var obligation in ledger.Obligations ?? [])
+        {
+            var ordered = signals.Where(s => s.ObligationId == obligation.Id && s.EventId is not null && eventSequence.ContainsKey(s.EventId))
+                .OrderBy(s => eventSequence[s.EventId!]).ThenBy(s => s.EventId, StringComparer.Ordinal).ThenBy(s => s.Index).ToList();
+            var abandoned = ordered.FindIndex(s => s.Status == "abandoned");
+            if (abandoned >= 0)
+                foreach (var later in ordered.Skip(abandoned + 1))
+                    diagnostics.Add(new(DiagnosticCodes.AbandonedTerminal, $"/signals/{later.Index}", "Signal violates the abandoned-terminal rule."));
         }
     }
 

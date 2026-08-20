@@ -114,6 +114,26 @@ dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj --configurat
 
 ## Phase 0 usage
 
+## Phase 4.3 ledger generation
+
+Generate an `ObligationLedger` 1.0 document and its independently versioned
+`LedgerGenerationReport` sidecar from the task contract's structured source
+arrays. The trace id is always explicit, and both files are written only after
+the complete generation and ledger Phase A validation succeed:
+
+```sh
+dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj \
+  --configuration Release -- generate-ledger \
+  fixtures/ledger-generation/valid/both-categories.json synthetic-trace \
+  /tmp/generated-ledger.json /tmp/ledger-generation-report.json
+```
+
+The verb accepts exactly four positional arguments after `generate-ledger` and
+returns `0` on success, `1` for semantic rejection, and `2` for usage or input
+failures. It derives obligations only from `deliverables`,
+`required_contract_decisions`, and `required_invariants`; it never derives from
+`objective`, `acceptance_commands`, or other task-contract properties.
+
 The SDK is pinned by `global.json`. Build all three zero-package projects:
 
 ```sh

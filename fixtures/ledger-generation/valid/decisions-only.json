@@ -1,0 +1,4 @@
+{
+  "id": "synthetic-decisions-only",
+  "required_contract_decisions": ["Keep the synthetic decision stable."]
+}

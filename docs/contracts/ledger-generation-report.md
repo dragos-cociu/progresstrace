@@ -37,7 +37,10 @@ contract in this repository.
 - `reportType`: exactly `"LedgerGenerationReport"`.
 - `generator`: object `{name: "progresstrace-ledger-generator", version}`,
   mirroring `VerificationReport.runner`'s existing `{name, version}` shape.
-- `generatedAt`: non-empty ISO-8601 timestamp.
+- `generatedAt`: the canonical ISO-8601 timestamp
+  `1970-01-01T00:00:00.0000000Z`. It is a deterministic generation sentinel,
+  not a wall-clock claim; this fixed value preserves the required byte-identical
+  regeneration without adding a fifth CLI input or reading environment state.
 - `taskContractId`: the source task contract's own `id` property, verbatim.
 - `taskContractPath`: the repository-relative path the generator read.
 - `taskContractDigest`: lowercase SHA-256 of the exact source task-contract

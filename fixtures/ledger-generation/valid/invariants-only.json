@@ -1,0 +1,4 @@
+{
+  "id": "synthetic-invariants-only",
+  "required_invariants": ["Preserve the synthetic invariant."]
+}

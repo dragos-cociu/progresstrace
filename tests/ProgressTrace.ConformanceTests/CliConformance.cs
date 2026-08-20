@@ -73,7 +73,7 @@ static class CliConformance
             if (assessSuccess.Stdout != assessGolden + (assessGolden.EndsWith('\n') ? "" : "\n"))
                 failures.Add("cli assess valid triple: stdout did not equal the canonical golden result");
 
-            const string usageMessage = "Usage: progresstrace <validate|normalize> <path> | progresstrace evaluate <trace-path> <ledger-path> | progresstrace assess <trace-path> <ledger-path> <termination-declaration-path> | progresstrace compare <trace-path> <ledger-path> <termination-declaration-path> <baseline-definition-path>";
+            const string usageMessage = "Usage: progresstrace <validate|normalize> <path> | progresstrace evaluate <trace-path> <ledger-path> | progresstrace assess <trace-path> <ledger-path> <termination-declaration-path> | progresstrace compare <trace-path> <ledger-path> <termination-declaration-path> <baseline-definition-path> | progresstrace generate-ledger <task-contract-path> <trace-id> <ledger-output-path> <report-output-path>";
             var usage = JsonSerializer.Serialize(new { error = "usage", message = usageMessage });
             var compareUsage = Run(cli, "compare", validTrace, assessLedger, validDeclaration);
             Check("compare bad usage", compareUsage, 2, false, true, failures, marker);
@@ -97,6 +97,40 @@ static class CliConformance
             var compareGolden = File.ReadAllText(Path.Combine(root, "fixtures", "baseline", "golden", "stable-attainment-baseline.json"));
             if (compareSuccess.Stdout != compareGolden + (compareGolden.EndsWith('\n') ? "" : "\n"))
                 failures.Add("cli compare valid quartet: stdout did not equal the canonical Phase 2b golden result");
+
+            var generationFixtures = Path.Combine(root, "fixtures", "ledger-generation");
+            var validTask = Path.Combine(generationFixtures, "valid", "both-categories.json");
+            var emptyTask = Path.Combine(generationFixtures, "invalid", "no-candidates.PT603.json");
+            var invalidEntryTask = Path.Combine(generationFixtures, "invalid", "non-string-entry.PT604.json");
+            var duplicateTask = Path.Combine(generationFixtures, "invalid", "duplicate-source-field.PT606.json");
+            var malformedTask = Path.Combine(generationFixtures, "invalid", "malformed.PT601.json");
+            var missingIdTask = Path.Combine(generationFixtures, "invalid", "missing-id.PT602.json");
+            var missingTask = Path.Combine(temp, marker + "-missing-task.json");
+            var ledgerOutput = Path.Combine(temp, "generated-ledger.json");
+            var reportOutput = Path.Combine(temp, "generated-report.json");
+
+            CheckGenerationDiagnostic("generate missing trace", Run(cli, "generate-ledger", validTask), 2, "PT605", "", failures, marker);
+            Check("generate bad argument count", Run(cli, "generate-ledger", validTask, "trace", ledgerOutput), 2, false, true, failures, marker);
+            CheckGenerationDiagnostic("generate unreadable task", Run(cli, "generate-ledger", missingTask, "trace", ledgerOutput, reportOutput), 2, "PT600", "", failures, marker);
+            CheckGenerationDiagnostic("generate malformed task", Run(cli, "generate-ledger", malformedTask, "trace", ledgerOutput, reportOutput), 2, "PT601", "", failures, marker);
+            CheckGenerationDiagnostic("generate missing id", Run(cli, "generate-ledger", missingIdTask, "trace", ledgerOutput, reportOutput), 2, "PT602", "/id", failures, marker);
+            CheckGenerationDiagnostic("generate empty trace", Run(cli, "generate-ledger", validTask, "", ledgerOutput, reportOutput), 2, "PT605", "", failures, marker);
+            CheckGenerationDiagnostic("generate empty candidates", Run(cli, "generate-ledger", emptyTask, "trace", ledgerOutput, reportOutput), 1, "PT603", "", failures, marker);
+            CheckGenerationDiagnostic("generate invalid entry", Run(cli, "generate-ledger", invalidEntryTask, "trace", ledgerOutput, reportOutput), 1, "PT604", "/deliverables/1", failures, marker);
+            CheckGenerationDiagnostic("generate duplicate id", Run(cli, "generate-ledger", duplicateTask, "trace", ledgerOutput, reportOutput), 1, "PT606", "/deliverables/0", failures, marker);
+            if (File.Exists(ledgerOutput) || File.Exists(reportOutput)) failures.Add("cli generate failure wrote an output file");
+
+            Check("generate valid", Run(cli, "generate-ledger", validTask, "synthetic-trace", ledgerOutput, reportOutput), 0, true, false, failures, marker);
+            if (!File.Exists(ledgerOutput) || !File.Exists(reportOutput)) failures.Add("cli generate success did not write both outputs");
+            else
+            {
+                var firstLedger = File.ReadAllBytes(ledgerOutput);
+                var firstReport = File.ReadAllBytes(reportOutput);
+                Check("generate repeat", Run(cli, "generate-ledger", validTask, "synthetic-trace", ledgerOutput, reportOutput), 0, true, false, failures, marker);
+                if (!firstLedger.AsSpan().SequenceEqual(File.ReadAllBytes(ledgerOutput)) ||
+                    !firstReport.AsSpan().SequenceEqual(File.ReadAllBytes(reportOutput)))
+                    failures.Add("cli generate repeat was not byte-identical");
+            }
         }
         finally
         {
@@ -174,6 +208,22 @@ static class CliConformance
         catch (Exception exception) when (exception is JsonException or InvalidOperationException or KeyNotFoundException)
         {
             failures.Add($"cli {name}: stdout was not a diagnostic response");
+        }
+    }
+
+    private static void CheckGenerationDiagnostic(string name, Result result, int exit, string code, string pointer, List<string> failures, string marker)
+    {
+        Check(name, result, exit, true, false, failures, marker);
+        try
+        {
+            using var response = JsonDocument.Parse(result.Stdout);
+            var diagnostic = response.RootElement.GetProperty("diagnostics")[0];
+            if (diagnostic.GetProperty("code").GetString() != code || diagnostic.GetProperty("pointer").GetString() != pointer)
+                failures.Add($"cli {name}: expected {code} at {pointer}");
+        }
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException or KeyNotFoundException)
+        {
+            failures.Add($"cli {name}: stdout was not a generation diagnostic response");
         }
     }
 

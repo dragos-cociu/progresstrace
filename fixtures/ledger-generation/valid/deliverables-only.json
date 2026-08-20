@@ -1,0 +1,6 @@
+{
+  "id": "synthetic-deliverables-only",
+  "objective": "SYNTHETIC_EXCLUDED_OBJECTIVE",
+  "deliverables": ["Create the synthetic output."],
+  "acceptance_commands": [["SYNTHETIC_EXCLUDED_COMMAND"]]
+}

@@ -42,6 +42,23 @@
         "type": "object",
         "additionalProperties": false,
         "required": ["obligationId", "coverageStatus"],
+        "allOf": [
+          {
+            "if": {
+              "properties": { "coverageStatus": { "const": "derived-automatic" } },
+              "required": ["coverageStatus"]
+            },
+            "then": { "required": ["sourceField", "sourcePointer"] },
+            "else": {
+              "not": {
+                "anyOf": [
+                  { "required": ["sourceField"] },
+                  { "required": ["sourcePointer"] }
+                ]
+              }
+            }
+          }
+        ],
         "properties": {
           "obligationId": { "type": "string", "minLength": 1 },
           "coverageStatus": { "enum": ["derived-automatic", "manual"] },
