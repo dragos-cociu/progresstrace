@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0","sessionId":"budget-session","taskContractId":"budget-task","records":[{"sessionId":"budget-session","invocationId":"invoke-1","sequence":0,"tokensTotal":100,"producerType":"harness","producerName":"meter","producerVersion":"1.0","evidenceBasis":"harness-metered"}]}

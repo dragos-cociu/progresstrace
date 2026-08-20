@@ -8,11 +8,13 @@ using ProgressTrace.Core.Normalization;
 using ProgressTrace.Core.Validation;
 using ProgressTrace.Core.Advisory;
 using ProgressTrace.Core.Models;
+using ProgressTrace.Core.Budget;
 
 return await RunAsync(args);
 
 static async Task<int> RunAsync(string[] args)
 {
+    if (args.Length > 0 && args[0] == "budget") return await BudgetAsync(args);
     if (args.Length > 0 && args[0] == "advise") return await AdviseAsync(args);
     if (args.Length > 0 && args[0] == "generate-ledger")
     {
@@ -174,6 +176,34 @@ static void WriteUsage() => WriteJson(Console.Error, new
     error = "usage",
     message = "Usage: progresstrace <validate|normalize> <path> | progresstrace evaluate <trace-path> <ledger-path> | progresstrace assess <trace-path> <ledger-path> <termination-declaration-path> | progresstrace compare <trace-path> <ledger-path> <termination-declaration-path> <baseline-definition-path> | progresstrace generate-ledger <task-contract-path> <trace-id> <ledger-output-path> <report-output-path>"
 });
+
+static void WriteBudgetUsage() => WriteJson(Console.Error, new { error = "usage", message = "Usage: progresstrace budget --session-path <path> --token-usage-path <path> --ledger-path <path> [--out <path>]" });
+
+static async Task<int> BudgetAsync(string[] args)
+{
+    var allowed = new HashSet<string>(["--session-path", "--token-usage-path", "--ledger-path", "--out"], StringComparer.Ordinal); var values = new Dictionary<string, string>(StringComparer.Ordinal);
+    for (var i = 1; i < args.Length; i++)
+    {
+        if (!allowed.Contains(args[i]) || i + 1 >= args.Length || args[i + 1].StartsWith("--", StringComparison.Ordinal) || !values.TryAdd(args[i], args[++i])) { WriteBudgetUsage(); return 2; }
+    }
+    if (new[] { "--session-path", "--token-usage-path", "--ledger-path" }.Any(key => !values.ContainsKey(key))) { WriteBudgetUsage(); return 2; }
+    var sessionInput = await ReadAsync(values["--session-path"], "session"); if (sessionInput.ExitCode is { } se) return se;
+    var session = AgentSessionValidator.ParseAndValidate(sessionInput.Bytes!);
+    if (!session.IsValid)
+    {
+        var window = session.Diagnostics.Any(d => d.Code == DiagnosticCodes.InvalidInvocationWindow || d.Pointer.EndsWith("/startedAt", StringComparison.Ordinal) || d.Pointer.EndsWith("/endedAt", StringComparison.Ordinal));
+        var diagnostics = window ? new[] { new Diagnostic(DiagnosticCodes.BudgetInvocationWindow, "", "Invocation window is invalid.") } : session.Diagnostics; WriteBudgetDiagnostics(diagnostics); return window ? 1 : FailureExit(diagnostics);
+    }
+    var usageInput = await ReadAsync(values["--token-usage-path"], "token-usage"); if (usageInput.ExitCode is { } ue) return ue;
+    var usage = TokenUsageValidator.ParseAndValidate(usageInput.Bytes!); if (!usage.IsValid) { WriteBudgetDiagnostics(usage.Diagnostics); return FailureExit(usage.Diagnostics); }
+    var ledgerInput = await ReadAsync(values["--ledger-path"], "ledger"); if (ledgerInput.ExitCode is { } le) return le;
+    var ledger = ObligationLedgerValidator.ParseAndValidatePhaseA(ledgerInput.Bytes!); if (!ledger.IsValid) { WriteBudgetDiagnostics(ledger.Diagnostics); return FailureExit(ledger.Diagnostics); }
+    var assembled = BudgetAssembler.Assemble(session.Session!, usage.TokenUsage!, ledger.Ledger!); if (!assembled.IsValid) { WriteBudgetDiagnostics(assembled.Diagnostics); return 1; }
+    var bytes = ObservedBudgetNormalizer.Normalize(assembled.Budget!); if (!await WriteAdvisoryOutput(values.GetValueOrDefault("--out"), bytes)) return 2;
+    if (assembled.Diagnostics.Count != 0) WriteBudgetDiagnostics(assembled.Diagnostics); return 0;
+}
+
+static void WriteBudgetDiagnostics(IReadOnlyList<Diagnostic> diagnostics) => WriteJson(Console.Error, new { diagnostics });
 
 static async Task<int> AdviseAsync(string[] args)
 {

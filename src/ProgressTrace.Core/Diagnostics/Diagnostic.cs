@@ -52,4 +52,11 @@ public static class DiagnosticCodes
     public const string AdvisoryNormalizationFailure = "PT704";
     public const string AdvisoryResultInvalid = "PT705";
     public const string AdvisoryObligationMismatch = "PT706";
+    public const string BudgetReferenceMismatch = "PT800";
+    public const string BudgetInadmissibleTokenUsage = "PT801";
+    public const string BudgetDuplicateTokenUsage = "PT802";
+    public const string BudgetInvocationWindow = "PT803";
+    public const string BudgetOverflow = "PT804";
+    public const string BudgetNormalizationFailure = "PT805";
+    public const string BudgetMissingTokenUsage = "PT806";
 }

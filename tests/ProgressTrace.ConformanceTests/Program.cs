@@ -52,6 +52,7 @@ CliConformance.Assert(repositoryRoot, failures);
 SessionConformance.Assert(repositoryRoot, failures);
 LedgerGenerationConformance.Assert(repositoryRoot, failures);
 AdvisoryConformance.Assert(repositoryRoot, failures);
+BudgetConformance.Assert(repositoryRoot, failures);
 
 if (failures.Count == 0)
 {
@@ -65,7 +66,9 @@ if (failures.Count == 0)
     var generationInvalid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "ledger-generation", "invalid"), "*.json").Count();
     var advisoryValid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "advisory", "valid"), "*.json").Count();
     var advisoryInvalid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "advisory", "invalid"), "*.json").Count();
-    Console.WriteLine($"PASS: Phase 0 {Directory.EnumerateFiles(validDirectory, "*.json").Count()} valid/{Directory.EnumerateFiles(invalidDirectory, "*.json").Count()} invalid; Phase 1 {phase1Valid} valid/{phase1Invalid} invalid; Phase 2a {phase2Valid} valid/{phase2Invalid} invalid; Phase 2b {phase2bValid} valid/{phase2bInvalid} invalid; Phase 4.3 {generationValid} valid/{generationInvalid} invalid fixtures; Phase 4.4 {advisoryValid} valid/{advisoryInvalid} invalid fixtures.");
+    var budgetValid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "budget", "valid"), "*.json").Count();
+    var budgetInvalid = Directory.EnumerateFiles(Path.Combine(repositoryRoot, "fixtures", "budget", "invalid"), "*.json").Count();
+    Console.WriteLine($"PASS: Phase 0 {Directory.EnumerateFiles(validDirectory, "*.json").Count()} valid/{Directory.EnumerateFiles(invalidDirectory, "*.json").Count()} invalid; Phase 1 {phase1Valid} valid/{phase1Invalid} invalid; Phase 2a {phase2Valid} valid/{phase2Invalid} invalid; Phase 2b {phase2bValid} valid/{phase2bInvalid} invalid; Phase 4.3 {generationValid} valid/{generationInvalid} invalid fixtures; Phase 4.4 {advisoryValid} valid/{advisoryInvalid} invalid fixtures; Phase 4.5 {budgetValid} valid/{budgetInvalid} invalid fixtures.");
     return 0;
 }
 

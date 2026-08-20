@@ -1,0 +1,1 @@
+{"schemaVersion":"1.0","traceId":"budget-trace","obligations":[{"id":"o1","description":"first"},{"id":"o2","description":"second"}],"signals":[{"obligationId":"o1","eventId":"event-1","status":"in-progress"},{"obligationId":"o2","eventId":"event-2","status":"satisfied"},{"obligationId":"o1","eventId":"event-3","status":"satisfied"}]}
