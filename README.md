@@ -16,13 +16,13 @@ The primary initial users are builders of early agent workflows that do not yet 
 
 ## Current phase
 
-**Phase 4: Hermes-native operational dogfooding — Task 4.3 is integrated; Task 4.4 architecture is accepted and implementation is next.**
+**Phase 4: Hermes-native operational dogfooding — Task 4.4 is implemented on this branch; integration into `main` is pending.**
 
-Phase 0, Phase 1, Phase 2a Task A, Phase 2b Task B, the benchmark MVP, authored validation, and the expansion to 60 cases are implemented. The .NET 10 core validates and normalizes traces, evaluates obligations, performs stop assessment, compares authored baselines, and generates a deterministic obligation ledger from structured task contracts. The 60 cases remain a regression suite in CI; `fuzzyRepeatCycle` is exploratory, while default operational reporting relies on `maxTurns` and `exactRepeat`.
+Phase 0, Phase 1, Phase 2a Task A, Phase 2b Task B, the benchmark MVP, authored validation, and the expansion to 60 cases are implemented. The .NET 10 core validates and normalizes traces, evaluates obligations, performs stop assessment, compares authored baselines, generates deterministic obligation ledgers from structured task contracts, and produces read-only in-flight advisory assessments. The 60 cases remain a regression suite in CI; `fuzzyRepeatCycle` is exploratory, while default operational reporting relies on `maxTurns` and `exactRepeat`.
 
 The experimental Hermes vertical slice passed five real/redacted projections and 15 CLI stages. Phase 4 narrows ingestion to the Hermes gate log: obligations come from task contracts, signals come from deterministic verdicts, and operational budgets will come from observed consumption. Universal compatibility, OpenTelemetry, a generic adapter, and conversational interpretation in Core are explicitly out of scope.
 
-Task 4.3 is complete and published: `tasks/phase-*.json` structured sources produce `ObligationLedger 1.0` plus a versioned provenance and coverage sidecar. Task 4.4 is the next implementation increment: the read-only in-flight advisory assessment and per-obligation divergence report defined by ADR-0008.
+Task 4.3 is complete and published: structured `tasks/phase-*.json` sources produce `ObligationLedger 1.0` plus a versioned provenance and coverage sidecar. Task 4.4 is implemented on the isolated branch: the `advise` CLI produces deterministic in-flight recommendations and the independent divergence sidecar defined by ADR-0008. After integration, Task 4.5 — observed budget — is next.
 
 ## Architectural direction
 
@@ -135,24 +135,41 @@ failures. It derives obligations only from `deliverables`,
 
 ## Phase 4.4 in-flight advisory
 
-The architecture and versioned contracts for the read-only in-flight advisory
-are accepted in ADR-0008. The implementation is the next increment and is not
-yet available in the CLI.
+The read-only in-flight advisory and its versioned contracts are implemented on
+this branch. The CLI accepts explicit local input paths and emits deterministic
+JSON; it does not persist state, access the network, call a model, interrupt a
+session, or modify canonical session-boundary evaluation.
 
-The approved design defines:
+Generate an advisory result:
 
-- `AdvisoryResult 1.0` with the existing evaluator classification plus the
-  closed recommendation vocabulary `continue`, `stop-recommended`, and
-  `insufficient-evidence`;
-- structured per-obligation evidence and stable-attainment status;
-- `AdvisoryDivergenceReport 1.0` as an independent, per-obligation sidecar;
-- deterministic, fail-closed local processing with no persistence, network,
-  model calls, or automatic interruption.
+```sh
+dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj \
+  --configuration Release -- advise \
+  --session-path fixtures/advisory/valid/session.json \
+  --ledger-path fixtures/advisory/valid/ledger.json \
+  --gate-outcomes-array-path fixtures/advisory/valid/outcomes-continue.json
+```
+
+Generate a per-obligation divergence report:
+
+```sh
+dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj \
+  --configuration Release -- advise --divergence-report \
+  --advisory-result-path fixtures/advisory/golden/advisory-stop.json \
+  --ledger-path fixtures/advisory/valid/ledger.json
+```
+
+The advisory uses the existing evaluator classification and adds the closed
+recommendation vocabulary `continue`, `stop-recommended`, and
+`insufficient-evidence`. The divergence report is an independent sidecar and
+its per-obligation entries are normative; any session-level rollup is
+informational only.
 
 See `docs/architecture/ADR-0008-in-flight-advisory-assessment.md`,
 `docs/contracts/advisory-result.md`,
-`docs/contracts/advisory-divergence-report.md`, and
-`tasks/phase-4-4-in-flight-advisory.json`.
+`docs/contracts/advisory-divergence-report.md`,
+`tasks/phase-4-4-in-flight-advisory.json`, and
+`tasks/phase-4-4-inflight-advisory-implementation.json`.
 
 The SDK is pinned by `global.json`. Build all three zero-package projects:
 
