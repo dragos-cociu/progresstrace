@@ -1,0 +1,199 @@
+{
+  "schemaVersion": "1.0",
+  "taskContractId": "phase-4-5-observed-budget-implementation",
+  "title": "Phase 4.5: Observed Budget — Implementation",
+  "adr": "docs/architecture/ADR-0009-observed-budget.md",
+  "dependsOn": [
+    "docs/architecture/ADR-0009-observed-budget.md is Accepted and unmodified: its fifteen human-gate points bind this task and are not reopened here.",
+    "tasks/phase-4-5-observed-budget.json (contract-definition task) is complete: contracts/token-usage.schema.json and contracts/observed-budget.schema.json are approved and frozen in shape.",
+    "docs/contracts/token-usage.md and docs/contracts/observed-budget.md are approved and fix the exact CLI usage this task implements verbatim."
+  ],
+  "objective": "Implement the budget CLI operation exactly as fixed by ADR-0009 and the approved TokenUsage / ObservedBudget contracts: deterministic, read-only, local-file-to-file transformation combining AgentSession, TokenUsage, and ObligationLedger into per-obligation observed invocation count, elapsed time, and token totals juxtaposed against ledger status, fail closed on every PT800-PT899 code except PT806, write output atomically, with no network, LLM, persistence, shadow mode, pricing, or verdict of any kind.",
+  "scope": [
+    "TokenUsage core model (src/ProgressTrace.Core/Models), Phase-A structural validator, and canonical byte normalizer, matching contracts/token-usage.schema.json exactly with no shape drift.",
+    "ObservedBudget core model, Phase-A structural validator, and canonical byte normalizer, matching contracts/observed-budget.schema.json exactly with no shape drift.",
+    "A new src/ProgressTrace.Core/Budget namespace assembling ObservedBudget from session-path + token-usage-path + ledger-path, per the requiredContractDecisions below.",
+    "A new progresstrace budget CLI verb (src/ProgressTrace.Cli/Program.cs) supporting exactly the single documented invocation: budget --session-path --token-usage-path --ledger-path [--out], with no additional flags and no alternate verb name.",
+    "Atomic single-file output (write-to-temp-then-move, no partial file ever visible on failure), reusing the existing atomic-write discipline already established for generate-ledger's paired output in src/ProgressTrace.Cli/Program.cs.",
+    "PT800-PT899 diagnostic codes registered in src/ProgressTrace.Core/Diagnostics/Diagnostic.cs and emitted exactly per the table in ADR-0009, fail-closed with no partial artifact for every code except PT806 (informational, non-blocking).",
+    "Valid, invalid, and golden fixtures under fixtures/budget covering every PT800-PT806 condition, missing token records yielding PT806 and null observedTokensTotal, overflow conditions, deterministic sourceDigest, and byte-reproducibility across two runs of the same input.",
+    "Conformance tests (tests/ProgressTrace.ConformanceTests) asserting: schema conformance of generated output against contracts/token-usage.schema.json and contracts/observed-budget.schema.json, exact diagnostic code for every PT800-PT806 fixture including PT806's non-blocking behavior, byte-identical regeneration, and that existing Phase 0-4.4 fixtures remain byte-identical."
+  ],
+  "nonGoals": [
+    "Any change to Evaluator.Evaluate, SessionEvaluator.Evaluate, GateOutcomeProjector, StopAssessor, Advisory assembly, or SessionTraceBuilder.Build.",
+    "Any change to contracts/agent-session.schema.json, contracts/gate-outcome.schema.json, contracts/obligation-ledger.schema.json, contracts/advisory-result.schema.json, contracts/advisory-divergence-report.schema.json, contracts/baseline-definition.schema.json, or contracts/baseline-comparison-result.schema.json shape.",
+    "Any change to docs/contracts/agent-session.md, docs/contracts/token-usage.md, docs/contracts/observed-budget.md, or ADR-0009 content.",
+    "Any change to the benchmark corpus, harness, or annotation tooling.",
+    "Persistence of TokenUsage or ObservedBudget beyond a single invocation; no database, cache, or state file.",
+    "Network access, model calls, or LLM-as-judge of any kind.",
+    "Shadow mode (continuous background budget computation); deferred to Hermes / a later phase.",
+    "Automatic session stopping, interruption, or escalation triggered by observed activity.",
+    "Pricing or cost-in-dollars fields of any kind.",
+    "Cross-session aggregation; ObservedBudget is scoped to exactly one session.",
+    "Any efficiency, waste, over-budget, or under-budget verdict.",
+    "Any change to generate-ledger, evaluate, assess, compare, advise, validate, or normalize verb behavior, or to their existing fixtures.",
+    "README updates; that is Hermes's responsibility and explicitly excluded from Codex scope for this task."
+  ],
+  "obligations": [
+    {
+      "id": "OBL-TOKEN-USAGE-MODEL",
+      "description": "Implement the TokenUsage C# record model under src/ProgressTrace.Core/Models, field-for-field matching the frozen schema, including the nested TokenUsageRecord type with all eight required properties: sessionId, invocationId, sequence, tokensTotal, producerType, producerName, producerVersion, evidenceBasis."
+    },
+    {
+      "id": "OBL-TOKEN-USAGE-VALIDATOR",
+      "description": "Implement TokenUsageValidator under src/ProgressTrace.Core/Validation performing Phase-A structural validation only (parse + shape + enum + pattern + const + range checks), reusing JsonValidationHelpers exactly as ObligationLedgerValidator's Phase A does; no cross-document referential checks live in the validator, those live in the Budget assembly layer per requiredContractDecisions."
+    },
+    {
+      "id": "OBL-TOKEN-USAGE-NORMALIZER",
+      "description": "Implement TokenUsageNormalizer under src/ProgressTrace.Core/Normalization producing canonical, stably-ordered, trailing-newline-terminated UTF-8 bytes, byte-idempotent on reparse/renormalize, following the existing writer pattern in GateOutcomeNormalizer."
+    },
+    {
+      "id": "OBL-OBSERVED-BUDGET-MODEL",
+      "description": "Implement the ObservedBudget C# record model under src/ProgressTrace.Core/Models, field-for-field matching the frozen schema, including the nested ObligationObservation type with all five required properties: obligationId, ledgerStatus, observedInvocationCount, observedElapsedMillis, observedTokensTotal (nullable long)."
+    },
+    {
+      "id": "OBL-OBSERVED-BUDGET-VALIDATOR",
+      "description": "Implement ObservedBudgetValidator under src/ProgressTrace.Core/Validation performing Phase-A structural validation only, reusing JsonValidationHelpers; cross-input validation is in the Budget assembly layer."
+    },
+    {
+      "id": "OBL-OBSERVED-BUDGET-NORMALIZER",
+      "description": "Implement ObservedBudgetNormalizer under src/ProgressTrace.Core/Normalization producing canonical, stably-ordered, trailing-newline-terminated UTF-8 bytes, byte-idempotent on reparse/renormalize, with generatedAt fixed to the sentinel 1970-01-01T00:00:00.0000000Z as a schema const, never read from wall-clock time."
+    },
+    {
+      "id": "OBL-BUDGET-ASSEMBLY",
+      "description": "Implement the ObservedBudget assembly logic under a new src/ProgressTrace.Core/Budget namespace, per requiredContractDecisions: session/token-usage/ledger cross-reference validation (PT800), TokenUsage record admissibility and duplicate detection (PT801, PT802), invocation-window validation (PT803), per-obligation invocation count and elapsed-time summation with checked overflow (PT804), per-obligation token-total summation with missing-record handling (PT806) and checked overflow (PT804), ledger-status derivation, sourceDigest computation, and deterministic assembly (PT805)."
+    },
+    {
+      "id": "OBL-BUDGET-CLI",
+      "description": "Add the budget CLI verb to src/ProgressTrace.Cli/Program.cs with exactly the three required flags --session-path --token-usage-path --ledger-path and optional --out documented in docs/contracts/observed-budget.md, writing output atomically to --out or stdout, and returning the exit codes fixed in requiredContractDecisions."
+    },
+    {
+      "id": "OBL-BUDGET-DIAGNOSTICS",
+      "description": "Register PT800 through PT806 in src/ProgressTrace.Core/Diagnostics/Diagnostic.cs and emit each exactly per ADR-0009's table and the requiredContractDecisions clarifications below, with no source-value echoing in diagnostic messages."
+    },
+    {
+      "id": "OBL-BUDGET-FIXTURES",
+      "description": "Author valid, invalid, and golden fixtures under fixtures/budget covering: a nominal budget run with all token records present, a budget run with one missing token record yielding PT806 and null observedTokensTotal for the affected obligation, a budget run with complete token records producing non-null observedTokensTotal for all obligations, every PT800/PT801/PT802/PT803/PT804/PT805 fail-closed condition, overflow in observedElapsedMillis and in observedTokensTotal, deterministic sourceDigest across two runs, and byte-reproducibility of the same input."
+    },
+    {
+      "id": "OBL-BUDGET-CONFORMANCE",
+      "description": "Author tests/ProgressTrace.ConformanceTests/BudgetConformance.cs asserting schema conformance via the existing SchemaConformance helper, exact diagnostic code (and PT806's non-blocking behavior) per fixture, byte-identical regeneration, and that all existing Phase 0-4.4 fixtures for other verbs still produce byte-identical output after this Phase 4.5 work; wire it into tests/ProgressTrace.ConformanceTests/Program.cs alongside the existing *Conformance classes."
+    }
+  ],
+  "requiredContractDecisions": [
+    "TokenUsage.records[] is structurally validated by TokenUsageValidator Phase A, checking parse + shape + enum + required fields + pattern + range for every record and the document root. Cross-document admissibility — sessionId matching the document's own sessionId, invocationId naming an invocation in the paired AgentSession, sequence matching that invocation's sequence — is checked in the Budget assembly layer, not the validator. An inadmissible record raises PT801 fail-closed; a duplicate invocationId across records[] raises PT802 fail-closed.",
+    "PT800 (cross-reference mismatch) is raised when: token-usage-path's sessionId or taskContractId does not equal session-path's sessionId or taskContractId, or ledger-path's traceId does not equal the traceId of session-path's earliest invocation ordered by sequence. PT800 is fail-closed, exits 1, writes no partial ObservedBudget.",
+    "PT801 is raised when a TokenUsage.records[] entry is inadmissible: its sessionId does not match the document's own sessionId, its invocationId does not name an invocation in session-path's AgentSession.invocations[], or its sequence does not equal that invocation's sequence. PT801 is fail-closed.",
+    "PT802 is raised when two or more TokenUsage.records[] entries target the same invocationId. PT802 is fail-closed.",
+    "PT803 (invocation window validation failure) is raised when an AgentSession invocation's startedAt or endedAt cannot be parsed as ISO-8601, or when endedAt precedes startedAt. This validation is local to ObservedBudget assembly and does not change AgentSession's own schema or existing validation behavior. PT803 is fail-closed.",
+    "PT804 (checked overflow) is raised when summing per-invocation elapsed durations (endedAt - startedAt in milliseconds) or tokensTotal values for one obligation would exceed the 64-bit nonnegative bound (Int64.MaxValue, 9223372036854775807). Overflow is checked explicitly and is never wrapped, truncated, or saturated. PT804 is fail-closed.",
+    "PT805 (non-deterministic assembly) is raised when internal assembly invariants are violated, for example an obligation id present in ledger-path is absent from the assembled obligations[], or vice versa. PT805 is fail-closed.",
+    "PT806 (informational, non-blocking) is raised once per AgentSession invocation that has no corresponding TokenUsage.records[] entry — a missing token record. budget still writes a complete, normalized ObservedBudget and exits 0 when one or more PT806 diagnostics apply; PT806 is emitted only through the CLI diagnostic channel, never added to the ObservedBudget JSON, never blocks output, and never forces a non-zero exit by itself. This is the only PT800-range code that does not suppress output, mirroring PT703's existing non-blocking precedent. For every obligation whose observed invocation set includes a missing-token-record invocation, observedTokensTotal is forced to null; a missing constituent is never silently dropped from the sum.",
+    "TokenUsage.records[] and ObligationLedger Phase A structural validation failures reuse existing generic codes PT000-PT005 and PT100-PT101 unmodified, exactly as ObligationLedger's own Phase A does. Malformed/oversized/unreadable JSON at any of the three input paths exits 2, matching the existing evaluate/assess/compare/advise convention (DiagnosticCodes.InvalidJson/InputTooLarge => 2). Well-formed JSON that fails schema validation (PT100-PT101 or PT800-PT805) or cross-reference checks (PT800) exits 1.",
+    "obligations targeted by budget are exactly ledger-path's ObligationLedger.obligations[].id set, in ledger array order. Per-obligation ledgerStatus is the Status of the last signal for that obligation in ledger-path's signals[] ordered by signal Index ascending for that obligationId, or open if the obligation has no signals. This is the same ledgerStatus computation rule used by AdvisoryDivergenceReport in Phase 4.4.",
+    "observedInvocationCount per obligation is the count of session-path's AgentSession.invocations[] whose obligationIds contains that obligation's id. Derived entirely from session-path; token-usage-path and ledger-path play no part in this count.",
+    "observedElapsedMillis per obligation is the sum, over that same set of invocations, of each invocation's (endedAt - startedAt) duration in milliseconds. Each invocation's window is validated (PT803 fail-closed on parse failure or endedAt < startedAt) before summing. The sum is computed with checked overflow (PT804 fail-closed). observedElapsedMillis is a 64-bit nonnegative integer, never null, since it depends only on the already-required AgentSession fields.",
+    "observedTokensTotal per obligation is the sum, over that same set of invocations, of each invocation's TokenUsage.records[].tokensTotal, or null if that set includes any invocation with a missing token record (no corresponding records[] entry). When present, it is a 64-bit nonnegative integer; the sum is computed with checked overflow (PT804 fail-closed). A missing constituent forces null for the entire obligation's observedTokensTotal, never a partial sum.",
+    "An invocation that targets more than one obligation (non-empty obligationIds with more than one entry) contributes its full observedElapsedMillis and, when present, its full tokensTotal to each targeted obligation's row independently. ObservedBudget performs no partition or proportional allocation of a shared invocation's activity across the obligations it targets.",
+    "sourceDigest is the lowercase hex-encoded SHA-256 digest of the concatenation, in fixed order, of AgentSessionNormalizer.Normalize(session) || TokenUsageNormalizer.Normalize(tokenUsage) || ObligationLedgerNormalizer.Normalize(ledger) — each operand already the existing canonical normalized bytes for that document type, with no additional wrapping or separator. The same digest algorithm and canonicalization convention already used for sourceDigest / advisorySourceDigest / ledgerDigest / reportId elsewhere in this repository.",
+    "generatedAt on every generated ObservedBudget is the literal sentinel 1970-01-01T00:00:00.0000000Z, written by the normalizer as a schema const, never read from wall-clock time (DateTime.UtcNow / DateTimeOffset.UtcNow is never referenced by the Budget namespace). Identical session-path/token-usage-path/ledger-path inputs always produce a byte-identical ObservedBudget, including generatedAt and sourceDigest themselves.",
+    "Output is written atomically: on any success, the single output file (--out, or stdout if omitted) is fully written or, for --out, never partially visible — reuse the existing write-to-temp-then-atomic-move discipline from generate-ledger's WritePairAtomically in src/ProgressTrace.Cli/Program.cs, adapted for a single file. On any fail-closed condition, no output file is created or modified at --out.",
+    "Exit codes follow the existing convention: 0 on success (including the PT806 case), 1 on a fail-closed condition detected from well-formed, schema-parseable input (PT800, PT801, PT802, PT803, PT804, PT805), 2 on unreadable files, malformed/oversized JSON, or CLI usage errors (missing/unknown flags, wrong flag combination)."
+  ],
+  "acceptanceCommands": [
+    ["dotnet", "build", "ProgressTrace.slnx", "--configuration", "Release", "--nologo", "--warnaserror"],
+    ["dotnet", "run", "--project", "tests/ProgressTrace.ConformanceTests/ProgressTrace.ConformanceTests.csproj", "--configuration", "Release", "--no-build"],
+    ["python3", "-m", "json.tool", "contracts/token-usage.schema.json"],
+    ["python3", "-m", "json.tool", "contracts/observed-budget.schema.json"],
+    ["dotnet", "format", "ProgressTrace.slnx", "--verify-no-changes", "--no-restore", "--verbosity", "minimal"],
+    ["git", "diff", "--check"]
+  ],
+  "allowedPaths": [
+    "src/ProgressTrace.Core/Models/**",
+    "src/ProgressTrace.Core/Validation/**",
+    "src/ProgressTrace.Core/Normalization/**",
+    "src/ProgressTrace.Core/Budget/**",
+    "src/ProgressTrace.Core/Diagnostics/**",
+    "src/ProgressTrace.Cli/**",
+    "tests/ProgressTrace.ConformanceTests/**",
+    "fixtures/budget/**",
+    "tasks/phase-4-5-observed-budget-implementation.json"
+  ],
+  "protectedPaths": [
+    "contracts/token-usage.schema.json",
+    "contracts/observed-budget.schema.json",
+    "docs/contracts/token-usage.md",
+    "docs/contracts/observed-budget.md",
+    "docs/architecture/ADR-0009-observed-budget.md",
+    "tasks/phase-4-5-observed-budget.json",
+    "contracts/agent-session.schema.json",
+    "contracts/gate-outcome.schema.json",
+    "contracts/obligation-ledger.schema.json",
+    "contracts/advisory-result.schema.json",
+    "contracts/advisory-divergence-report.schema.json",
+    "contracts/evaluation-result.schema.json",
+    "contracts/escalation.schema.json",
+    "contracts/stop-assessment-result.schema.json",
+    "contracts/termination-declaration.schema.json",
+    "contracts/baseline-definition.schema.json",
+    "contracts/baseline-comparison-result.schema.json",
+    "contracts/ledger-generation-report.schema.json",
+    "contracts/trace-envelope.schema.json",
+    "docs/contracts/agent-session.md",
+    "docs/contracts/gate-outcome.md",
+    "docs/contracts/obligation-ledger.md",
+    "docs/contracts/advisory-result.md",
+    "docs/contracts/advisory-divergence-report.md",
+    "docs/contracts/evaluation-result.md",
+    "docs/contracts/stop-assessment-result.md",
+    "docs/contracts/ledger-generation-report.md",
+    "src/ProgressTrace.Core/Evaluation/**",
+    "src/ProgressTrace.Core/Advisory/**",
+    "src/ProgressTrace.Core/Sessions/**",
+    "src/ProgressTrace.Core/Adapters/**",
+    "src/ProgressTrace.Core/Generation/**",
+    "src/ProgressTrace.Core/Comparison/**",
+    "src/ProgressTrace.Core/Assessment/**",
+    "src/ProgressTrace.Benchmarks/**",
+    "fixtures/session/**",
+    "fixtures/gate-outcome/**",
+    "fixtures/obligations/**",
+    "fixtures/ledger-generation/**",
+    "fixtures/advisory/**",
+    "fixtures/termination/**",
+    "fixtures/baseline/**",
+    "fixtures/benchmarks/**",
+    "fixtures/valid/**",
+    "fixtures/invalid/**",
+    "annotations/**",
+    "experiments/reference-adapter-v0/**",
+    "policy/**",
+    "verification/**",
+    "AGENTS.md",
+    "global.json",
+    "README.md",
+    ".github/workflows/ci.yml"
+  ],
+  "stopConditions": [
+    "Implementation would require any diff to contracts/token-usage.schema.json, contracts/observed-budget.schema.json, or any other protected contract.",
+    "Implementation would require modifying Evaluator.Evaluate, SessionEvaluator.Evaluate, GateOutcomeProjector, StopAssessor, Advisory assembly, or SessionTraceBuilder.Build.",
+    "Implementation would require modifying AgentSession, GateOutcome, AdvisoryResult, AdvisoryDivergenceReport, ObligationLedger, or any existing Phase 0-4.4 contract shape.",
+    "A required field can only be populated via network access, a model call, or free-text interpretation of session/token-usage/ledger content.",
+    "generatedAt would need to read wall-clock time, or sourceDigest would need a random or time-based component, to make the CLI usable.",
+    "budget would need a fourth input, a different flag name, or a different verb name than the single invocation fixed in docs/contracts/observed-budget.md.",
+    "Existing Phase 0-4.4 fixtures, schemas, CLI behavior, or deterministic semantics regress.",
+    "The allowed path set is exceeded, particularly any edit to README.md (that is Hermes's responsibility).",
+    "Two bounded repair attempts are exhausted."
+  ],
+  "humanGates": [
+    "architecture_scope_change",
+    "final_integration"
+  ],
+  "diagnostics": {
+    "allocatedRange": "PT800-PT899",
+    "reference": "docs/architecture/ADR-0009-observed-budget.md"
+  },
+  "ownership": "ProgressTrace core contract maintainers",
+  "maxRepairAttempts": 2,
+  "compatibility": "This task implements TokenUsage and ObservedBudget at schemaVersion 1.0 with no shape change; any future required-field or vocabulary change requires a superseding ADR and a new human gate, per ADR-0009's compatibility posture."
+}
