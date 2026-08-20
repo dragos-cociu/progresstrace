@@ -16,7 +16,7 @@ The primary initial users are builders of early agent workflows that do not yet 
 
 ## Current phase
 
-**Phase 4: Hermes-native operational dogfooding — Task 4.5 is implemented on this branch; integration into `main` is pending.**
+**Phase 4: Hermes-native operational dogfooding — Task 4.6 is implemented on this branch; integration into `main` is pending.**
 
 Phase 0, Phase 1, Phase 2a Task A, Phase 2b Task B, the benchmark MVP, authored validation, and the expansion to 60 cases are implemented. The .NET 10 core validates and normalizes traces, evaluates obligations, performs stop assessment, compares authored baselines, generates deterministic obligation ledgers from structured task contracts, and produces read-only in-flight advisory assessments. The 60 cases remain a regression suite in CI; `fuzzyRepeatCycle` is exploratory, while default operational reporting relies on `maxTurns` and `exactRepeat`.
 
@@ -137,6 +137,27 @@ overflow is checked. See `docs/architecture/ADR-0009-observed-budget.md`,
 `docs/contracts/token-usage.md`, `docs/contracts/observed-budget.md`,
 `tasks/phase-4-5-observed-budget.json`, and
 `tasks/phase-4-5-observed-budget-implementation.json`.
+
+## Phase 4.6 shadow summary
+
+The additive `shadow-summarize` operation combines an ordered local snapshot
+manifest of already-generated `AdvisoryResult` files with an optional external
+`RealDecisionRecord` and produces a deterministic `ShadowSessionSummary`.
+It is diagnostic-only: it never stops, interrupts, escalates, or changes a live
+Hermes decision. The external Hermes hook and persistence directory remain
+separate tooling responsibilities.
+
+```sh
+dotnet run --project src/ProgressTrace.Cli/ProgressTrace.Cli.csproj \\
+  --configuration Release -- shadow-summarize \\
+  --snapshot-manifest-path fixtures/shadow-summary/valid/manifest.json \\
+  --real-decision-path fixtures/shadow-summary/valid/real-decision.json
+```
+
+PT900–PT904 fail closed; PT905 is informational and produces a complete summary
+with no real decision and `aligned: null`. See `docs/architecture/ADR-0010-shadow-mode-integration.md`,
+`docs/contracts/real-decision-record.md`, `docs/contracts/shadow-session-summary.md`,
+and `tasks/phase-4-6-shadow-mode-implementation.json`.
 
 ## Core CLI usage
 
