@@ -41,7 +41,7 @@ public static class ShadowAssembler
         "insufficient-evidence" => null,
         _ when decision is null => null,
         "continue" => decision is "continued" or "escalated",
-        "stop-recommended" => decision is "stopped" or "merged" or "rejected" or "abandoned",
+        "stop-recommended" => decision is "stopped" or "merged" or "rejected" or "abandoned" or "completed",
         _ => null
     };
 
