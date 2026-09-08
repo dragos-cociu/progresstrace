@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Buffers;
 using System.Text.Json;
 using ProgressTrace.Core.Diagnostics;
 using ProgressTrace.Core.Models;
@@ -87,7 +88,7 @@ public static class TaskContractLedgerGenerator
             var ledgerBytes = ObligationLedgerNormalizer.Normalize(ledger);
             var validation = ObligationLedgerValidator.ParseAndValidatePhaseA(ledgerBytes);
             if (!validation.IsValid)
-                return new(null, null, null, null, validation.Diagnostics);
+                return new(null, null, null, null, null, null, validation.Diagnostics);
 
             var ledgerDigest = Digest(ledgerBytes);
             var report = new LedgerGenerationReport(
@@ -103,7 +104,17 @@ public static class TaskContractLedgerGenerator
                 coverage,
                 unsupported);
             var reportBytes = LedgerGenerationReportNormalizer.Normalize(report);
-            return new(ledger, report, ledgerBytes, reportBytes, []);
+            var bindingResult = ParseBindings(root, taskContractId, candidates);
+            if (bindingResult.Diagnostic is not null)
+                return Invalid(bindingResult.Diagnostic.Code, bindingResult.Diagnostic.Pointer, bindingResult.Diagnostic.Message);
+            CorrelationManifest? manifest = null;
+            byte[]? manifestBytes = null;
+            if (bindingResult.Bindings.Count > 0)
+            {
+                manifest = new("pt-shadow-correlation-1.0", taskContractId, traceId, bindingResult.Bindings);
+                manifestBytes = NormalizeManifest(manifest);
+            }
+            return new(ledger, report, ledgerBytes, reportBytes, manifest, manifestBytes, []);
         }
     }
 
@@ -119,7 +130,91 @@ public static class TaskContractLedgerGenerator
         Convert.ToHexStringLower(SHA256.HashData(bytes));
 
     private static LedgerGenerationResult Invalid(string code, string pointer, string message) =>
-        new(null, null, null, null, [new(code, pointer, message)]);
+        new(null, null, null, null, null, null, [new(code, pointer, message)]);
+
+    private static (IReadOnlyList<CorrelationGateBinding> Bindings, Diagnostic? Diagnostic) ParseBindings(
+        JsonElement root,
+        string taskContractId,
+        IReadOnlyList<Candidate> candidates)
+    {
+        if (!root.TryGetProperty("acceptance_commands", out var commands)) return ([], null);
+        if (commands.ValueKind != JsonValueKind.Array)
+            return BindingInvalid("/acceptance_commands", "acceptance_commands must be an array.");
+
+        var bindings = new List<CorrelationGateBinding>();
+        var gateKeys = new HashSet<string>(StringComparer.Ordinal);
+        var commandIndex = 0;
+        foreach (var entry in commands.EnumerateArray())
+        {
+            var pointer = $"/acceptance_commands/{commandIndex}";
+            if (entry.ValueKind == JsonValueKind.Array)
+            {
+                if (!IsCommand(entry)) return BindingInvalid(pointer, "Legacy command must be a non-empty string array.");
+                commandIndex++;
+                continue;
+            }
+            if (entry.ValueKind != JsonValueKind.Object ||
+                entry.EnumerateObject().Select(p => p.Name).Distinct(StringComparer.Ordinal).Count() != 3 ||
+                entry.GetPropertyCount() != 3 ||
+                !entry.TryGetProperty("command", out var command) || !IsCommand(command) ||
+                !entry.TryGetProperty("gateKey", out var gateKeyElement) || gateKeyElement.ValueKind != JsonValueKind.String ||
+                string.IsNullOrWhiteSpace(gateKeyElement.GetString()) ||
+                !entry.TryGetProperty("obligationRef", out var obligationRef) || obligationRef.ValueKind != JsonValueKind.Object)
+                return BindingInvalid(pointer, "Bound command must contain only command, non-empty gateKey, and obligationRef.");
+
+            var gateKey = gateKeyElement.GetString()!;
+            if (!gateKeys.Add(gateKey)) return BindingInvalid(pointer + "/gateKey", "gateKey must be unique.");
+            if (obligationRef.EnumerateObject().Select(p => p.Name).Distinct(StringComparer.Ordinal).Count() != 2 ||
+                obligationRef.GetPropertyCount() != 2 ||
+                !obligationRef.TryGetProperty("sourceField", out var sourceFieldElement) || sourceFieldElement.ValueKind != JsonValueKind.String ||
+                !obligationRef.TryGetProperty("index", out var indexElement) || !indexElement.TryGetInt32(out var sourceIndex))
+                return BindingInvalid(pointer + "/obligationRef", "obligationRef must contain only sourceField and integer index.");
+            var sourceField = sourceFieldElement.GetString();
+            if (sourceField is null || !SourceFields.Contains(sourceField, StringComparer.Ordinal))
+                return BindingInvalid(pointer + "/obligationRef/sourceField", "sourceField is not supported.");
+            var candidate = candidates.SingleOrDefault(item => item.Field == sourceField && item.Index == sourceIndex);
+            if (candidate is null)
+                return BindingInvalid(pointer + "/obligationRef/index", "obligationRef does not identify an existing obligation.");
+            bindings.Add(new(gateKey, $"{taskContractId}:{sourceField}:{sourceIndex}", "exit-code-zero", new("envelope-field", "result.verification_evidence.gateKey")));
+            commandIndex++;
+        }
+        return (bindings, null);
+    }
+
+    private static bool IsCommand(JsonElement command) =>
+        command.ValueKind == JsonValueKind.Array && command.GetArrayLength() > 0 &&
+        command.EnumerateArray().All(item => item.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(item.GetString()));
+
+    private static (IReadOnlyList<CorrelationGateBinding>, Diagnostic) BindingInvalid(string pointer, string message) =>
+        ([], new("PT607", pointer, message));
+
+    private static byte[] NormalizeManifest(CorrelationManifest manifest)
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+        using (var writer = new Utf8JsonWriter(buffer))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("schemaVersion", manifest.SchemaVersion);
+            writer.WriteString("taskContractId", manifest.TaskContractId);
+            writer.WriteString("traceId", manifest.TraceId);
+            writer.WriteStartArray("gateBindings");
+            foreach (var binding in manifest.GateBindings)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("gateKey", binding.GateKey);
+                writer.WriteString("obligationId", binding.ObligationId);
+                writer.WriteString("passPredicate", binding.PassPredicate);
+                writer.WriteStartObject("match");
+                writer.WriteString("type", binding.Match.Type);
+                writer.WriteString("value", binding.Match.Value);
+                writer.WriteEndObject();
+                writer.WriteEndObject();
+            }
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        }
+        return [.. buffer.WrittenSpan, (byte)'\n'];
+    }
 
     private sealed record Candidate(string Field, int Index, string Pointer, string Description);
 }

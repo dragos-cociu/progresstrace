@@ -25,12 +25,13 @@ static async Task<int> RunAsync(string[] args)
             WriteGenerationFailure([new(DiagnosticCodes.MissingTraceId, "", "traceId argument is missing or empty.")]);
             return 2;
         }
-        if (args.Length != 5)
+        if (args.Length is not (5 or 7) ||
+            (args.Length == 7 && args[5] != "--manifest-output-path"))
         {
-            WriteUsage();
+            WriteGenerationUsage();
             return 2;
         }
-        return await GenerateLedgerAsync(args[1], args[2], args[3], args[4]);
+        return await GenerateLedgerAsync(args[1], args[2], args[3], args[4], args.Length == 7 ? args[6] : null);
     }
     if (args.Length == 3 && (args[0] is "validate" or "normalize") && (args[1] is "session" or "gate-outcome"))
     {
@@ -121,7 +122,7 @@ static bool TryParseShadowManifest(byte[] bytes, out IReadOnlyList<(long Sequenc
 
 static void WriteShadowDiagnostics(IReadOnlyList<Diagnostic> diagnostics) => WriteJson(Console.Error, new { diagnostics });
 
-static async Task<int> GenerateLedgerAsync(string taskContractPath, string traceId, string ledgerOutputPath, string reportOutputPath)
+static async Task<int> GenerateLedgerAsync(string taskContractPath, string traceId, string ledgerOutputPath, string reportOutputPath, string? manifestOutputPath)
 {
     byte[] bytes;
     try
@@ -141,14 +142,27 @@ static async Task<int> GenerateLedgerAsync(string taskContractPath, string trace
         return result.Diagnostics.Any(static diagnostic => diagnostic.Code is
             DiagnosticCodes.NoObligationCandidates or
             DiagnosticCodes.InvalidSourceEntry or
-            DiagnosticCodes.DuplicateGeneratedObligationId ||
+            DiagnosticCodes.DuplicateGeneratedObligationId or
+            "PT607" ||
             diagnostic.Code.StartsWith("PT1", StringComparison.Ordinal) ||
             diagnostic.Code.StartsWith("PT2", StringComparison.Ordinal)) ? 1 : 2;
     }
 
+    if (manifestOutputPath is not null && result.ManifestBytes is null)
+    {
+        WriteGenerationFailure([new("PT607", "/acceptance_commands", "At least one explicit gate binding is required for manifest output.")]);
+        return 1;
+    }
+
     try
     {
-        WritePairAtomically(ledgerOutputPath, result.LedgerBytes!, reportOutputPath, result.ReportBytes!);
+        var outputs = new List<(string Path, byte[] Bytes)>
+        {
+            (ledgerOutputPath, result.LedgerBytes!),
+            (reportOutputPath, result.ReportBytes!)
+        };
+        if (manifestOutputPath is not null) outputs.Add((manifestOutputPath, result.ManifestBytes!));
+        WriteAtomically(outputs);
     }
     catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
     {
@@ -160,57 +174,43 @@ static async Task<int> GenerateLedgerAsync(string taskContractPath, string trace
     return 0;
 }
 
-static void WritePairAtomically(string firstPath, byte[] firstBytes, string secondPath, byte[] secondBytes)
+static void WriteAtomically(IReadOnlyList<(string Path, byte[] Bytes)> outputs)
 {
-    var firstFullPath = Path.GetFullPath(firstPath);
-    var secondFullPath = Path.GetFullPath(secondPath);
-    if (string.Equals(firstFullPath, secondFullPath, StringComparison.Ordinal))
+    var files = outputs.Select(output => new AtomicOutput(Path.GetFullPath(output.Path), output.Bytes)).ToList();
+    if (files.Select(file => file.FullPath).Distinct(StringComparer.Ordinal).Count() != files.Count)
         throw new ArgumentException("Output paths must differ.");
-
-    var firstDirectory = Path.GetDirectoryName(firstFullPath)!;
-    var secondDirectory = Path.GetDirectoryName(secondFullPath)!;
-    Directory.CreateDirectory(firstDirectory);
-    Directory.CreateDirectory(secondDirectory);
     var token = Guid.NewGuid().ToString("N");
-    var firstTemp = Path.Combine(firstDirectory, $".{Path.GetFileName(firstFullPath)}.{token}.tmp");
-    var secondTemp = Path.Combine(secondDirectory, $".{Path.GetFileName(secondFullPath)}.{token}.tmp");
-    var firstBackup = firstTemp + ".backup";
-    var secondBackup = secondTemp + ".backup";
-    var firstExisted = File.Exists(firstFullPath);
-    var secondExisted = File.Exists(secondFullPath);
+    foreach (var file in files)
+    {
+        var directory = Path.GetDirectoryName(file.FullPath)!;
+        Directory.CreateDirectory(directory);
+        file.TempPath = Path.Combine(directory, $".{Path.GetFileName(file.FullPath)}.{token}.tmp");
+        file.BackupPath = file.TempPath + ".backup";
+        file.Existed = File.Exists(file.FullPath);
+    }
     try
     {
-        File.WriteAllBytes(firstTemp, firstBytes);
-        File.WriteAllBytes(secondTemp, secondBytes);
-        if (firstExisted) File.Move(firstFullPath, firstBackup);
-        if (secondExisted) File.Move(secondFullPath, secondBackup);
-        File.Move(firstTemp, firstFullPath);
-        try
-        {
-            File.Move(secondTemp, secondFullPath);
-        }
-        catch
-        {
-            File.Delete(firstFullPath);
-            throw;
-        }
-        if (firstExisted) File.Delete(firstBackup);
-        if (secondExisted) File.Delete(secondBackup);
+        foreach (var file in files) File.WriteAllBytes(file.TempPath!, file.Bytes);
+        foreach (var file in files) if (file.Existed) File.Move(file.FullPath, file.BackupPath!);
+        foreach (var file in files) File.Move(file.TempPath!, file.FullPath);
+        foreach (var file in files) if (file.Existed) File.Delete(file.BackupPath!);
     }
     catch
     {
-        if (File.Exists(firstFullPath) && !firstExisted) File.Delete(firstFullPath);
-        if (File.Exists(secondFullPath) && !secondExisted) File.Delete(secondFullPath);
-        if (File.Exists(firstBackup)) File.Move(firstBackup, firstFullPath, true);
-        if (File.Exists(secondBackup)) File.Move(secondBackup, secondFullPath, true);
+        foreach (var file in files)
+        {
+            if (File.Exists(file.FullPath)) File.Delete(file.FullPath);
+            if (file.BackupPath is not null && File.Exists(file.BackupPath)) File.Move(file.BackupPath, file.FullPath, true);
+        }
         throw;
     }
     finally
     {
-        File.Delete(firstTemp);
-        File.Delete(secondTemp);
-        File.Delete(firstBackup);
-        File.Delete(secondBackup);
+        foreach (var file in files)
+        {
+            if (file.TempPath is not null) File.Delete(file.TempPath);
+            if (file.BackupPath is not null) File.Delete(file.BackupPath);
+        }
     }
 }
 
@@ -221,6 +221,12 @@ static void WriteUsage() => WriteJson(Console.Error, new
 {
     error = "usage",
     message = "Usage: progresstrace <validate|normalize> <path> | progresstrace evaluate <trace-path> <ledger-path> | progresstrace assess <trace-path> <ledger-path> <termination-declaration-path> | progresstrace compare <trace-path> <ledger-path> <termination-declaration-path> <baseline-definition-path> | progresstrace generate-ledger <task-contract-path> <trace-id> <ledger-output-path> <report-output-path>"
+});
+
+static void WriteGenerationUsage() => WriteJson(Console.Error, new
+{
+    error = "usage",
+    message = "Usage: progresstrace generate-ledger <task-contract-path> <trace-id> <ledger-output-path> <report-output-path> [--manifest-output-path <path>]"
 });
 
 static void WriteBudgetUsage() => WriteJson(Console.Error, new { error = "usage", message = "Usage: progresstrace budget --session-path <path> --token-usage-path <path> --ledger-path <path> [--out <path>]" });
@@ -459,4 +465,13 @@ static void WriteJson(TextWriter output, object value)
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false
     }));
+}
+
+sealed class AtomicOutput(string fullPath, byte[] bytes)
+{
+    public string FullPath { get; } = fullPath;
+    public byte[] Bytes { get; } = bytes;
+    public string? TempPath { get; set; }
+    public string? BackupPath { get; set; }
+    public bool Existed { get; set; }
 }

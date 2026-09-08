@@ -1,0 +1,27 @@
+{
+  "id": "phase-5-gate-bindings-example",
+  "title": "Phase 5 authored gate binding example",
+  "objective": "A bounded example task contract whose acceptance commands demonstrate explicit gate-to-obligation bindings without free-text inference.",
+  "repository": "/srv/projects/.tooling/pilot-sibiul-nestiut-worktree",
+  "deliverables": [
+    "The methodology page is present in all three localized routes.",
+    "The production check and build commands complete successfully."
+  ],
+  "acceptance_commands": [
+    {
+      "command": ["npm", "run", "check"],
+      "gateKey": "sibiul-check",
+      "obligationRef": {"sourceField": "deliverables", "index": 0}
+    },
+    {
+      "command": ["npm", "run", "build"],
+      "gateKey": "sibiul-build",
+      "obligationRef": {"sourceField": "deliverables", "index": 1}
+    },
+    ["git", "diff", "--check"]
+  ],
+  "required_contract_decisions": [],
+  "required_invariants": [],
+  "allowed_paths": ["src/layouts/BaseLayout.astro", "src/lib/i18n.ts", "src/pages/[lang]/metoda.astro"],
+  "protected_paths": ["src/ProgressTrace.Core/**"]
+}

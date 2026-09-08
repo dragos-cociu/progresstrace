@@ -1,0 +1,23 @@
+{
+  "id": "phase-5-gate-bindings-example",
+  "title": "Phase 5 authored gate binding example",
+  "deliverables": [
+    "The methodology page is present in all three localized routes.",
+    "The production check and build commands complete successfully."
+  ],
+  "acceptance_commands": [
+    {
+      "command": ["npm", "run", "check"],
+      "gateKey": "sibiul-check",
+      "obligationRef": {"sourceField": "deliverables", "index": 0}
+    },
+    {
+      "command": ["npm", "run", "build"],
+      "gateKey": "sibiul-build",
+      "obligationRef": {"sourceField": "deliverables", "index": 1}
+    },
+    ["git", "diff", "--check"]
+  ],
+  "required_contract_decisions": [],
+  "required_invariants": []
+}

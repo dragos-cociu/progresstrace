@@ -12,7 +12,7 @@ public sealed record RealDecisionRecordValidationResult(RealDecisionRecord? Real
 
 public static class RealDecisionRecordValidator
 {
-    private static readonly HashSet<string> Decisions = new(StringComparer.Ordinal) { "continued", "stopped", "merged", "rejected", "escalated", "abandoned" };
+    private static readonly HashSet<string> Decisions = new(StringComparer.Ordinal) { "continued", "stopped", "merged", "rejected", "escalated", "abandoned", "completed" };
 
     public static RealDecisionRecordValidationResult ParseAndValidate(ReadOnlyMemory<byte> bytes)
     {

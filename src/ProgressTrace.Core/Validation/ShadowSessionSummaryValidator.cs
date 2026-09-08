@@ -36,7 +36,7 @@ public static class ShadowSessionSummaryValidator
             for (var index = 1; index < snapshots.Count; index++) if (snapshots[index].ShadowSequence <= snapshots[index - 1].ShadowSequence) d.Add(new(DiagnosticCodes.InvalidValue, $"/snapshots/{index}/shadowSequence", "shadowSequence must be strictly increasing."));
             if (snapshots.Count != 0 && final is not null && final != snapshots[^1].Recommendation) d.Add(new(DiagnosticCodes.InvalidValue, "/finalRecommendation", "finalRecommendation must equal the latest snapshot recommendation."));
             if (decision is not null && (decision.SessionId != session || decision.TaskContractId != task)) d.Add(new(DiagnosticCodes.InvalidValue, "/realDecision", "Real decision references must match the summary."));
-            bool? expectedAlignment = final switch { "insufficient-evidence" => null, _ when decision is null => null, "continue" => decision.Decision is "continued" or "escalated", "stop-recommended" => decision.Decision is "stopped" or "merged" or "rejected" or "abandoned", _ => null };
+            bool? expectedAlignment = final switch { "insufficient-evidence" => null, _ when decision is null => null, "continue" => decision.Decision is "continued" or "escalated", "stop-recommended" => decision.Decision is "stopped" or "merged" or "rejected" or "abandoned" or "completed", _ => null };
             if (aligned != expectedAlignment) d.Add(new(DiagnosticCodes.InvalidValue, "/aligned", "aligned does not match the fixed alignment table."));
             return new(new(version ?? "", session ?? "", task ?? "", snapshots, decision, final ?? "", aligned, generated ?? "", digest ?? ""), d);
         }

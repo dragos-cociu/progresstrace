@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using ProgressTrace.Core.Generation;
 using ProgressTrace.Core.Validation;
 
@@ -36,6 +37,18 @@ static class LedgerGenerationConformance
                 AssertGolden(ledgerBytes, Path.Combine(fixtureRoot, "golden", "deliverables-only.ledger.json"), "ledger", failures);
                 AssertGolden(reportBytes, Path.Combine(fixtureRoot, "golden", "deliverables-only.report.json"), "report", failures);
             }
+            if (Path.GetFileName(path) == "phase5-gate-bindings.json")
+            {
+                if (first.ManifestBytes is null) failures.Add("phase5 bindings: manifest was not derived");
+                else
+                {
+                    AssertGolden(first.ManifestBytes, Path.Combine(fixtureRoot, "golden", "phase5-correlation-manifest.json"), "manifest", failures);
+                    if (!first.ManifestBytes.AsSpan().SequenceEqual(second.ManifestBytes)) failures.Add("phase5 bindings: manifest regeneration was not byte-identical");
+                    AssertManifestStructure(first.ManifestBytes, failures);
+                    if (first.Manifest!.GateBindings.Count != 2 || first.Manifest.GateBindings.Any(binding => !first.Ledger.Obligations!.Any(obligation => obligation.Id == binding.ObligationId)))
+                        failures.Add("phase5 bindings: gate binding did not reference a generated obligation");
+                }
+            }
         }
 
         var expectedPointers = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -60,7 +73,81 @@ static class LedgerGenerationConformance
         AssertDiagnostic(TaskContractLedgerGenerator.Generate(Encoding.UTF8.GetBytes("{}"), "x", "synthetic-trace"), "PT602", "/id", failures);
         AssertDiagnostic(TaskContractLedgerGenerator.Generate(Encoding.UTF8.GetBytes("{}"), "x", " "), "PT605", "", failures);
         AssertDiagnostic(TaskContractLedgerGenerator.Generate(new byte[TraceValidator.MaximumInputSizeBytes + 1], "x", "synthetic-trace"), "PT600", "", failures);
+        AssertBindingFailures(failures);
         AssertConditionalSchema(reportSchema, failures);
+    }
+
+    private static void AssertManifestStructure(byte[] manifestBytes, List<string> failures)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(manifestBytes);
+            var root = document.RootElement;
+            var rootFields = new HashSet<string>(["schemaVersion", "taskContractId", "traceId", "gateBindings"], StringComparer.Ordinal);
+            if (root.ValueKind != JsonValueKind.Object ||
+                root.EnumerateObject().Any(property => !rootFields.Remove(property.Name)) || rootFields.Count != 0 ||
+                root.GetProperty("schemaVersion").ValueKind != JsonValueKind.String || root.GetProperty("schemaVersion").GetString() != "pt-shadow-correlation-1.0" ||
+                !IsNonEmptyString(root.GetProperty("taskContractId")) || !IsNonEmptyString(root.GetProperty("traceId")) ||
+                root.GetProperty("gateBindings").ValueKind != JsonValueKind.Array || root.GetProperty("gateBindings").GetArrayLength() != 2)
+            {
+                failures.Add("phase5 bindings: manifest root structure was invalid");
+                return;
+            }
+
+            var gateKeys = new HashSet<string>(StringComparer.Ordinal);
+            var obligationIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var binding in root.GetProperty("gateBindings").EnumerateArray())
+            {
+                var bindingFields = new HashSet<string>(["gateKey", "obligationId", "passPredicate", "match"], StringComparer.Ordinal);
+                if (binding.ValueKind != JsonValueKind.Object ||
+                    binding.EnumerateObject().Any(property => !bindingFields.Remove(property.Name)) || bindingFields.Count != 0 ||
+                    !IsNonEmptyString(binding.GetProperty("gateKey")) || !gateKeys.Add(binding.GetProperty("gateKey").GetString()!) ||
+                    !IsNonEmptyString(binding.GetProperty("obligationId")) || !obligationIds.Add(binding.GetProperty("obligationId").GetString()!) ||
+                    binding.GetProperty("passPredicate").ValueKind != JsonValueKind.String || binding.GetProperty("passPredicate").GetString() != "exit-code-zero")
+                {
+                    failures.Add("phase5 bindings: manifest gate binding structure was invalid");
+                    return;
+                }
+
+                var match = binding.GetProperty("match");
+                var matchFields = new HashSet<string>(["type", "value"], StringComparer.Ordinal);
+                if (match.ValueKind != JsonValueKind.Object ||
+                    match.EnumerateObject().Any(property => !matchFields.Remove(property.Name)) || matchFields.Count != 0 ||
+                    match.GetProperty("type").ValueKind != JsonValueKind.String || match.GetProperty("type").GetString() != "envelope-field" ||
+                    !IsNonEmptyString(match.GetProperty("value")))
+                {
+                    failures.Add("phase5 bindings: manifest match structure was invalid");
+                    return;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            failures.Add("phase5 bindings: manifest was not valid JSON");
+        }
+    }
+
+    private static bool IsNonEmptyString(JsonElement value) =>
+        value.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(value.GetString());
+
+    private static void AssertBindingFailures(List<string> failures)
+    {
+        const string prefix = "{\"id\":\"x\",\"deliverables\":[\"one\"],\"acceptance_commands\":";
+        var malformed = new[]
+        {
+            "{}", "[{\"command\":[\"ok\"],\"gateKey\":\"\",\"obligationRef\":{\"sourceField\":\"deliverables\",\"index\":0}}]",
+            "[{\"command\":[\"ok\"],\"gateKey\":\"g\",\"obligationRef\":{\"sourceField\":\"other\",\"index\":0}}]",
+            "[{\"command\":[\"ok\"],\"gateKey\":\"g\",\"obligationRef\":{\"sourceField\":\"deliverables\",\"index\":1}}]",
+            "[{\"command\":[\"ok\"],\"gateKey\":\"g\",\"obligationRef\":{\"sourceField\":\"deliverables\",\"index\":0}},{\"command\":[\"ok\"],\"gateKey\":\"g\",\"obligationRef\":{\"sourceField\":\"deliverables\",\"index\":0}}]"
+        };
+        foreach (var commands in malformed)
+        {
+            var result = TaskContractLedgerGenerator.Generate(Encoding.UTF8.GetBytes(prefix + commands + "}"), "x", "trace");
+            if (result.IsValid || result.Diagnostics.Count != 1 || result.Diagnostics[0].Code != "PT607" || result.LedgerBytes is not null || result.ReportBytes is not null || result.ManifestBytes is not null)
+                failures.Add("phase5 bindings: malformed binding did not fail closed");
+        }
+        var legacy = TaskContractLedgerGenerator.Generate(Encoding.UTF8.GetBytes(prefix + "[[\"git\",\"diff\"]]}"), "x", "trace");
+        if (!legacy.IsValid || legacy.ManifestBytes is not null) failures.Add("phase5 bindings: legacy argv was not valid and unbound");
     }
 
     private static void AssertDiagnostic(LedgerGenerationResult result, string code, string pointer, List<string> failures)
