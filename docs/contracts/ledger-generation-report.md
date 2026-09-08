@@ -142,13 +142,21 @@ covers it.
 ## CLI `generate-ledger` behavior
 
 Usage: `generate-ledger <task-contract-path> <trace-id> <ledger-output-path>
-<report-output-path>`, exactly four positional arguments (ADR-0007 Decision
-11). Both output files are written if and only if generation fully
+<report-output-path> [--manifest-output-path <path>]`. The original four
+positional arguments remain unchanged (ADR-0007 Decision 11). Without the
+optional flag, ledger and report bytes are unchanged. With the flag, ledger,
+report, and the derived CorrelationManifest are written as one atomic set.
+The output files are written if and only if generation fully
 succeeds: the task contract reads and parses; at least one candidate
 obligation exists; every candidate entry is a non-empty string; `traceId`
 is non-empty; every stable id is unique within the run; and the assembled
 ledger passes `ObligationLedgerValidator` Phase A. On any failure, neither
-output file is written or partially written.
+output file is written or partially written. Manifest output additionally
+requires at least one valid explicit binding. Legacy argv arrays remain valid
+but are not represented in the manifest. Bound entries contain only a
+non-empty string `command` array, a unique non-blank `gateKey`, and an
+`obligationRef` whose closed `sourceField` and integer `index` identify a
+generated obligation. Binding errors use `PT607` and fail closed.
 
 Exit codes reuse the existing convention unchanged: `0` only when both
 files are written; `1` for `PT603`, `PT604`, `PT606`, or an assembled-ledger
