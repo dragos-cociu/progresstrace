@@ -1013,3 +1013,12 @@ data, regula de decizie și rolurile.
 3. o sesiune de dezvoltare per contract, măsurată în paralel;
 4. reproducere independentă și `feedback.json` generat din artefacte (§12.2, §12.6);
 5. decizia A/B/C la 2026-10-11, după criteriul din §12.7, fără renegociere.
+
+---
+
+## 15. Decizie — 2026-09-27
+
+Seria adversă S1–S3 s-a încheiat pe 2026-09-27; decizia s-a luat în aceeași zi, înainte de
+termenul-limită. **B — FREEZE la 1.0, precedat de bugfix F5/F1.** Detalii, date și
+constatări: `docs/architecture/ADR-0017-phase-5-decision-freeze.md`. Dovezile:
+`progresstrace-experiments/experiments/07-phase-5-adversarial-series-sibiul/`.
