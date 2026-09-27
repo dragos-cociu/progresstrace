@@ -48,6 +48,11 @@ different gate passing later, and a current unrecovered failure is classified as
   produced by external tooling), the coverage report generator is not exposed as a command,
   `RealDecisionRecord` can only be validated through `shadow-summarize`, and the top-level
   usage message does not list `advise`, `budget` or `shadow-summarize`.
+- **`AdvisoryResult 1.0` changed without a version bump.** The `v1.0.0` bugfix added
+  `failed-attempt` to the closed `classification` vocabulary while `schemaVersion` stayed
+  `1.0` (the contract had been frozen in Phase 4.4, ADR-0008). A strict external validator
+  written against the earlier `1.0` schema would reject current output. No consumer outside
+  this repository is known; any consumer must accept `failed-attempt`.
 - **`SessionEvaluator`** (not used by `advise`) counts any failure alongside a pass as
   `recovery-after-failed-attempt`, regardless of order.
 

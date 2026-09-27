@@ -59,6 +59,9 @@ Per-obligation `classification` (closed vocabulary):
   least two distinct attempts, and no passing outcome ever;
 - `failed-attempt` — `regressed` in any other case (a current failure that has not been
   recovered). Added in the 1.0.0 bugfix: the four earlier values had no correct slot for it.
+  **Compatibility note:** this extends the closed vocabulary of `AdvisoryResult 1.0` without a
+  `schemaVersion` change; documents produced by `v1.0.0` may fail validation against the
+  pre-`v1.0.0` schema. See ADR-0017, addendum.
 
 Top-level `classification` is the first present per-obligation value in the priority order
 `insufficient-evidence`, `failed-attempt`, `repeated-attempt-without-obligation-advancement`,
