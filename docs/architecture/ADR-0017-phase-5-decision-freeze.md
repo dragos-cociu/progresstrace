@@ -73,3 +73,18 @@ ProgressTrace).
 - F2/F4 rămân limitări documentate.
 - Valoarea demonstrată a seriei a venit din gate-uri bine proiectate și review uman, nu din
   agregarea ProgressTrace; asta se spune explicit în writeup.
+
+## Addendum — contract change without a version bump (2026-09-27)
+
+A post-merge review of `v1.0.0` flagged that the F1 fix added `failed-attempt` to the closed
+`classification` enum of `AdvisoryResult` (and of the shadow session summary) while
+`schemaVersion` remained `1.0`, although that contract had been frozen in Phase 4.4
+(ADR-0008). This is an incompatible change for any strict validator of the earlier schema.
+
+Decision: **document, do not re-version.** No consumer outside this repository validates
+`AdvisoryResult` (checked across Hermes, its skills and all tooling on the host), the tool is
+frozen, and a schema bump would reopen code after the freeze for a consumer that does not
+exist. The change is declared in the README known limitations and in
+`docs/contracts/advisory-result.md`. If an external consumer ever appears, the correct fix is
+`schemaVersion: "1.1"` with the validator accepting both.
+
