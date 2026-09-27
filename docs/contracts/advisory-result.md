@@ -31,18 +31,40 @@ digest over the three canonicalized inputs, for provenance and
 tamper-evidence — not authentication. `classification`, `recommendation`,
 and `obligations` are required.
 
-## Evaluator reuse
+## Classification (revised in 1.0.0 bugfix, ADR-0017)
 
-`classification` is populated exclusively by the existing
-`Evaluator.Evaluate` method — the same evaluator already depended on by
-`SessionEvaluator` and `GateOutcomeProjector`. Phase 4.4 introduces no new
-evaluator and no alternate classification path. The closed vocabulary is
-unchanged: `progress`, `recovery-after-failed-attempt`,
-`repeated-attempt-without-obligation-advancement`, `insufficient-evidence`.
+`Evaluator.Evaluate` still supplies `evidenceEventIds`. `status`, `classification` and
+`stable` are derived in `advise` from the gate outcomes, because the evaluator's own
+vocabulary (`regression`, `stagnation`) does not map onto the advisory vocabulary: the
+earlier projection reported a current failure as `recovery-after-failed-attempt` and two
+passing gates in one attempt as `repeated-attempt-without-obligation-advancement` (F1).
 
-`insufficient-evidence` takes priority: when evidence is absent, incomplete,
-or incoherent for any targeted obligation, `classification` is
-`insufficient-evidence` regardless of partial progress shown elsewhere.
+A gate is identified by its `command`. For each obligation only the **latest outcome of each
+gate** counts (F5 — previously the single latest signal of any gate decided, so a failing gate
+followed by a different passing gate reported `satisfied`):
+
+| latest outcome per gate | `status` |
+|---|---|
+| none | `open` |
+| at least one `fail`/`error` | `regressed` |
+| all `pass` | `satisfied` |
+| otherwise (`skipped`) | `in-progress` |
+
+Per-obligation `classification` (closed vocabulary):
+
+- `insufficient-evidence` — no outcome, or `status` is `open`/`in-progress`;
+- `progress` — `satisfied` with no failing outcome for the obligation;
+- `recovery-after-failed-attempt` — `satisfied` after at least one failing outcome;
+- `repeated-attempt-without-obligation-advancement` — `regressed`, failing outcomes in at
+  least two distinct attempts, and no passing outcome ever;
+- `failed-attempt` — `regressed` in any other case (a current failure that has not been
+  recovered). Added in the 1.0.0 bugfix: the four earlier values had no correct slot for it.
+
+Top-level `classification` is the first present per-obligation value in the priority order
+`insufficient-evidence`, `failed-attempt`, `repeated-attempt-without-obligation-advancement`,
+`recovery-after-failed-attempt`, else `progress`. `insufficient-evidence` therefore still takes
+priority over partial progress elsewhere (known limitation F2: any obligation without a gate
+keeps the top-level value and the recommendation at `insufficient-evidence`).
 
 ## Recommendation
 
@@ -73,20 +95,18 @@ with no field generated from free text:
   per-obligation status assessment. This is the field
   `AdvisoryDivergenceReport` compares against the supplied ledger's
   declared status.
-- `classification` — a per-obligation instance of the same closed
-  `Evaluator.Evaluate` vocabulary as the top-level `classification`
+- `classification` — per-obligation value of the closed vocabulary above
   (`progress`, `recovery-after-failed-attempt`,
-  `repeated-attempt-without-obligation-advancement`,
+  `repeated-attempt-without-obligation-advancement`, `failed-attempt`,
   `insufficient-evidence`).
-- `stable` — computed by the existing stable-attainment helper shared with
-  `StopAssessor`; `advise` consumes its existing boolean output and adds no
-  rank, priority, or overhead field to it. `StopAssessor`'s own
-  stop-decision behavior is unaffected by `advise`. This is the "outcome"
-  the recommendation rule above reads.
+- `stable` — `true` exactly when `status` is `satisfied` (every gate of the
+  obligation passed on its latest outcome). Derived from the same effective
+  status so it can never contradict it; `StopAssessor` is unaffected. This is
+  the "outcome" the recommendation rule above reads.
 - `evidenceEventIds` — the event ids backing this obligation's
   `classification` and `stable`, following the same content-and-ordering
   convention as `EvaluationResult.obligationResults[].evidenceEventIds`
-  (`docs/contracts/evaluation-result.md`): may be empty exactly when
+  (`docs/contracts/evaluation-result.md`): is empty only when
   `classification` is `insufficient-evidence` for that obligation.
 
 ## SessionTraceBuilder boundary

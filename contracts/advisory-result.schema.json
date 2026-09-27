@@ -36,7 +36,7 @@
   },
   "$defs": {
     "classification": {
-      "enum": ["progress", "recovery-after-failed-attempt", "repeated-attempt-without-obligation-advancement", "insufficient-evidence"]
+      "enum": ["progress", "recovery-after-failed-attempt", "repeated-attempt-without-obligation-advancement", "failed-attempt", "insufficient-evidence"]
     }
   }
 }
