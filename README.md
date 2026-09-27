@@ -327,3 +327,8 @@ byte-identical. A malformed expectation or mismatch exits non-zero. The
 benchmark test executable checks complete case coverage, all expectation and
 detector branches, mismatch handling, evaluator classifications, ordering, and
 in-process determinism.
+
+## License
+
+ProgressTrace is released under the [MIT License](LICENSE). It is frozen at `v1.0.0`
+(see *Status* above): issues and pull requests may not receive a response.

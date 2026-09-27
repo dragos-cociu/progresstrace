@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-27 · **Decision:** B — freeze at `v1.0.0` after a bounded F5/F1 bugfix
 (`docs/architecture/ADR-0017-phase-5-decision-freeze.md`) · **Evidence:**
-`progresstrace-experiments/experiments/07-phase-5-adversarial-series-sibiul/`
+`progresstrace-experiments/experiments/07-phase-5-adversarial-series-sibiul/` (not public, see §7)
 
 ## 1. The question
 
@@ -118,4 +118,11 @@ keeping as a practice:
   `docs/phase-5-adverse-series-manual-test-plan.md`
 - Bugfix: `advise` F5/F1 (PR #15), conformance cases reproducing the series
 - Evidence: `progresstrace-experiments/experiments/07-phase-5-adversarial-series-sibiul/`
+
+The evidence archive (`progresstrace-experiments`) is a separate, **non-public** repository:
+it contains session material from the author's private environment. The numbers and
+findings in this report are the ones recorded there; the method is described in enough
+detail (section 2 and `docs/phase-5-plan-and-decision-metrics.md` §12–§14) to be repeated
+on another project. Absolute paths such as `/srv/projects/...` that appear in the
+documentation refer to the author's machine.
   (`series-result.md`, `findings.md`, `sessions/S*/`, `evidence-history.bundle`)
