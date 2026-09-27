@@ -14,17 +14,42 @@ No agent is required to emit ProgressTrace-native JSON. A source may already emi
 
 The primary initial users are builders of early agent workflows that do not yet have a mature harness; mature systems may integrate through adapters, independent audit, or conformance rather than replacing their harnesses. The later `reference-adapter-v0` dogfooding experiment is intentionally experimental/internal and is not a stable adapter contract or industry standard. Hosted history, UI, and persistent storage remain optional and out of current scope.
 
-## Current phase
+## Status: v1.0.0 — frozen
 
-**Phase 5: authored gate bindings, derived correlation, session projection, and coverage reporting — integration pending via Pull Request.**
+**ProgressTrace is frozen at `v1.0.0` as a personal tool** (decision B,
+`docs/architecture/ADR-0017-phase-5-decision-freeze.md`). No further phases are planned;
+reopening any direction requires a new question, a decision date and numeric thresholds
+fixed in advance.
 
-Phase 0, Phase 1, Phase 2a Task A, Phase 2b Task B, the benchmark MVP, authored validation, the expansion to 60 cases, Phase 4.6 shadow summary, and the Phase 5 P0 vertical slice are implemented. The .NET 10 core validates and normalizes traces, evaluates obligations, performs stop assessment, compares authored baselines, generates deterministic obligation ledgers and correlation manifests from structured task contracts, derives `AgentSession` projections from explicit gate outcomes, and emits per-obligation coverage reports. The 60 cases remain a regression suite in CI; `fuzzyRepeatCycle` is exploratory, while default operational reporting relies on `maxTurns` and `exactRepeat`.
+The decision follows a Phase 5 adversarial series of three real development sessions on an
+external project, measured outside the orchestrating agent against a threshold committed
+before the first session. Result: **0 human-confirmed cases in which ProgressTrace reported
+something the agent's own report and the exit codes did not.** The full account is in
+`docs/phase-5-final-report.md`.
 
-Phase 5 is a product-development phase, not a disposable experiment. Its live validation is intentionally separate from source integration: five real sessions across at least two projects will produce `feedback.json` and M1–M10 evidence after the implementation is published. That evidence will guide the later GO/FREEZE/PIVOT decision; it is not a prerequisite for publishing the verified P0 implementation.
+`v1.0.0` includes one bounded bugfix found during the series (`advise`, F5/F1): status is
+derived from the latest outcome of each gate, so a failing gate can no longer be masked by a
+different gate passing later, and a current unrecovered failure is classified as
+`failed-attempt` instead of `recovery-after-failed-attempt`.
 
-The Phase 5 boundary remains explicit: `gate_bindings` are authored once in the task contract; `CorrelationManifest`, `AgentSession`, and coverage reports are derived deterministically; Hermes `gateKey` telemetry remains an additive, shadow-only candidate in the separate Hermes repository. Universal compatibility, OpenTelemetry, a generic adapter, persistence, automatic stopping, and conversational interpretation in Core remain out of scope.
+### Known limitations
 
-Task 4.3 is complete and published: structured `tasks/phase-*.json` sources produce `ObligationLedger 1.0` plus a versioned provenance and coverage sidecar. Task 4.4 is implemented on the isolated branch: the `advise` CLI produces deterministic in-flight recommendations and the independent divergence sidecar defined by ADR-0008. Task 4.5 is implemented on this branch: the `budget` CLI combines an `AgentSession`, observed `TokenUsage`, and an `ObligationLedger` into deterministic per-obligation `ObservedBudget 1.0` rows. Observed invocation counts, elapsed milliseconds, and token totals remain distinct from authored `eventBudget` estimates; missing token evidence is reported non-blockingly as PT806, while malformed, inadmissible, divergent, or overflowing inputs fail closed. Phase 5 continues this contract-first integration path without bypassing the human merge gate.
+- **The verdict is at most as good as the gates that feed it.** ProgressTrace aggregates gate
+  outcomes; it does not see what a gate does not check (in the series, every real defect was
+  visual and escaped all automated layers).
+- **Obligations without a gate pin the top-level result (F2).** Any obligation with no gate
+  keeps the top-level `classification` and `recommendation` at `insufficient-evidence`; read
+  the per-obligation `status` instead.
+- **`PT703` (insufficient evidence) exits `0`.** It is a valid advisory, not a process error;
+  a harness must read `classification`/`status` from `advisory.json`, not the exit code.
+- **Gate identity in `advise` is the outcome `command` string.** Two different gates with an
+  identical command are treated as one gate.
+- **CLI ergonomics (F4).** The CLI does not derive `session.json` (it must be authored or
+  produced by external tooling), the coverage report generator is not exposed as a command,
+  `RealDecisionRecord` can only be validated through `shadow-summarize`, and the top-level
+  usage message does not list `advise`, `budget` or `shadow-summarize`.
+- **`SessionEvaluator`** (not used by `advise`) counts any failure alongside a pass as
+  `recovery-after-failed-attempt`, regardless of order.
 
 ## Architectural direction
 
