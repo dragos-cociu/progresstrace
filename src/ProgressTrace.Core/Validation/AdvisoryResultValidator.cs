@@ -12,7 +12,7 @@ public sealed record AdvisoryResultValidationResult(AdvisoryResult? AdvisoryResu
 
 public static class AdvisoryResultValidator
 {
-    private static readonly HashSet<string> Classifications = new(StringComparer.Ordinal) { "progress", "recovery-after-failed-attempt", "repeated-attempt-without-obligation-advancement", "insufficient-evidence" };
+    private static readonly HashSet<string> Classifications = new(StringComparer.Ordinal) { "progress", "recovery-after-failed-attempt", "repeated-attempt-without-obligation-advancement", "failed-attempt", "insufficient-evidence" };
     private static readonly HashSet<string> Recommendations = new(StringComparer.Ordinal) { "continue", "stop-recommended", "insufficient-evidence" };
     private static readonly HashSet<string> Statuses = new(StringComparer.Ordinal) { "open", "in-progress", "satisfied", "regressed", "abandoned" };
     private static readonly Regex Digest = new("^[0-9a-f]{64}$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
